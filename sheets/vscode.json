@@ -1,0 +1,286 @@
+{
+  "id": "vscode-productivity-reference",
+  "title": "Visual Studio Code Cheatsheet",
+  "slug": "vscode",
+  "category": "Developer Tools",
+  "technology": "Visual Studio Code",
+  "version": "Current VS Code",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 48,
+  "description": "Beginner-to-advanced Visual Studio Code reference for navigation, editing, search, IntelliSense, refactoring, Git, terminal, tasks, debugging, testing, settings, shortcuts, profiles, extensions, remote development, and troubleshooting.",
+  "tags": ["VSCODE", "EDITOR", "SHORTCUTS", "DEBUGGING", "GIT", "PRODUCTIVITY"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["vs code", "visual studio code", "vscode shortcuts", "code editor", "launch json", "tasks json"],
+  "relatedSheets": ["git", "typescript", "nodejs", "python", "docker", "kubernetes"],
+  "sections": [
+    {
+      "id": "interface-navigation",
+      "title": "Interface & Navigation",
+      "description": "Use command-driven navigation to move through files, symbols, views, and history.",
+      "subtopics": [
+        {
+          "id": "command-quick-open",
+          "title": "Command Palette & Quick Open",
+          "description": "The Command Palette exposes discoverable actions; Quick Open searches files and accepts prefixes for commands, symbols, lines, and views.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⇧⌘P / F1   Command Palette\n⌘P          Quick Open file\n⌘P then >   Commands\n⌘P then @   Symbol in current file\n⌘P then #   Workspace symbol\n⌘P then :42 Go to line 42\n⌃Q          Quick Open view" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+Shift+P / F1  Command Palette\nCtrl+P             Quick Open file\nCtrl+P then >      Commands\nCtrl+P then @      Symbol in current file\nCtrl+P then #      Workspace symbol\nCtrl+P then :42    Go to line 42\nCtrl+Q             Quick Open view" }
+          ],
+          "callouts": [{ "title": "Search Commands Before Memorizing", "type": "tip", "icon": "💡", "text": "Run Preferences: Open Keyboard Shortcuts, search by command/title, and customize collisions. Shortcuts can differ by OS, layout, extensions, and keymap.", "color": "green" }]
+        },
+        {
+          "id": "editor-navigation-history",
+          "title": "Tabs, Groups & Navigation History",
+          "description": "Open files into editor groups, move between groups, and navigate location history without reopening files manually.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌘\\          Split editor\n⌘1 / ⌘2    Focus editor group\n⌃Tab        Cycle recent editors\n⌃- / ⌃⇧-   Back / Forward\n⌘K ⌘W      Close all editors\n⌘K Enter   Keep preview editor open" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+\\               Split editor\nCtrl+1 / Ctrl+2       Focus editor group\nCtrl+Tab              Cycle recent editors\nAlt+Left / Alt+Right  Back / Forward\nCtrl+K Ctrl+W         Close all editors\nCtrl+K Enter          Keep preview editor open" }
+          ],
+          "callouts": [{ "title": "Preview Tabs", "type": "note", "icon": "📌", "text": "A single-click/Quick Open result may reuse an italic preview tab. Double-click, edit, or Keep Open to pin it; configure workbench.editor.enablePreview if desired.", "color": "blue" }]
+        },
+        {
+          "id": "breadcrumbs-outline-symbols",
+          "title": "Breadcrumbs, Outline & Symbols",
+          "description": "Navigate semantic structure from language-service symbols rather than scrolling large files.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⇧⌘O       Go to Symbol in Editor\n⌘T         Go to Symbol in Workspace\nF12        Go to Definition\n⌥F12       Peek Definition\n⇧F12       Find All References\n⌃⇧. / ⌃⇧, Next / Previous change" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+Shift+O  Go to Symbol in Editor\nCtrl+T        Go to Symbol in Workspace\nF12           Go to Definition\nAlt+F12       Peek Definition\nShift+F12     Find All References\nAlt+F5 / Shift+Alt+F5 Next / Previous change" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "editing-refactoring",
+      "title": "Editing, Selection & Refactoring",
+      "description": "Use structural operations, multiple cursors, and language-aware refactors instead of repetitive manual edits.",
+      "subtopics": [
+        {
+          "id": "line-editing",
+          "title": "Line & Block Editing",
+          "description": "Move, copy, delete, comment, format, indent, and join code without selecting whole lines.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌥↑ / ⌥↓       Move line up/down\n⇧⌥↑ / ⇧⌥↓     Copy line up/down\n⇧⌘K            Delete line\n⌘/             Toggle line comment\n⇧⌥A            Toggle block comment\n⇧⌥F            Format document\n⌘K ⌘F          Format selection\n⌘] / ⌘[        Indent / Outdent" },
+            { "label": "Windows/Linux", "language": "text", "code": "Alt+Up / Alt+Down           Move line\nShift+Alt+Up / Shift+Alt+Down Copy line\nCtrl+Shift+K                 Delete line\nCtrl+/                       Toggle line comment\nShift+Alt+A                  Toggle block comment\nShift+Alt+F                  Format document\nCtrl+K Ctrl+F                Format selection\nCtrl+] / Ctrl+[              Indent / Outdent" }
+          ],
+          "callouts": [{ "title": "Choose One Formatter", "type": "warning", "icon": "⚠️", "text": "Multiple default formatters or format-on-save/code-action conflicts cause churn. Set language-scoped defaults and commit repository formatting configuration.", "color": "amber" }]
+        },
+        {
+          "id": "multicursor-selection",
+          "title": "Multiple Cursors & Selection",
+          "description": "Add cursors for repeated local edits, select occurrences, expand semantic selection, or use column selection.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌥Click        Add cursor\n⌥⌘↑ / ⌥⌘↓   Cursor above/below\n⌘D            Add next occurrence\n⇧⌘L           Select all occurrences\n⌃⇧⌘→ / ←     Expand / Shrink selection\n⇧⌥ drag       Column selection" },
+            { "label": "Windows/Linux", "language": "text", "code": "Alt+Click                 Add cursor\nCtrl+Alt+Up / Down        Cursor above/below\nCtrl+D                    Add next occurrence\nCtrl+Shift+L              Select all occurrences\nShift+Alt+Right / Left    Expand / Shrink selection\nShift+Alt drag            Column selection" }
+          ],
+          "callouts": [{ "title": "Use Rename for Symbols", "type": "danger", "icon": "🛑", "text": "Multi-cursor/text replacement cannot understand imports, scopes, strings, generated references, or language semantics. Use F2 Rename Symbol when changing an identifier.", "color": "red" }]
+        },
+        {
+          "id": "intellisense-refactors",
+          "title": "IntelliSense, Code Actions & Refactors",
+          "description": "Language extensions provide completion, parameter hints, diagnostics, quick fixes, rename, extract, organize imports, and source actions.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌃Space      Trigger suggestions\n⇧⌘Space     Parameter hints\n⌘.          Quick Fix / Code Action\nF2          Rename Symbol\nF8 / ⇧F8   Next / Previous problem\n⇧⌘M         Problems panel\n⌘K M        Change language mode" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+Space         Trigger suggestions\nCtrl+Shift+Space   Parameter hints\nCtrl+.             Quick Fix / Code Action\nF2                 Rename Symbol\nF8 / Shift+F8      Next / Previous problem\nCtrl+Shift+M       Problems panel\nCtrl+K M           Change language mode" }
+          ],
+          "callouts": [{ "title": "Refactor Preview Before Broad Changes", "type": "tip", "icon": "💡", "text": "Review affected files and run project type/tests after rename or source actions, especially across generated code, dynamic usage, or multiple language servers.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "search-files-workspaces",
+      "title": "Search, Files & Workspaces",
+      "description": "Use scoped search and workspace configuration without hiding repository behavior in personal settings.",
+      "subtopics": [
+        {
+          "id": "find-replace-search",
+          "title": "Find, Replace & Workspace Search",
+          "description": "Editor find works in one file; Search view supports regex, include/exclude globs, replace previews, and Search Editors.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌘F          Find\n⌥⌘F         Replace\n⌘G / ⇧⌘G   Next / Previous match\n⇧⌘F         Search workspace\n⇧⌘H         Replace workspace\n⌥⌘Enter     Replace all\n⌘K C        Compare active file with clipboard" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+F             Find\nCtrl+H             Replace\nF3 / Shift+F3      Next / Previous match\nCtrl+Shift+F       Search workspace\nCtrl+Shift+H       Replace workspace\nCtrl+Alt+Enter     Replace all\nCtrl+K C           Compare active file with clipboard" }
+          ],
+          "callouts": [{ "title": "Preview Workspace Replacements", "type": "danger", "icon": "⚠️", "text": "Regex replacement can alter vendored/generated/binary-like text. Scope include/exclude globs, inspect diffs, and use version control before Replace All.", "color": "red" }]
+        },
+        {
+          "id": "settings-scopes",
+          "title": "User, Profile, Workspace & Folder Settings",
+          "description": "Settings precedence moves from defaults to user/profile, remote, workspace, folder, language, and policy/context-specific values.",
+          "table": {
+            "title": "VS Code Settings Scopes",
+            "headers": ["Scope", "Applies To", "Storage / Sharing", "Good Use"],
+            "rows": [
+              ["User", "All local workspaces", "User settings; optionally synced", "Personal editor behavior"],
+              ["Profile", "Workspaces using that profile", "Profile-specific settings and extensions", "Separate language or job-role toolchains"],
+              ["Remote", "A remote authority such as SSH, WSL, or container", "Stored for that remote context", "Remote paths and extension behavior"],
+              ["Workspace", "One workspace", ".vscode/settings.json or workspace file; often shareable", "Team formatter, lint, file exclusions"],
+              ["Workspace folder", "One folder in a multi-root workspace", "Folder-level .vscode settings", "Per-project toolchain differences"],
+              ["Language-specific", "Files matching a language identifier", "Nested under [language-id] at another scope", "Formatter and tab width per language"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "jsonc",
+            "code": "// .vscode/settings.json — commit only shared project behavior\n{\n  \"editor.formatOnSave\": true,\n  \"editor.codeActionsOnSave\": { \"source.organizeImports\": \"explicit\" },\n  \"files.exclude\": { \"**/.cache\": true },\n  \"[typescript]\": { \"editor.defaultFormatter\": \"esbenp.prettier-vscode\" }\n}"
+          }],
+          "callouts": [{ "title": "Do Not Commit Personal Preferences", "type": "tip", "icon": "💡", "text": "Theme, font, UI layout, telemetry preference, and personal keybindings belong in user/profile settings. Commit settings required for consistent project behavior.", "color": "green" }]
+        },
+        {
+          "id": "multi-root-trust",
+          "title": "Multi-Root Workspaces & Workspace Trust",
+          "description": "A .code-workspace file groups folders and settings/tasks. Workspace Trust restricts code execution features for untrusted content.",
+          "codeBlocks": [{
+            "language": "jsonc",
+            "code": "{\n  \"folders\": [{ \"path\": \"apps/web\" }, { \"path\": \"services/api\" }],\n  \"settings\": { \"search.exclude\": { \"**/dist\": true } },\n  \"extensions\": { \"recommendations\": [\"dbaeumer.vscode-eslint\"] }\n}"
+          }],
+          "callouts": [{ "title": "A Workspace Can Execute Code", "type": "danger", "icon": "🔐", "text": "Tasks, debug configs, extensions, settings, and language tooling can run repository code. Keep Restricted Mode until you trust the source and inspect configuration.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "terminal-tasks-debugging",
+      "title": "Terminal, Tasks & Debugging",
+      "description": "Automate reproducible commands and debug with explicit launch behavior.",
+      "subtopics": [
+        {
+          "id": "integrated-terminal",
+          "title": "Integrated Terminal & Shell Integration",
+          "description": "Use named terminal profiles, split terminals, command decorations, navigation, and detected links without confusing terminal state with editor tasks.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌃`          Toggle terminal\n⌃⇧`         New terminal\n⌘\\          Split terminal (when focused/configured)\n⌘K          Clear terminal\nTerminal: Select Default Profile via Palette" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+`        Toggle terminal\nCtrl+Shift+`  New terminal\nCtrl+Shift+5  Split terminal\nCtrl+K        Clear terminal (may depend on shell)\nTerminal: Select Default Profile via Palette" }
+          ],
+          "callouts": [{ "title": "Shell Initialization Affects Reproducibility", "type": "note", "icon": "📌", "text": "Environment managers and login/interactive shell behavior can differ between terminal, tasks, debugger, CI, and containers. Put required project commands/config in scripts rather than aliases.", "color": "blue" }]
+        },
+        {
+          "id": "tasks-json",
+          "title": "tasks.json, Problem Matchers & Compounds",
+          "description": "Tasks run builds/tests/tools with presentation, grouping, dependencies, background readiness, inputs, and problem matchers.",
+          "codeBlocks": [{
+            "language": "jsonc",
+            "code": "{\n  \"version\": \"2.0.0\",\n  \"tasks\": [{\n    \"label\": \"typecheck\", \"type\": \"npm\", \"script\": \"typecheck\",\n    \"group\": { \"kind\": \"build\", \"isDefault\": true },\n    \"problemMatcher\": \"$tsc\"\n  }, {\n    \"label\": \"verify\", \"dependsOrder\": \"sequence\",\n    \"dependsOn\": [\"typecheck\", \"test\"]\n  }]\n}"
+          }],
+          "callouts": [{ "title": "Tasks Are Shared Executables", "type": "warning", "icon": "⚠️", "text": "Prefer package/project scripts as the source of truth so CI and other editors can run them. Review shell commands and platform assumptions before committing.", "color": "amber" }]
+        },
+        {
+          "id": "launch-debug",
+          "title": "launch.json, Breakpoints & Data Inspection",
+          "description": "Launch or attach a debugger with runtime, program, arguments, environment, source maps, preLaunchTask, and console behavior.",
+          "codeBlocks": [{
+            "language": "jsonc",
+            "code": "{\n  \"version\": \"0.2.0\",\n  \"configurations\": [{\n    \"name\": \"Debug API\", \"type\": \"node\", \"request\": \"launch\",\n    \"program\": \"${workspaceFolder}/src/server.ts\",\n    \"runtimeArgs\": [\"--enable-source-maps\"],\n    \"envFile\": \"${workspaceFolder}/.env.development\",\n    \"skipFiles\": [\"<node_internals>/**\"]\n  }]\n}"
+          }],
+          "callouts": [{ "title": "Do Not Commit Secrets in launch.json", "type": "danger", "icon": "🔐", "text": "Use ignored env files or secure runtime injection. Debug consoles, environment, variables, memory, and logs may expose sensitive values.", "color": "red" }]
+        },
+        {
+          "id": "debug-shortcuts",
+          "title": "Debug Shortcuts, Logpoints & Conditions",
+          "description": "Use conditional/hit-count breakpoints and logpoints to reduce intrusive debug edits.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "F5          Start / Continue\nF9          Toggle breakpoint\nF10         Step Over\nF11         Step Into\nShift+F11   Step Out\nShift+F5    Stop\nCtrl+Shift+F5 (Win/Linux) / ⇧⌘F5 (macOS) Restart\n\nRight-click gutter → Conditional Breakpoint / Logpoint / Triggered Breakpoint"
+          }],
+          "callouts": [{ "title": "Pausing Production Is Risky", "type": "warning", "icon": "⚠️", "text": "A breakpoint may halt a process/event loop. Prefer logs, traces, metrics, snapshots, or logpoints in shared/live environments and protect debug ports.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "source-control-testing",
+      "title": "Source Control & Testing",
+      "description": "Review changes deliberately and run tests through language/tool adapters.",
+      "subtopics": [
+        {
+          "id": "git-source-control",
+          "title": "Git Changes, Stage, Commit & Graph",
+          "description": "The Source Control view displays repositories, staged/unstaged changes, diffs, commits, branches, merge conflicts, history graph, and sync operations.",
+          "tabs": [
+            { "label": "macOS", "language": "text", "code": "⌃⇧G       Source Control view\nOpen changed file → side-by-side diff\nStage selected hunks/lines from editor gutter\nCommand Palette: Git: Commit, Branch, Checkout, Stash, Pull, Push" },
+            { "label": "Windows/Linux", "language": "text", "code": "Ctrl+Shift+G Source Control view\nOpen changed file → side-by-side diff\nStage selected hunks/lines from editor gutter\nCommand Palette: Git: Commit, Branch, Checkout, Stash, Pull, Push" }
+          ],
+          "callouts": [{ "title": "Sync Means Pull Then Push", "type": "warning", "icon": "⚠️", "text": "Review incoming/outgoing commits before Sync. Only staged changes are committed; inspect the staged diff to avoid secrets, generated noise, or unrelated edits.", "color": "amber" }]
+        },
+        {
+          "id": "merge-conflicts-timeline",
+          "title": "Merge Editor, Timeline & Local History",
+          "description": "The Merge Editor compares base, incoming, current, and result; Timeline shows Git commits and local-history entries where enabled.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Resolve by understanding intended combined behavior—not Accept Both blindly.\nSearch every conflict marker: <<<<<<<, =======, >>>>>>>\nRun formatter, type checker, and affected tests after resolution.\nReview final diff against both parents.\nLocal History is recovery help, not a replacement for Git/backup."
+          }],
+          "callouts": [{ "title": "Conflict Resolution Can Compile and Still Be Wrong", "type": "danger", "icon": "🛑", "text": "Independent changes can violate invariants without textual conflicts. Test integration behavior and review semantic interactions.", "color": "red" }]
+        },
+        {
+          "id": "testing-view",
+          "title": "Testing View, Profiles & Coverage",
+          "description": "Test adapters discover tests and provide run/debug, status, output, filtering, continuous run, and coverage when supported.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Testing: Focus on Test Explorer View via Command Palette\nRun/Debug icons appear in gutter for discovered tests\nUse profiles to select run/debug/coverage configuration\nPeek test output and navigate stack traces\nVerify the same command in terminal/CI when adapter behavior differs"
+          }],
+          "callouts": [{ "title": "Adapter Is Not the Test Runner", "type": "note", "icon": "📌", "text": "The extension integrates an underlying runner. Keep runner configuration/scripts authoritative and diagnose differences in environment, cwd, filters, or watch mode.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "extensions-profiles-remote",
+      "title": "Extensions, Profiles & Remote Development",
+      "description": "Control privileged extension code and make environments repeatable.",
+      "subtopics": [
+        {
+          "id": "extensions-management",
+          "title": "Extension Trust, Recommendations & Bisect",
+          "description": "Extensions can read/write files, run processes, access network, modify UI, and execute workspace code. Install minimally and inspect publisher/repository/permissions/update changes.",
+          "tabs": [
+            { "label": "CLI", "language": "bash", "code": "code --list-extensions --show-versions\ncode --install-extension publisher.extension\ncode --uninstall-extension publisher.extension\ncode --disable-extensions .\ncode --profile \"Python\" ." },
+            { "label": "Diagnosis", "language": "text", "code": "Help: Start Extension Bisect\nDeveloper: Show Running Extensions\nDeveloper: Open Extensions Folder\nDeveloper: Toggle Developer Tools\nHelp: Open Process Explorer" }
+          ],
+          "callouts": [{ "title": "Recommendations Are Not Automatic Approval", "type": "danger", "icon": "🔐", "text": "A repository can recommend extensions. Review them before installation, especially in untrusted workspaces and development containers/remote hosts.", "color": "red" }]
+        },
+        {
+          "id": "profiles-settings-sync",
+          "title": "Profiles & Settings Sync",
+          "description": "Profiles isolate settings, extensions, shortcuts, snippets, tasks, and UI state for different workflows; Sync shares selected personal configuration across signed-in devices.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Example profiles: Web, Python, Documentation, Demo, Empty\nExport/import a profile for reproducible personal tooling\nUse an Empty Profile to diagnose extensions/settings\nChoose Sync categories explicitly\nNever store workspace/application secrets in synced settings"
+          }],
+          "callouts": [{ "title": "Profiles Complement Project Config", "type": "note", "icon": "📌", "text": "Profiles customize the developer experience. Repository format/lint/build/test configuration remains the portable team contract.", "color": "blue" }]
+        },
+        {
+          "id": "remote-dev-containers",
+          "title": "SSH, WSL, Tunnels & Dev Containers",
+          "description": "Remote extensions split local UI from remote extension host/files/processes. Dev Containers describe a containerized toolchain and workspace mounts/features.",
+          "codeBlocks": [{
+            "language": "jsonc",
+            "code": "// .devcontainer/devcontainer.json\n{\n  \"name\": \"Web Dev\",\n  \"build\": { \"dockerfile\": \"Dockerfile\" },\n  \"forwardPorts\": [5173],\n  \"postCreateCommand\": \"npm ci\",\n  \"customizations\": { \"vscode\": { \"extensions\": [\"dbaeumer.vscode-eslint\"] } },\n  \"remoteUser\": \"node\"\n}"
+          }],
+          "callouts": [{ "title": "Container Config Is Executable Supply Chain", "type": "danger", "icon": "🔐", "text": "Dockerfiles, features, lifecycle commands, mounts, forwarded ports, and extensions execute with developer credentials/data. Pin/review them and avoid mounting broad host secrets or Docker socket.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "performance-checklist",
+      "title": "Performance, Recovery & Checklist",
+      "description": "Diagnose editor, extension host, filesystem, watcher, language server, and project-scale issues separately.",
+      "subtopics": [
+        {
+          "id": "vscode-performance",
+          "title": "Slow Editor & Extension Diagnosis",
+          "description": "Measure startup, running extensions, processes, language-server logs, file watchers, search excludes, and remote latency before deleting configuration.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "code --status\ncode --disable-extensions .\ncode --user-data-dir /tmp/vscode-clean --extensions-dir /tmp/vscode-exts .\n\n# Commands: Help: Startup Performance\n# Developer: Show Running Extensions\n# Help: Open Process Explorer\n# Start Extension Bisect"
+          }],
+          "callouts": [{ "title": "Exclude Generated Trees Carefully", "type": "tip", "icon": "💡", "text": "Large node_modules, build, cache, virtualenv, logs, or generated trees can overload watchers/search/language servers. Use tool-specific exclusions without hiding source that must be indexed.", "color": "green" }]
+        },
+        {
+          "id": "vscode-checklist",
+          "title": "Workspace Checklist",
+          "description": "Keep shared behavior reproducible, security boundaries visible, and shortcuts discoverable across operating systems.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Workspace is trusted only after configuration review\n□ Shared settings are minimal and language-scoped where needed\n□ Personal UI/theme/keybindings remain outside repository\n□ One formatter/linter source of truth is configured\n□ Tasks delegate to portable project scripts\n□ Debug configs contain no secrets and map sources correctly\n□ Git staged diff is reviewed before commit/sync\n□ Test adapter matches terminal/CI runner behavior\n□ Extensions are minimal, trusted, and version/update reviewed\n□ Remote/container mounts, ports, features, and commands are reviewed\n□ Generated directories are excluded from the right indexers\n□ Performance issues are isolated with status/process/bisect tools\n□ Keyboard shortcuts are checked against current OS/keymap"
+          }]
+        }
+      ]
+    }
+  ]
+}

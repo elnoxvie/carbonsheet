@@ -1,0 +1,261 @@
+{
+  "name": "CarbonSheet Official",
+  "description": "The official curated reference sheet collection maintained by the CarbonSheet team.",
+  "author": "CarbonSheet",
+  "version": "1",
+  "homepage": "https://github.com/elnoxvie/stitch_devsheet_hub",
+  "sheets": [
+    {
+      "slug": "android-jetpack-compose-modifiers",
+      "title": "Android Jetpack Compose Modifiers",
+      "description": "Beginner-to-advanced reference for modifier order, constraints, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
+      "technology": "Jetpack Compose Modifier",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/android-jetpack-compose-modifiers.json"
+    },
+    {
+      "slug": "android-jetpack-compose",
+      "title": "Android Jetpack Compose",
+      "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, lazy UI, theming, navigation, accessibility, interoperability, and performance.",
+      "technology": "Jetpack Compose",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/android-jetpack-compose.json"
+    },
+    {
+      "slug": "android-kotlin-coroutines",
+      "title": "Android Kotlin Coroutines",
+      "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, lifecycle scopes, and production coroutine design on Android.",
+      "technology": "Kotlin Coroutines",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/android-kotlin-coroutines.json"
+    },
+    {
+      "slug": "android-kotlin-flows",
+      "title": "Android Kotlin Flows",
+      "description": "Beginner-to-advanced reference for building, transforming, sharing, collecting, debugging, and testing Kotlin Flow streams in Android applications.",
+      "technology": "Kotlin Flow",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/android-kotlin-flows.json"
+    },
+    {
+      "slug": "android-naming-conventions",
+      "title": "Android Naming Conventions",
+      "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, resources, Compose APIs, state, events, streams, tests, and implementation variants.",
+      "technology": "Kotlin / Android / Compose",
+      "category": "Android",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/android-naming-conventions.json"
+    },
+    {
+      "slug": "android-testing",
+      "title": "Android Testing",
+      "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, test doubles, coroutines and Flow, Compose UI, navigation, storage, reliability, and CI.",
+      "technology": "JUnit / AndroidX Test / Compose Test",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/android-testing.json"
+    },
+    {
+      "slug": "bun",
+      "title": "Bun Runtime & Toolchain",
+      "description": "Bun reference covering the runtime, package manager, lockfile, workspaces, scripts, Bun.serve, files, SQL, testing, bundling, Node compatibility, performance, deployment, and security.",
+      "technology": "Bun",
+      "category": "Web Development",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/bun.json"
+    },
+    {
+      "slug": "docker",
+      "title": "Docker Containers & Compose",
+      "description": "Beginner-to-advanced Docker reference covering images, containers, Dockerfiles, BuildKit, cache, lifecycle, storage, networking, Compose, registries, multi-platform builds, security, diagnostics, and production practices.",
+      "technology": "Docker",
+      "category": "DevOps",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/docker.json"
+    },
+    {
+      "slug": "fastapi",
+      "title": "FastAPI Web APIs",
+      "description": "Beginner-to-advanced FastAPI reference covering routing, validation, Pydantic, dependency injection, async execution, authentication, authorization, errors, middleware, lifespan, databases, background tasks, WebSockets, testing, OpenAPI, security, performance, and deployment.",
+      "technology": "FastAPI / Pydantic",
+      "category": "Backend",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/fastapi.json"
+    },
+    {
+      "slug": "git",
+      "title": "Git Modern Command Reference & Internal Architecture",
+      "description": "High-density Git cheat sheet covering interactive staging, branch rebase workflows, reflog recovery, and visual branch architecture.",
+      "technology": "Git",
+      "category": "DevOps",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/git.json"
+    },
+    {
+      "slug": "java",
+      "title": "Java Programming",
+      "description": "Beginner-to-advanced Java reference covering the type system, object model, collections, streams, exceptions, generics, records, sealed types, concurrency, JVM behavior, testing, and production practices.",
+      "technology": "Java",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/java.json"
+    },
+    {
+      "slug": "javascript",
+      "title": "JavaScript Programming",
+      "description": "Modern JavaScript reference covering values, scope, objects, collections, functions, modules, promises, iterators, browser APIs, performance, testing, and security.",
+      "technology": "JavaScript",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/javascript.json"
+    },
+    {
+      "slug": "android-kotlin",
+      "title": "Android Kotlin",
+      "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, resources, intents, permissions, storage, and scalable app architecture.",
+      "technology": "Android / Kotlin",
+      "category": "Android",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/kotlin.json"
+    },
+    {
+      "slug": "kotlin-collection-processing",
+      "title": "Android Kotlin Collection Processing",
+      "description": "Beginner-to-advanced Kotlin collection reference for Android, covering mutability, transformations, filtering, grouping, aggregation, sequences, allocation, complexity, concurrency boundaries, and production patterns.",
+      "technology": "Kotlin Standard Library",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/kotlin_collection_processing_sheet.json"
+    },
+    {
+      "slug": "kubernetes",
+      "title": "Kubernetes & kubectl",
+      "description": "Beginner-to-advanced Kubernetes reference covering architecture, API objects, Pods, workloads, Services, configuration, storage, health, resources, scheduling, scaling, security, observability, kubectl, Kustomize, Helm, and production operations.",
+      "technology": "Kubernetes",
+      "category": "DevOps",
+      "difficulty": "ADVANCED",
+      "file": "src/content/sheets/kubernetes.json"
+    },
+    {
+      "slug": "nextjs",
+      "title": "Next.js Web Development",
+      "description": "Beginner-to-advanced Next.js App Router reference covering routing, Server and Client Components, data and cache behavior, mutations, Route Handlers, metadata, errors, security, performance, testing, and deployment.",
+      "technology": "Next.js",
+      "category": "Full Stack Web",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/nextjs.json"
+    },
+    {
+      "slug": "nodejs",
+      "title": "Node.js Web Development",
+      "description": "Beginner-to-advanced Node.js runtime reference covering modules, packages, event loop, async design, files, streams, HTTP, processes, workers, testing, diagnostics, security, and production operation.",
+      "technology": "Node.js",
+      "category": "Backend",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/nodejs.json"
+    },
+    {
+      "slug": "python-design-patterns",
+      "title": "Design Patterns with Python Examples",
+      "description": "Complete reference to all 23 Gang of Four design patterns using typed, Pythonic examples, selection guidance, trade-offs, implementation hints, and modern language alternatives.",
+      "technology": "Python",
+      "category": "Software Design",
+      "difficulty": "ADVANCED",
+      "file": "src/content/sheets/python-design-patterns.json"
+    },
+    {
+      "slug": "python",
+      "title": "Python Programming",
+      "description": "Beginner-to-advanced Python reference covering syntax, values, collections, functions, typing, iterators, classes, dataclasses, exceptions, context managers, modules, packaging, I/O, concurrency, testing, performance, and security.",
+      "technology": "Python",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/python.json"
+    },
+    {
+      "slug": "react",
+      "title": "React Web Development",
+      "description": "Beginner-to-advanced React reference covering component design, JSX, state, events, forms, Hooks, effects, context, reducers, Suspense, errors, performance, accessibility, and testing.",
+      "technology": "React",
+      "category": "Frontend",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/react.json"
+    },
+    {
+      "slug": "rust",
+      "title": "Rust Programming",
+      "description": "Beginner-to-advanced Rust reference covering ownership, borrowing, enums, traits, generics, collections, iterators, errors, concurrency, async, unsafe boundaries, testing, Cargo, and production engineering.",
+      "technology": "Rust",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/rust.json"
+    },
+    {
+      "slug": "swift",
+      "title": "Swift Programming",
+      "description": "Beginner-to-advanced Swift reference covering value semantics, optionals, collections, protocols, generics, errors, ARC, concurrency, actors, Sendable, testing, packages, performance, and API design.",
+      "technology": "Swift",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/swift.json"
+    },
+    {
+      "slug": "swiftui",
+      "title": "SwiftUI",
+      "description": "SwiftUI reference covering view identity, state, bindings, observation, layout, navigation, lists, tasks, animation, accessibility, UIKit interoperability, testing, performance, and production architecture.",
+      "technology": "SwiftUI",
+      "category": "Mobile Development",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/swiftui.json"
+    },
+    {
+      "slug": "tailwind",
+      "title": "Tailwind CSS",
+      "description": "Utility-first Tailwind CSS reference covering setup, layout, responsive variants, state, theme variables, arbitrary values, component composition, accessibility, performance, and production practices.",
+      "technology": "Tailwind CSS",
+      "category": "Web Development",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/tailwind.json"
+    },
+    {
+      "slug": "typescript",
+      "title": "TypeScript Class & Type System",
+      "description": "Essential syntax reference for TypeScript classes, generic constraints, type-only modifiers, control flow analysis, and type evaluation.",
+      "technology": "TypeScript",
+      "category": "Frontend",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/typescript.json"
+    },
+    {
+      "slug": "vite",
+      "title": "Vite Web Development",
+      "description": "Beginner-to-advanced Vite reference covering project setup, native-ESM development, configuration, environments, assets, CSS, plugins, dependency optimization, production builds, libraries, SSR, testing, and deployment.",
+      "technology": "Vite",
+      "category": "Frontend Tooling",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/vite.json"
+    },
+    {
+      "slug": "vscode",
+      "title": "Visual Studio Code Cheatsheet",
+      "description": "Beginner-to-advanced Visual Studio Code reference for navigation, editing, search, IntelliSense, refactoring, Git, terminal, tasks, debugging, testing, settings, shortcuts, profiles, extensions, remote development, and troubleshooting.",
+      "technology": "Visual Studio Code",
+      "category": "Developer Tools",
+      "difficulty": "BEGINNER",
+      "file": "src/content/sheets/vscode.json"
+    },
+    {
+      "slug": "zod",
+      "title": "Zod Schema Validation",
+      "description": "Zod 4 reference covering parsing, inferred types, object policies, unions, refinements, transforms, async validation, recursive schemas, errors, JSON Schema, performance, and API-boundary design.",
+      "technology": "Zod",
+      "category": "Web Development",
+      "difficulty": "INTERMEDIATE",
+      "file": "src/content/sheets/zod.json"
+    }
+  ]
+}

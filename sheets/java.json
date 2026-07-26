@@ -1,0 +1,82 @@
+{
+  "id": "java-language-reference",
+  "title": "Java Programming",
+  "slug": "java",
+  "category": "Languages",
+  "technology": "Java",
+  "version": "JDK 25 LTS",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 70,
+  "description": "Beginner-to-advanced Java reference covering the type system, object model, collections, streams, exceptions, generics, records, sealed types, concurrency, JVM behavior, testing, and production practices.",
+  "tags": ["JAVA", "JVM", "OOP", "STREAMS", "CONCURRENCY", "TESTING"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["jdk", "jvm language", "java syntax", "virtual threads", "java streams"],
+  "relatedSheets": ["kotlin-collection-processing", "sql", "postgres", "docker"],
+  "sections": [
+    {
+      "id": "syntax-types-control",
+      "title": "Syntax, Types & Control Flow",
+      "description": "Understand Java's static type system, value/reference semantics, null boundary, and expression-oriented modern syntax.",
+      "subtopics": [
+        {
+          "id": "values-references-null",
+          "title": "Primitives, References & null",
+          "description": "Primitive variables contain values; reference variables identify objects. Java always passes arguments by value—even when the copied value is an object reference.",
+          "table": {
+            "title": "Primitive and Reference Semantics",
+            "headers": ["Kind", "Examples", "Default Field Value", "Equality"],
+            "rows": [
+              ["Integral", "byte, short, int, long, char", "0 / \\u0000", "== compares values"],
+              ["Floating point", "float, double", "0.0", "Use policy for NaN and precision"],
+              ["Boolean", "boolean", "false", "== compares values"],
+              ["Reference", "String, arrays, classes, interfaces", "null", "== identity; equals usually value semantics"]
+            ]
+          },
+          "codeBlocks": [{"language":"java","code":"var names = new ArrayList<String>(); // local inference, still static\nnames.add(\"Ada\");\nList<String> alias = names;          // same object\nList<String> copy = List.copyOf(names);\n\nif (value == null) return;\nif (Objects.equals(left, right)) { /* null-safe value equality */ }"}],
+          "callouts": [{"title":"No Nullable Type in Core Java","type":"warning","icon":"⚠️","text":"Treat nullability as an API contract. Validate at boundaries, avoid returning null collections, and use Optional mainly for return values—not fields or parameters by default.","color":"amber"}]
+        },
+        {
+          "id": "control-patterns",
+          "title": "Control Flow, switch & Pattern Matching",
+          "description": "Modern switch can return a value and use exhaustive type patterns. Guard clauses keep failure paths explicit.",
+          "codeBlocks": [{"language":"java","code":"sealed interface Result permits Ok, Failure {}\nrecord Ok(String value) implements Result {}\nrecord Failure(Throwable cause) implements Result {}\n\nString message = switch (result) {\n  case Ok(var value) -> value;\n  case Failure(var cause) -> \"failed: \" + cause.getMessage();\n};"}],
+          "callouts": [{"title":"Exhaustiveness Is a Design Tool","type":"tip","icon":"💡","text":"Sealed hierarchies plus switch make missing domain cases compiler-visible. Keep the permitted set close to the abstraction.","color":"green"}]
+        },
+        {
+          "id": "strings-numbers-time",
+          "title": "Strings, Numbers & Time",
+          "description": "String is immutable; BigDecimal is for explicit decimal precision; java.time types separate instants, local civil time, zones, and durations.",
+          "codeBlocks": [{"language":"java","code":"var amount = new BigDecimal(\"19.99\");\nvar total = amount.multiply(BigDecimal.valueOf(3));\nvar now = Instant.now();\nvar singapore = now.atZone(ZoneId.of(\"Asia/Singapore\"));\nvar text = \"Total: %s at %s\".formatted(total, singapore);"}],
+          "callouts": [{"title":"Do Not Construct BigDecimal from double","type":"danger","icon":"💰","text":"Use a decimal string or BigDecimal.valueOf. Define scale and RoundingMode at the domain boundary.","color":"red"}]
+        }
+      ]
+    },
+    {
+      "id": "objects-domain-types",
+      "title": "Objects, Interfaces & Domain Types",
+      "subtopics": [
+        {"id":"classes-interfaces-composition","title":"Classes, Interfaces & Composition","description":"Keep invariants inside constructors/factories, expose behavior rather than mutable internals, and prefer composition over inheritance for replaceable policy.","codeBlocks":[{"language":"java","code":"interface PricePolicy { BigDecimal apply(BigDecimal subtotal); }\n\nfinal class Checkout {\n  private final PricePolicy policy;\n  Checkout(PricePolicy policy) { this.policy = Objects.requireNonNull(policy); }\n  BigDecimal total(BigDecimal subtotal) { return policy.apply(subtotal); }\n}"}],"callouts":[{"title":"Defensive Ownership","type":"note","icon":"📌","text":"Copy mutable inputs and return unmodifiable snapshots when callers must not mutate internal state.","color":"blue"}]},
+        {"id":"records-sealed-enums","title":"Records, Sealed Types & Enums","description":"Records model transparent data aggregates; sealed types bound polymorphic families; enums represent a fixed set with identity and behavior.","codeBlocks":[{"language":"java","code":"record UserId(UUID value) {\n  UserId { Objects.requireNonNull(value); }\n}\n\nsealed interface Payment permits CardPayment, BankPayment {}"}],"callouts":[{"title":"Records Are Shallowly Immutable","type":"warning","icon":"⚠️","text":"Record components are final references, but referenced collections or objects may still mutate. Copy them in the compact constructor.","color":"amber"}]},
+        {"id":"generics-variance","title":"Generics, Bounds & PECS","description":"Generics provide compile-time type safety with erasure. Use ? extends T for producers and ? super T for consumers.","codeBlocks":[{"language":"java","code":"static <T> void copy(List<? extends T> source, List<? super T> target) {\n  target.addAll(source);\n}\n\nList<Integer> ints = List.of(1, 2);\nList<Number> numbers = new ArrayList<>();\ncopy(ints, numbers);"}],"callouts":[{"title":"Generic Types Are Invariant","type":"note","icon":"📌","text":"List<Integer> is not a subtype of List<Number>. Wildcards express safe read/write variance at API boundaries.","color":"blue"}]}
+      ]
+    },
+    {
+      "id": "collections-streams-errors",
+      "title": "Collections, Streams & Errors",
+      "subtopics": [
+        {"id":"collection-selection","title":"List, Set, Map & Queues","description":"Program to collection interfaces and choose implementations by ordering, uniqueness, lookup, concurrency, and mutation requirements.","codeBlocks":[{"language":"java","code":"List<String> ordered = new ArrayList<>();\nSet<String> unique = new HashSet<>();\nMap<String, User> byId = new HashMap<>();\nDeque<Job> queue = new ArrayDeque<>();\n\nvar immutable = List.copyOf(ordered);"}]},
+        {"id":"streams-collectors","title":"Streams, Collectors & Parallelism","description":"Streams are single-use lazy pipelines. Keep operations stateless and non-interfering; collect explicitly at the boundary.","codeBlocks":[{"language":"java","code":"Map<Tier, List<User>> activeByTier = users.stream()\n    .filter(User::active)\n    .sorted(comparing(User::name))\n    .collect(groupingBy(User::tier));"}],"callouts":[{"title":"parallelStream Is Not a Free Speedup","type":"warning","icon":"⚠️","text":"Measure workload size, splitting cost, ordering, blocking, and common-pool contention. Prefer explicit executors for controlled services.","color":"amber"}]},
+        {"id":"exceptions-resources","title":"Exceptions & Resource Ownership","description":"Use checked exceptions only when callers can recover meaningfully; preserve causes; close resources with try-with-resources.","codeBlocks":[{"language":"java","code":"try (var reader = Files.newBufferedReader(path, UTF_8)) {\n  return reader.lines().toList();\n} catch (IOException cause) {\n  throw new ConfigLoadException(path, cause);\n}"}],"callouts":[{"title":"Do Not Swallow Interruption","type":"danger","icon":"🛑","text":"If InterruptedException cannot be propagated, restore the flag with Thread.currentThread().interrupt() and stop the operation.","color":"red"}]}
+      ]
+    },
+    {
+      "id": "concurrency-jvm-quality",
+      "title": "Concurrency, JVM & Production Quality",
+      "subtopics": [
+        {"id":"threads-executors-futures","title":"Virtual Threads, Executors & Futures","description":"Virtual threads make thread-per-task practical for blocking I/O; platform pools remain suitable for bounded CPU work. Structured ownership still matters.","codeBlocks":[{"language":"java","code":"try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n  Future<User> user = executor.submit(() -> client.fetchUser(id));\n  Future<List<Order>> orders = executor.submit(() -> client.fetchOrders(id));\n  return new Profile(user.get(), orders.get());\n}"}],"callouts":[{"title":"Virtual Threads Do Not Make CPU Work Parallel for Free","type":"warning","icon":"⚠️","text":"They improve blocking concurrency, not compute throughput. Bound scarce downstream resources and avoid pinning through long blocking synchronized sections.","color":"amber"}]},
+        {"id":"memory-jvm-observability","title":"Memory, GC & Observability","description":"Diagnose allocation rate, retained objects, GC pauses, thread states, and latency together. Use JFR, thread dumps, heap dumps, and metrics before tuning flags.","codeBlocks":[{"language":"bash","code":"jcmd <pid> JFR.start name=profile duration=60s filename=app.jfr\njcmd <pid> Thread.print\njcmd <pid> GC.heap_info"}],"callouts":[{"title":"Measure Before Tuning","type":"tip","icon":"📈","text":"Most memory incidents are ownership, cache, or allocation problems. GC flags cannot repair unbounded retention.","color":"green"}]},
+        {"id":"testing-build-checklist","title":"Testing, Build & Review Checklist","description":"Use focused unit tests, integration tests for real boundaries, reproducible builds, static analysis, dependency locking, and graceful shutdown checks.","codeBlocks":[{"language":"java","code":"@Test void rejectsNegativeAmount() {\n  var error = assertThrows(IllegalArgumentException.class,\n      () -> new Payment(new BigDecimal(\"-1\")));\n  assertEquals(\"amount must be positive\", error.getMessage());\n}"}],"callouts":[{"title":"Production Checklist","type":"tip","icon":"✅","text":"Pin the JDK toolchain, avoid mutable globals, bound concurrency and queues, configure timeouts, preserve causes, redact secrets, expose health/metrics, and test shutdown.","color":"green"}]}
+      ]
+    }
+  ]
+}

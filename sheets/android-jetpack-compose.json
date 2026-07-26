@@ -1,0 +1,279 @@
+{
+  "id": "android-jetpack-compose",
+  "title": "Android Jetpack Compose",
+  "slug": "android-jetpack-compose",
+  "category": "Android",
+  "technology": "Jetpack Compose",
+  "version": "Modern Jetpack Compose",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 50,
+  "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, lazy UI, theming, navigation, accessibility, interoperability, and performance.",
+  "tags": ["ANDROID", "JETPACK COMPOSE", "COMPOSABLE", "STATE", "UI", "RECOMPOSITION"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["compose ui", "android declarative ui", "composable", "recomposition", "compose state", "compose side effects"],
+  "relatedSheets": ["android-jetpack-compose-modifiers", "android-kotlin", "android-kotlin-flows", "android-testing", "android-naming-conventions"],
+  "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],
+  "sections": [
+    {
+      "id": "compose-mental-model",
+      "title": "Compose Mental Model",
+      "description": "Describe UI from state and let the runtime update only affected parts.",
+      "subtopics": [
+        {
+          "id": "composition-recomposition",
+          "title": "Composition, Recomposition & Skipping",
+          "description": "Initial composition records emitted UI. State reads create dependencies; changing observed state schedules recomposition, which may run in any order, be skipped, or be discarded.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun Greeting(name: String, onDismiss: () -> Unit) {\n    Column {\n        Text(text = \"Hello, $name\")\n        Button(onClick = onDismiss) { Text(\"Dismiss\") }\n    }\n}",
+            "annotations": [
+              { "id": "declarative-input", "targetToken": "name: String", "text": "Inputs describe current UI; do not mutate widgets to synchronize them.", "position": "top" },
+              { "id": "event-output", "targetToken": "onDismiss", "text": "Callbacks carry user events outward to the state owner.", "position": "right" }
+            ]
+          }],
+          "callouts": [{ "title": "Composable Bodies Must Be Idempotent", "type": "danger", "icon": "🛑", "text": "Do not start requests, write storage, navigate, or mutate external state directly during composition. Recomposition is not a lifecycle callback; use effect APIs for controlled side effects.", "color": "red" }]
+        },
+        {
+          "id": "smart-recomposition",
+          "title": "State Reads & Recomposition Scope",
+          "description": "Read rapidly changing state as close as possible to where it is used, pass stable values, and avoid work that repeats on every recomposition.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun ScrollToTopButton(listState: LazyListState) {\n    val visible by remember {\n        derivedStateOf { listState.firstVisibleItemIndex > 0 }\n    }\n    AnimatedVisibility(visible = visible) { Button(onClick = { /*...*/ }) {\n        Text(\"Top\")\n    } }\n}"
+          }],
+          "callouts": [{ "title": "derivedStateOf Has Overhead", "type": "warning", "icon": "⚠️", "text": "Use it when inputs change more often than the derived result should invalidate UI, such as scroll position crossing a threshold. Simple string or arithmetic derivation usually belongs directly in composition.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "state-ownership",
+      "title": "State, Hoisting & Screen Architecture",
+      "description": "Keep a single source of truth and place state at the lowest common owner that needs to control it.",
+      "subtopics": [
+        {
+          "id": "remember-state",
+          "title": "remember, rememberSaveable & MutableState",
+          "description": "remember retains a value across recomposition while the call remains in composition. rememberSaveable additionally restores supported small UI state after recreation.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun SearchField() {\n    var query by rememberSaveable { mutableStateOf(\"\") }\n    OutlinedTextField(\n        value = query,\n        onValueChange = { query = it },\n        label = { Text(\"Search\") }\n    )\n}"
+          }],
+          "callouts": [
+            { "title": "remember Is Not Persistence", "type": "warning", "icon": "⚠️", "text": "remember does not survive removal from composition or process recreation. Save small reconstruction inputs; keep application data in repositories/persistent storage.", "color": "amber" },
+            { "title": "Observable Collections", "type": "danger", "icon": "🛑", "text": "A mutableListOf inside State is not automatically observable. Publish a new immutable list or use a snapshot-aware state collection when local mutation is intentional.", "color": "red" }
+          ]
+        },
+        {
+          "id": "state-hoisting",
+          "title": "Stateless & Stateful Composables",
+          "description": "Hoist state by replacing internal state with a value plus event callback. This makes the UI controllable, previewable, and testable.",
+          "tabs": [
+            { "label": "Stateless", "language": "kotlin", "code": "@Composable\nfun NameField(\n    value: String,\n    onValueChange: (String) -> Unit,\n    modifier: Modifier = Modifier\n) {\n    OutlinedTextField(value, onValueChange, modifier)\n}" },
+            { "label": "Stateful Wrapper", "language": "kotlin", "code": "@Composable\nfun RememberedNameField(modifier: Modifier = Modifier) {\n    var value by rememberSaveable { mutableStateOf(\"\") }\n    NameField(value, { value = it }, modifier)\n}" }
+          ],
+          "callouts": [{ "title": "Hoist to the Right Owner", "type": "tip", "icon": "💡", "text": "Hoist screen business state to a ViewModel; keep transient element state near the element unless another component must coordinate or persist it.", "color": "green" }]
+        },
+        {
+          "id": "viewmodel-udf",
+          "title": "ViewModel, UiState & Unidirectional Data Flow",
+          "description": "A screen-level ViewModel exposes immutable state and receives user actions; the screen collects state and passes plain values/callbacks to reusable content.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun ProfileRoute(viewModel: ProfileViewModel = viewModel()) {\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\n    ProfileScreen(\n        state = state,\n        onNameChange = viewModel::updateName,\n        onSave = viewModel::save\n    )\n}\n\n@Composable\nfun ProfileScreen(state: ProfileUiState, onNameChange: (String) -> Unit, onSave: () -> Unit) { /*...*/ }"
+          }],
+          "callouts": [{ "title": "Do Not Pass ViewModels Down the Tree", "type": "warning", "icon": "⚠️", "text": "Pass only required state and callbacks. Reusable composables should not know navigation scope, repositories, or ViewModel implementation details.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "effects",
+      "title": "Side Effects & Lifecycle",
+      "description": "Run external work from effect APIs whose restart and cleanup behavior matches the task.",
+      "subtopics": [
+        {
+          "id": "effect-selection",
+          "title": "LaunchedEffect, rememberCoroutineScope & SideEffect",
+          "description": "LaunchedEffect runs suspend work tied to keys; rememberCoroutineScope launches from callbacks; SideEffect publishes successful composition state to non-Compose code.",
+          "table": {
+            "title": "Compose Effect Selection",
+            "headers": ["API", "Use When", "Lifetime / Trigger", "Key Caution"],
+            "rows": [
+              ["LaunchedEffect", "Run suspend work owned by composition", "Starts on entry; restarts when a key changes; cancels on exit", "Use stable keys that represent restart conditions"],
+              ["rememberCoroutineScope", "Launch suspend work from an event callback", "Scope survives recomposition and cancels on exit", "Do not launch during composition itself"],
+              ["SideEffect", "Publish composed state to non-Compose code", "Runs after every successful recomposition", "Must be fast and non-suspending"],
+              ["DisposableEffect", "Register and unregister an observer or listener", "Recreates on key change; disposes on change or exit", "Always release the acquired resource in onDispose"],
+              ["produceState", "Convert an external async source into State", "Producer follows keys and composition lifetime", "Conflates equal values"],
+              ["snapshotFlow", "Observe Compose state reads as a Flow", "Emits when observed snapshot values change", "Collect inside a coroutine-backed effect"]
+            ]
+          },
+          "tabs": [
+            { "label": "LaunchedEffect", "language": "kotlin", "code": "LaunchedEffect(userId) {\n    analytics.screenViewed(userId)\n}" },
+            { "label": "Callback Coroutine", "language": "kotlin", "code": "val scope = rememberCoroutineScope()\nButton(onClick = {\n    scope.launch { snackbarHost.showSnackbar(\"Saved\") }\n}) { Text(\"Save\") }" },
+            { "label": "SideEffect", "language": "kotlin", "code": "SideEffect { analytics.setUserProperty(\"tier\", tier) }" }
+          ],
+          "callouts": [{ "title": "Keys Define Restart Semantics", "type": "danger", "icon": "🔑", "text": "A changed key cancels and restarts LaunchedEffect. Missing keys use stale inputs; unstable keys restart work repeatedly. Choose keys from the identity of the work.", "color": "red" }]
+        },
+        {
+          "id": "disposable-effect",
+          "title": "DisposableEffect & rememberUpdatedState",
+          "description": "Use DisposableEffect for listener registration/cleanup. rememberUpdatedState lets long-lived effects call the latest callback without restarting.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val currentOnStop by rememberUpdatedState(onStop)\nDisposableEffect(lifecycleOwner) {\n    val observer = LifecycleEventObserver { _, event ->\n        if (event == Lifecycle.Event.ON_STOP) currentOnStop()\n    }\n    lifecycleOwner.lifecycle.addObserver(observer)\n    onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }\n}"
+          }],
+          "callouts": [{ "title": "Always Pair Registration and Disposal", "type": "warning", "icon": "🧹", "text": "Listeners, observers, and callbacks registered by an effect must be removed in onDispose. Empty onDispose blocks usually signal the wrong effect API.", "color": "amber" }]
+        },
+        {
+          "id": "produce-snapshot-flow",
+          "title": "produceState & snapshotFlow",
+          "description": "produceState converts external async values into Compose State. snapshotFlow converts observable snapshot reads into a cold Flow for non-UI processing.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "LaunchedEffect(listState) {\n    snapshotFlow { listState.firstVisibleItemIndex }\n        .map { it > 0 }\n        .distinctUntilChanged()\n        .filter { it }\n        .collect { analytics.scrolledPastFirstItem() }\n}"
+          }],
+          "callouts": [{ "title": "Use State for Rendering, Flow for Stream Work", "type": "tip", "icon": "💡", "text": "Do not route simple UI derivation through a Flow. snapshotFlow is useful for debounce, distinctness, and non-UI reactions to snapshot changes.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "layout-lists-input",
+      "title": "Layouts, Lazy Content & Input",
+      "description": "Compose constraints flow down, sizes flow up, and parents place children.",
+      "subtopics": [
+        {
+          "id": "layout-primitives",
+          "title": "Row, Column, Box & Constraints",
+          "description": "Use Row/Column for linear layout and Box for stacking. Parents provide min/max constraints; children choose a permitted size; parents place them.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun AccountHeader(account: Account) {\n    Row(verticalAlignment = Alignment.CenterVertically) {\n        Avatar(account.avatarUrl)\n        Column {\n            Text(account.name, style = MaterialTheme.typography.titleMedium)\n            Text(account.email, style = MaterialTheme.typography.bodyMedium)\n        }\n    }\n}"
+          }],
+          "callouts": [{ "title": "Modifier Mechanics Are Separate", "type": "note", "icon": "🔗", "text": "See Jetpack Compose Modifiers for constraint-changing order, padding, sizing, parent data, drawing, input, semantics, and custom Modifier.Node APIs.", "color": "blue" }]
+        },
+        {
+          "id": "lazy-lists",
+          "title": "LazyColumn, LazyRow & Stable Keys",
+          "description": "Lazy containers compose visible content. Supply stable unique keys so remembered state and animations follow item identity across moves.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "LazyColumn {\n    items(\n        items = messages,\n        key = { it.id },\n        contentType = { it.kind }\n    ) { message ->\n        MessageRow(message)\n    }\n}"
+          }],
+          "callouts": [{ "title": "Do Not Use Index as Identity", "type": "warning", "icon": "⚠️", "text": "When insertions or sorting occur, index keys move to different records and can transfer remembered state to the wrong item. Use durable domain IDs.", "color": "amber" }]
+        },
+        {
+          "id": "input-focus",
+          "title": "Input, Focus & IME",
+          "description": "Use state-driven fields, meaningful keyboard options/actions, and explicit focus movement only where product flow requires it.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "OutlinedTextField(\n    value = email,\n    onValueChange = onEmailChange,\n    label = { Text(\"Email\") },\n    keyboardOptions = KeyboardOptions(\n        keyboardType = KeyboardType.Email,\n        imeAction = ImeAction.Next\n    ),\n    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),\n    isError = emailError != null,\n    supportingText = { emailError?.let { Text(it) } }\n)"
+          }],
+          "callouts": [{ "title": "Validation Is State", "type": "tip", "icon": "💡", "text": "Expose clear error state and supporting text rather than relying only on color. Decide when to validate—typing, blur, or submit—based on user experience.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "material-theme-adaptive",
+      "title": "Material, Theming & Adaptive UI",
+      "description": "Centralize design tokens and adapt structure to available space and input mode.",
+      "subtopics": [
+        {
+          "id": "theme-system",
+          "title": "MaterialTheme & Design Tokens",
+          "description": "Define color scheme, typography, and shapes at the app theme. Build semantic component tokens rather than scattering literal values.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun AppTheme(dark: Boolean, content: @Composable () -> Unit) {\n    MaterialTheme(\n        colorScheme = if (dark) darkColorScheme() else lightColorScheme(),\n        typography = AppTypography,\n        shapes = AppShapes,\n        content = content\n    )\n}"
+          }],
+          "callouts": [{ "title": "Semantic Colors", "type": "tip", "icon": "🎨", "text": "Use roles such as primary, surface, onSurface, and error. Literal colors make dark theme, dynamic color, contrast, and design evolution difficult.", "color": "green" }]
+        },
+        {
+          "id": "adaptive-layout",
+          "title": "Window Size & Adaptive Structure",
+          "description": "Respond to actual window space and posture. A phone can be wide in landscape; a desktop window can be narrow.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Compact width → one pane, bottom navigation\nMedium width → navigation rail, optional supporting pane\nExpanded width → list-detail or multi-pane\nAlso test: landscape, split screen, fold posture, keyboard/mouse, large fonts"
+          }],
+          "callouts": [{ "title": "Avoid Device-Type Branches", "type": "warning", "icon": "⚠️", "text": "Do not infer layout solely from phone/tablet names or physical screen. Base layout decisions on current window and content requirements.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "navigation-accessibility",
+      "title": "Navigation, Accessibility & Interoperability",
+      "description": "Keep route boundaries small, make semantics intentional, and migrate incrementally.",
+      "subtopics": [
+        {
+          "id": "navigation",
+          "title": "Navigation Boundaries",
+          "description": "Pass stable identifiers between destinations, load canonical data in the destination owner, and keep navigation operations at the screen boundary.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun ArticleRoute(articleId: ArticleId, onBack: () -> Unit) {\n    val viewModel: ArticleViewModel = viewModel(key = articleId.value)\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\n    ArticleScreen(state = state, onBack = onBack)\n}"
+          }],
+          "callouts": [{ "title": "Pass IDs, Not Object Graphs", "type": "tip", "icon": "💡", "text": "Navigation arguments should be small and reconstructable. Passing whole models duplicates state, risks size limits, and becomes stale after process recreation.", "color": "green" }]
+        },
+        {
+          "id": "accessibility-semantics",
+          "title": "Accessibility & Semantics",
+          "description": "Expose meaningful roles, labels, states, actions, traversal, and touch targets. Prefer built-in Material components that include baseline semantics.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "IconButton(onClick = onFavorite) {\n    Icon(\n        imageVector = if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,\n        contentDescription = if (favorite) \"Remove from favorites\" else \"Add to favorites\"\n    )\n}\n\n// Decorative image: contentDescription = null"
+          }],
+          "callouts": [{ "title": "Do Not Duplicate Speech", "type": "warning", "icon": "♿", "text": "If nearby text already labels a grouped element, redundant content descriptions create noisy announcements. Merge or clear semantics deliberately and test with accessibility services.", "color": "amber" }]
+        },
+        {
+          "id": "view-interop",
+          "title": "Compose/View Interoperability",
+          "description": "Use ComposeView to host Compose in Views and AndroidView to host a necessary View in Compose. Keep ownership and cleanup aligned with the host lifecycle.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "AndroidView(\n    factory = { context -> MapView(context).apply { onCreate(null) } },\n    update = { map -> map.show(markers) },\n    onRelease = { map -> map.onDestroy() }\n)"
+          }],
+          "callouts": [{ "title": "Treat Interop as a Boundary", "type": "note", "icon": "📌", "text": "Avoid rebuilding Views in update and avoid leaking them into ViewModels. Translate state/events at the boundary and honor the embedded component's lifecycle.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "performance-quality",
+      "title": "Performance, Preview & Quality Checklist",
+      "description": "Measure real bottlenecks and keep composables reusable, observable, and testable.",
+      "subtopics": [
+        {
+          "id": "stability-performance",
+          "title": "Stability & Recomposition Performance",
+          "description": "Stable unchanged parameters can be skipped. Favor immutable models and measure recomposition, layout, drawing, startup, and jank before optimizing.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Immutable\ndata class ContactUiModel(\n    val id: ContactId,\n    val name: String,\n    val selected: Boolean\n)\n\nval sortedContacts = remember(contacts) { contacts.sortedBy { it.name } }"
+          }],
+          "callouts": [
+            { "title": "Annotations Are Contracts", "type": "danger", "icon": "🛑", "text": "Do not add @Stable or @Immutable to silence reports unless the type obeys the contract. Lying can prevent required recomposition and produce stale UI.", "color": "red" },
+            { "title": "Collections and Stability", "type": "note", "icon": "📌", "text": "Ordinary List/Set/Map parameters may be considered unstable because mutation cannot be proven absent. Consider immutable collections or stable wrapper UI models where measurement shows value.", "color": "blue" }
+          ]
+        },
+        {
+          "id": "preview-testability",
+          "title": "Previews & Testable APIs",
+          "description": "Previews work best for stateless content that receives plain models and callbacks; create representative loading, empty, error, long-text, and dark-theme cases.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Preview(showBackground = true)\n@Composable\nprivate fun ProfileErrorPreview() {\n    AppTheme(dark = false) {\n        ProfileScreen(\n            state = ProfileUiState.Error(\"Could not load profile\"),\n            onRetry = {}\n        )\n    }\n}"
+          }],
+          "callouts": [{ "title": "Preview Is Not Verification", "type": "note", "icon": "📌", "text": "Previews accelerate design feedback but do not replace semantics tests, screenshot checks, device behavior, or user-journey tests.", "color": "blue" }]
+        },
+        {
+          "id": "compose-checklist",
+          "title": "Production Checklist",
+          "description": "Audit state ownership, effects, identity, accessibility, adaptation, and measured performance.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ UI is a deterministic function of state\n□ Reusable composables receive values and callbacks\n□ Screen ViewModels remain at route boundaries\n□ Every effect has correct keys and cleanup\n□ Lazy items use stable domain keys\n□ Small UI state restores after recreation\n□ Canonical data lives outside Compose\n□ Loading, empty, error, offline, and retry are designed\n□ Semantics, touch targets, contrast, and font scaling work\n□ Compact/expanded windows and input modes work\n□ Expensive work is remembered or moved out of composition\n□ Stability annotations are truthful and optimization is measured"
+          }]
+        }
+      ]
+    }
+  ]
+}

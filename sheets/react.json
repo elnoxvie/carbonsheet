@@ -1,0 +1,257 @@
+{
+  "id": "react-modern-reference",
+  "title": "React Web Development",
+  "slug": "react",
+  "category": "Frontend",
+  "technology": "React",
+  "version": "React 19.x",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 58,
+  "description": "Beginner-to-advanced React reference covering component design, JSX, state, events, forms, Hooks, effects, context, reducers, Suspense, errors, performance, accessibility, and testing.",
+  "tags": ["REACT", "JAVASCRIPT", "TYPESCRIPT", "HOOKS", "FRONTEND", "UI"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["reactjs", "react hooks", "react 19", "frontend components", "jsx"],
+  "relatedSheets": ["typescript", "vite", "nextjs", "vscode"],
+  "sections": [
+    {
+      "id": "react-foundations",
+      "title": "Components, JSX & Rendering",
+      "description": "Build pure component trees from immutable inputs.",
+      "subtopics": [
+        {
+          "id": "components-props-jsx",
+          "title": "Function Components, Props & JSX",
+          "description": "Components are functions React calls. Props are immutable snapshots; JSX describes UI and embeds expressions with braces.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "type AvatarProps = {\n  name: string;\n  imageUrl?: string;\n  size?: number;\n};\n\nexport function Avatar({ name, imageUrl, size = 40 }: AvatarProps) {\n  return imageUrl ? (\n    <img src={imageUrl} width={size} height={size} alt={`${name}'s avatar`} />\n  ) : (\n    <span role=\"img\" aria-label={`${name}'s initials`}>{name[0]}</span>\n  );\n}"
+          }],
+          "callouts": [
+            { "title": "Never Call Components Directly", "type": "danger", "icon": "🛑", "text": "Render <Avatar /> rather than Avatar(). React must control component and Hook invocation to preserve identity and scheduling.", "color": "red" },
+            { "title": "Keep Rendering Pure", "type": "tip", "icon": "💡", "text": "Given the same props, state, and context, rendering should produce the same result without mutating external values or starting side effects.", "color": "green" }
+          ]
+        },
+        {
+          "id": "conditional-list-rendering",
+          "title": "Conditional Rendering, Lists & Keys",
+          "description": "Use normal JavaScript control flow. Keys identify siblings across insertion, deletion, and reordering.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function TodoList({ todos }: { todos: Todo[] }) {\n  if (todos.length === 0) return <EmptyState />;\n  return (\n    <ul>\n      {todos.map(todo => (\n        <TodoRow key={todo.id} todo={todo} />\n      ))}\n    </ul>\n  );\n}"
+          }],
+          "callouts": [{ "title": "Keys Are Identity, Not Warnings", "type": "warning", "icon": "⚠️", "text": "Use stable domain IDs. Index and random keys can transfer local state to the wrong item or remount every child; key is not passed as a prop.", "color": "amber" }]
+        },
+        {
+          "id": "composition-children",
+          "title": "Composition, children & Slots",
+          "description": "Compose specialized UI from smaller parts. Pass elements as children or named slots instead of building inheritance hierarchies.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "type DialogProps = {\n  title: React.ReactNode;\n  children: React.ReactNode;\n  actions?: React.ReactNode;\n};\n\nfunction Dialog({ title, children, actions }: DialogProps) {\n  return <section role=\"dialog\" aria-labelledby=\"dialog-title\">\n    <h2 id=\"dialog-title\">{title}</h2>\n    <div>{children}</div>\n    <footer>{actions}</footer>\n  </section>;\n}"
+          }],
+          "callouts": [{ "title": "Prefer Narrow APIs", "type": "tip", "icon": "💡", "text": "Expose semantic props and slots that preserve component invariants. Avoid a large matrix of boolean appearance props or leaking internal DOM structure.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "state-events-forms",
+      "title": "State, Events & Forms",
+      "description": "Model state minimally and update it without mutation.",
+      "subtopics": [
+        {
+          "id": "use-state",
+          "title": "useState, Snapshots & Functional Updates",
+          "description": "State belongs to a component position. Setting state queues a future render; current handlers retain the snapshot from the render that created them.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const [count, setCount] = useState(0);\n\nfunction incrementThree() {\n  setCount(c => c + 1);\n  setCount(c => c + 1);\n  setCount(c => c + 1);\n}\n\nconst [profile, setProfile] = useState({ name: '', city: '' });\nsetProfile(p => ({ ...p, city: 'Singapore' }));"
+          }],
+          "callouts": [{ "title": "Do Not Mutate State", "type": "danger", "icon": "🛑", "text": "Mutating objects or arrays can leave React unaware of changes and corrupt previous snapshots. Create a new container and new changed values.", "color": "red" }]
+        },
+        {
+          "id": "state-design",
+          "title": "Minimal State, Derivation & Reset",
+          "description": "Store the minimum source of truth; derive filtered, formatted, and aggregate values during rendering. Change a key to intentionally reset a subtree.",
+          "table": {
+            "title": "React State Placement Guide",
+            "headers": ["State Kind", "Preferred Home", "Why", "Example"],
+            "rows": [
+              ["Ephemeral component state", "Nearest owning component", "Keeps updates and lifetime local", "Open menu, draft input"],
+              ["Shared subtree state", "Closest common ancestor", "Provides one source of truth to siblings", "Selected item shared by list and detail"],
+              ["Widely shared stable context", "Focused Context provider", "Avoids deep prop threading", "Theme, authenticated identity"],
+              ["Complex transition state", "useReducer near its owner", "Centralizes event-to-state rules", "Multi-step form or editor"],
+              ["External mutable source", "External store + useSyncExternalStore", "Provides consistent concurrent subscriptions", "Router or custom client cache"],
+              ["Derived value", "Compute during render", "Prevents synchronized duplicate state", "Filtered rows or total price"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const [query, setQuery] = useState('');\nconst visibleProducts = products.filter(p =>\n  p.name.toLowerCase().includes(query.toLowerCase())\n);\n\n// Reset editor state when selected record identity changes.\n<ProfileEditor key={selectedUserId} userId={selectedUserId} />"
+          }],
+          "callouts": [{ "title": "Avoid Synchronized Copies", "type": "warning", "icon": "⚠️", "text": "Do not mirror props or derived data into state with an Effect. It adds an extra render and creates stale synchronization bugs.", "color": "amber" }]
+        },
+        {
+          "id": "events-controlled-forms",
+          "title": "Events & Controlled Forms",
+          "description": "Event handlers perform user-triggered work. Controlled fields receive value/checked plus a change handler from state.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function SignupForm() {\n  const [email, setEmail] = useState('');\n  function submit(event: React.FormEvent) {\n    event.preventDefault();\n    save({ email });\n  }\n  return <form onSubmit={submit}>\n    <label>Email <input value={email} onChange={e => setEmail(e.target.value)} /></label>\n    <button type=\"submit\" disabled={!email.includes('@')}>Create account</button>\n  </form>;\n}"
+          }],
+          "callouts": [{ "title": "Use Semantic HTML First", "type": "tip", "icon": "♿", "text": "A form and submit button provide keyboard, accessibility, and browser behavior. Avoid clickable divs and custom controls when native elements fit.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "hooks-effects-refs",
+      "title": "Hooks, Effects & Refs",
+      "description": "Reuse stateful logic and synchronize only with systems outside React.",
+      "subtopics": [
+        {
+          "id": "rules-custom-hooks",
+          "title": "Rules of Hooks & Custom Hooks",
+          "description": "Call Hooks only at the top level of React components or custom Hooks. Custom Hooks share logic, not state instances.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function useOnlineStatus() {\n  const [online, setOnline] = useState(navigator.onLine);\n  useEffect(() => {\n    const update = () => setOnline(navigator.onLine);\n    addEventListener('online', update);\n    addEventListener('offline', update);\n    return () => { removeEventListener('online', update); removeEventListener('offline', update); };\n  }, []);\n  return online;\n}"
+          }],
+          "callouts": [{ "title": "Hooks Must Be Unconditional", "type": "danger", "icon": "🪝", "text": "Do not call Hooks in conditions, loops, callbacks, or after conditional returns. React relies on identical call order to associate Hook state.", "color": "red" }]
+        },
+        {
+          "id": "use-effect",
+          "title": "useEffect & Cleanup",
+          "description": "Effects synchronize a component with external systems after commit. Dependencies must include every reactive value read by the effect.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "useEffect(() => {\n  const controller = new AbortController();\n  fetch(`/api/users/${userId}`, { signal: controller.signal })\n    .then(r => r.json())\n    .then(setUser)\n    .catch(e => { if (e.name !== 'AbortError') setError(e); });\n  return () => controller.abort();\n}, [userId]);"
+          }],
+          "callouts": [
+            { "title": "Effects Are Escape Hatches", "type": "warning", "icon": "⚠️", "text": "If work can happen during render or in an event handler, it probably does not need an Effect. Framework data APIs are usually better for route data than manual fetch Effects.", "color": "amber" },
+            { "title": "Strict Mode Probes Cleanup", "type": "note", "icon": "📌", "text": "Development may run setup, cleanup, then setup again to reveal missing cleanup. Fix the effect rather than suppressing the probe.", "color": "blue" }
+          ]
+        },
+        {
+          "id": "refs-imperative-handles",
+          "title": "useRef, DOM Refs & Imperative Handles",
+          "description": "Refs hold values not required for rendering and point to DOM nodes. Updating current does not re-render.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function SearchBox() {\n  const inputRef = useRef<HTMLInputElement>(null);\n  return <>\n    <input ref={inputRef} />\n    <button onClick={() => inputRef.current?.focus()}>Focus search</button>\n  </>;\n}"
+          }],
+          "callouts": [{ "title": "State Is for Rendered Data", "type": "warning", "icon": "⚠️", "text": "If a value affects output, store it in state. Reading/writing refs during rendering breaks purity except predictable one-time initialization.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "shared-complex-state",
+      "title": "Shared & Complex State",
+      "description": "Lift state to its owner and scale transitions explicitly.",
+      "subtopics": [
+        {
+          "id": "lifting-context",
+          "title": "Lifting State & Context",
+          "description": "Lift state to the closest common owner. Context broadcasts values through a subtree and suits stable cross-cutting data such as theme or authenticated identity.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const ThemeContext = createContext<Theme | null>(null);\n\nfunction useTheme() {\n  const value = useContext(ThemeContext);\n  if (!value) throw new Error('useTheme requires ThemeProvider');\n  return value;\n}\n\n<ThemeContext value={theme}><App /></ThemeContext>"
+          }],
+          "callouts": [{ "title": "Context Is Not Automatic State Architecture", "type": "warning", "icon": "⚠️", "text": "Frequently changing broad context re-renders consumers and hides dependencies. Split contexts, colocate state, or use a specialized external store when necessary.", "color": "amber" }]
+        },
+        {
+          "id": "reducers",
+          "title": "useReducer & Transition Design",
+          "description": "Reducers centralize complex state transitions as pure functions. Actions describe events; reducers calculate next state without effects.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "type Action =\n  | { type: 'itemAdded'; item: Item }\n  | { type: 'itemRemoved'; id: string }\n  | { type: 'cleared' };\n\nfunction cartReducer(state: Cart, action: Action): Cart {\n  switch (action.type) {\n    case 'itemAdded': return { ...state, items: [...state.items, action.item] };\n    case 'itemRemoved': return { ...state, items: state.items.filter(i => i.id !== action.id) };\n    case 'cleared': return { ...state, items: [] };\n  }\n}"
+          }],
+          "callouts": [{ "title": "Reducer Must Be Pure", "type": "danger", "icon": "🛑", "text": "Do not fetch, log, mutate, generate nondeterministic IDs, or write storage in a reducer. Trigger effects around dispatch or in framework/business layers.", "color": "red" }]
+        },
+        {
+          "id": "external-store",
+          "title": "External Stores & useSyncExternalStore",
+          "description": "Use useSyncExternalStore to subscribe React safely to state owned outside React, with a stable snapshot and optional server snapshot.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function useOnline() {\n  return useSyncExternalStore(\n    callback => { addEventListener('online', callback); addEventListener('offline', callback); return () => { removeEventListener('online', callback); removeEventListener('offline', callback); }; },\n    () => navigator.onLine,\n    () => true\n  );\n}"
+          }],
+          "callouts": [{ "title": "Snapshot Identity Matters", "type": "note", "icon": "📌", "text": "getSnapshot must return the same immutable value while the store is unchanged. Returning a new object each call can cause infinite re-rendering.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "async-suspense-errors",
+      "title": "Async UI, Actions, Suspense & Errors",
+      "description": "Represent pending work and failure at explicit boundaries.",
+      "subtopics": [
+        {
+          "id": "transitions-deferred",
+          "title": "useTransition & useDeferredValue",
+          "description": "Transitions mark non-urgent updates so urgent input stays responsive. Deferred values let a slow subtree lag behind a rapidly changing value.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const [isPending, startTransition] = useTransition();\nfunction selectTab(tab: Tab) {\n  startTransition(() => setActiveTab(tab));\n}\n\nconst deferredQuery = useDeferredValue(query);\n<SearchResults query={deferredQuery} />"
+          }],
+          "callouts": [{ "title": "Transitions Do Not Make Work Faster", "type": "note", "icon": "📌", "text": "They change scheduling priority and interruption behavior. Optimize expensive computation, data access, and bundle size separately.", "color": "blue" }]
+        },
+        {
+          "id": "suspense-use",
+          "title": "Suspense & use",
+          "description": "Suspense shows a fallback while supported children suspend. The use API reads a Promise or context and integrates with Suspense/error boundaries.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "function Profile({ userPromise }: { userPromise: Promise<User> }) {\n  const user = use(userPromise);\n  return <h1>{user.name}</h1>;\n}\n\n<Suspense fallback={<ProfileSkeleton />}>\n  <Profile userPromise={userPromise} />\n</Suspense>"
+          }],
+          "callouts": [{ "title": "Use Framework Data Integration", "type": "warning", "icon": "⚠️", "text": "Suspense data contracts are best supplied by a framework or compatible cache. Creating a new Promise during every render causes repeated suspension.", "color": "amber" }]
+        },
+        {
+          "id": "actions-optimistic-errors",
+          "title": "Actions, Optimistic State & Error Boundaries",
+          "description": "useActionState coordinates action result/pending state; useOptimistic shows immediate feedback. Error boundaries catch rendering failures below them, not event-handler errors.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const [state, submitAction, pending] = useActionState(saveProfile, initialState);\nconst [optimisticItems, addOptimistic] = useOptimistic(items, (current, item: Item) => [...current, item]);\n\n<form action={submitAction}>\n  <input name=\"displayName\" />\n  <button disabled={pending}>Save</button>\n  {state.error && <p role=\"alert\">{state.error}</p>}\n</form>"
+          }],
+          "callouts": [{ "title": "Optimism Needs Reconciliation", "type": "danger", "icon": "↩️", "text": "Design pending identity, duplicate submission, server normalization, rejection, and rollback. Never imply irreversible success before the server commits it.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "performance-quality",
+      "title": "Performance, Accessibility & Testing",
+      "description": "Measure before memoizing and test behavior through the user-visible surface.",
+      "subtopics": [
+        {
+          "id": "memo-performance",
+          "title": "memo, useMemo & useCallback",
+          "description": "Memoization is a performance optimization. Use it when measured work or referential equality is important, not to make incorrect code function.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "const visible = useMemo(() => expensiveFilter(items, query), [items, query]);\nconst select = useCallback((id: string) => setSelectedId(id), []);\nconst Row = memo(function Row({ item, onSelect }: Props) { /*...*/ });"
+          }],
+          "callouts": [{ "title": "Memoization Has Cost", "type": "warning", "icon": "⚠️", "text": "Dependency comparison, retained values, and complexity can cost more than recomputation. Profile production builds and first fix state placement, effects, and expensive rendering.", "color": "amber" }]
+        },
+        {
+          "id": "accessibility-security",
+          "title": "Accessibility & Safe DOM Output",
+          "description": "Use semantic elements, labels, headings, focus management, keyboard behavior, and announced status/errors. React escapes text values by default.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "<main>\n  <h1>Account settings</h1>\n  <label htmlFor=\"timezone\">Time zone</label>\n  <select id=\"timezone\" value={zone} onChange={changeZone}>...</select>\n  <p role=\"status\" aria-live=\"polite\">{saveStatus}</p>\n</main>"
+          }],
+          "callouts": [{ "title": "Raw HTML Is a Trust Boundary", "type": "danger", "icon": "🔐", "text": "dangerouslySetInnerHTML bypasses escaping. Sanitize untrusted HTML with a maintained policy and prefer structured rendering.", "color": "red" }]
+        },
+        {
+          "id": "react-testing-checklist",
+          "title": "Testing & Production Checklist",
+          "description": "Test output and interaction rather than component internals; preserve strict-mode compatibility and cleanup.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Components and Hooks remain pure\n□ Props/state are never mutated\n□ List keys use stable domain identity\n□ State is minimal and owned at the correct level\n□ Effects only synchronize external systems and clean up\n□ Hook dependencies are complete\n□ Loading, empty, error, retry, and optimistic rollback exist\n□ Semantic HTML, labels, focus, and keyboard behavior work\n□ User interactions are tested by role/name\n□ Memoization follows measurement\n□ Client bundle and re-render hotspots are profiled\n□ Raw HTML and external URLs cross explicit security boundaries"
+          }],
+          "callouts": [{ "title": "Test Like a User", "type": "tip", "icon": "🧪", "text": "Query by role, label, and visible name; perform real events; assert rendered results. Avoid testing Hook call order, private state, or implementation-only selectors.", "color": "green" }]
+        }
+      ]
+    }
+  ]
+}

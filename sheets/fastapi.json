@@ -1,0 +1,341 @@
+{
+  "id": "fastapi-production-reference",
+  "title": "FastAPI Web APIs",
+  "slug": "fastapi",
+  "category": "Backend",
+  "technology": "FastAPI / Pydantic",
+  "version": "Current FastAPI",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 72,
+  "description": "Beginner-to-advanced FastAPI reference covering routing, validation, Pydantic, dependency injection, async execution, authentication, authorization, errors, middleware, lifespan, databases, background tasks, WebSockets, testing, OpenAPI, security, performance, and deployment.",
+  "tags": ["FASTAPI", "PYTHON", "PYDANTIC", "REST API", "ASGI", "BACKEND"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["fast api", "python api", "pydantic api", "asgi", "uvicorn", "openapi python"],
+  "relatedSheets": ["python", "docker", "kubernetes", "vscode"],
+  "prerequisites": [{ "title": "Python Programming", "slug": "python" }],
+  "sections": [
+    {
+      "id": "application-routing",
+      "title": "Application, Routing & Parameters",
+      "description": "Define typed HTTP contracts and keep transport logic thin.",
+      "subtopics": [
+        {
+          "id": "first-app-routes",
+          "title": "FastAPI App & Path Operations",
+          "description": "Path-operation decorators bind an HTTP method/path to a callable; annotations drive parsing, validation, OpenAPI, and editor support.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from fastapi import FastAPI, status\n\napp = FastAPI(title='Catalog API', version='1.0.0')\n\n@app.get('/health/live', include_in_schema=False)\nasync def liveness() -> dict[str, str]:\n    return {'status': 'ok'}\n\n@app.get('/items/{item_id}', response_model=ItemRead)\nasync def get_item(item_id: ItemId) -> ItemRead:\n    return await service.get(item_id)"
+          }],
+          "callouts": [{ "title": "Route Order Can Matter", "type": "warning", "icon": "⚠️", "text": "Declare fixed routes such as /users/me before /users/{user_id} when both can match. Use typed path converters/validation to reduce ambiguity.", "color": "amber" }]
+        },
+        {
+          "id": "path-query-header-cookie",
+          "title": "Path, Query, Header & Cookie Parameters",
+          "description": "Use Annotated with Path/Query/Header/Cookie for constraints, aliases, metadata, deprecation, and repeated values.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from typing import Annotated\nfrom fastapi import Header, Path, Query\n\n@app.get('/items/{item_id}')\nasync def list_related(\n    item_id: Annotated[int, Path(gt=0)],\n    q: Annotated[str | None, Query(min_length=2, max_length=100)] = None,\n    tags: Annotated[list[str], Query()] = [],\n    request_id: Annotated[str | None, Header(alias='X-Request-ID')] = None,\n): ..."
+          }],
+          "callouts": [{ "title": "Validation Is Not Authorization", "type": "danger", "icon": "🔐", "text": "A valid item_id may still belong to another tenant. Verify authenticated access to the resource in the service/data boundary.", "color": "red" }]
+        },
+        {
+          "id": "routers-structure",
+          "title": "APIRouter, Prefixes & Project Structure",
+          "description": "Compose routers by bounded API/domain area with shared prefixes, tags, dependencies, and responses; avoid one giant route module.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "router = APIRouter(prefix='/v1/orders', tags=['orders'])\n\n@router.post('', response_model=OrderRead, status_code=201)\nasync def create_order(command: OrderCreate, service: OrderServiceDep):\n    return await service.create(command)\n\napp.include_router(router)\n\n# app/api/orders.py, app/domain/orders.py, app/data/orders.py"
+          }],
+          "callouts": [{ "title": "Routes Translate; Services Decide", "type": "tip", "icon": "💡", "text": "Keep HTTP extraction/status/response in routes, business policy in services/domain, and persistence details in repositories. This enables unit tests without ASGI.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "pydantic-contracts",
+      "title": "Pydantic Models & API Contracts",
+      "description": "Separate request, domain, persistence, and response representations where their trust and evolution differ.",
+      "subtopics": [
+        {
+          "id": "models-fields-validators",
+          "title": "BaseModel, Fields & Validators",
+          "description": "Pydantic parses/validates boundary data into typed models. Field constraints describe local values; model validators enforce cross-field invariants.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from pydantic import BaseModel, ConfigDict, Field, model_validator\n\nclass OrderCreate(BaseModel):\n    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)\n    sku: str = Field(min_length=1, max_length=64, pattern=r'^[A-Z0-9-]+$')\n    quantity: int = Field(ge=1, le=100)\n    coupon: str | None = None\n\n    @model_validator(mode='after')\n    def coupon_requires_multiple(self):\n        if self.coupon and self.quantity < 2: raise ValueError('coupon requires quantity >= 2')\n        return self"
+          }],
+          "callouts": [{ "title": "Forbid Unknown Write Fields", "type": "tip", "icon": "💡", "text": "extra='forbid' catches client mistakes and prevents mass-assignment surprises. Add fields deliberately through API evolution.", "color": "green" }]
+        },
+        {
+          "id": "request-response-models",
+          "title": "Create, Update & Read Models",
+          "description": "Use distinct write/read models so clients cannot set server-controlled fields and responses cannot accidentally expose internal secrets.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class UserCreate(BaseModel):\n    email: EmailStr\n    password: SecretStr\n\nclass UserPatch(BaseModel):\n    display_name: str | None = None\n\nclass UserRead(BaseModel):\n    id: UUID\n    email: EmailStr\n    display_name: str\n    created_at: datetime\n\n@app.get('/users/{id}', response_model=UserRead)\nasync def read_user(...): ..."
+          }],
+          "callouts": [{ "title": "Response Model Is a Security Filter", "type": "danger", "icon": "🔐", "text": "Always define/output explicit safe fields. Never return ORM/domain objects containing password hashes, tokens, internal flags, or tenant-private relationships by convenience.", "color": "red" }]
+        },
+        {
+          "id": "serialization-schema-evolution",
+          "title": "Serialization, Aliases & API Evolution",
+          "description": "Configure external naming and serialization without contaminating domain names; version breaking contracts and add compatible optional fields carefully.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class ProductRead(BaseModel):\n    model_config = ConfigDict(from_attributes=True, populate_by_name=True)\n    product_id: UUID = Field(serialization_alias='id')\n    price: Decimal\n\nreturn ProductRead.model_validate(orm_product).model_dump(by_alias=True, mode='json')"
+          }],
+          "callouts": [{ "title": "JSON Numeric/Time Semantics", "type": "warning", "icon": "⚠️", "text": "Define Decimal, datetime/timezone, UUID, enum, null, and large integer representation in the public contract and consumer tests.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "dependencies-lifecycle",
+      "title": "Dependency Injection & Lifespan",
+      "description": "Use dependency graphs for request-scoped resources, policy, and replaceable adapters without hiding domain logic.",
+      "subtopics": [
+        {
+          "id": "depends-annotated",
+          "title": "Depends, Annotated & Sub-Dependencies",
+          "description": "A dependency callable can declare its own dependencies; FastAPI resolves/caches the graph per request by default and integrates requirements into OpenAPI.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from typing import Annotated\nfrom fastapi import Depends\n\nasync def get_repository(session: SessionDep) -> OrderRepository:\n    return SqlOrderRepository(session)\n\nOrderRepositoryDep = Annotated[OrderRepository, Depends(get_repository)]\n\n@app.get('/orders/{id}')\nasync def get_order(id: UUID, repository: OrderRepositoryDep):\n    return await repository.get(id)"
+          }],
+          "callouts": [{ "title": "Dependency Graph Can Hide Work", "type": "warning", "icon": "⚠️", "text": "Keep dependencies focused and observable. Deep graphs that perform unrelated database/network operations make latency, transaction ownership, and testing hard to understand.", "color": "amber" }]
+        },
+        {
+          "id": "yield-dependencies",
+          "title": "Dependencies with yield",
+          "description": "Yield dependencies acquire a request resource, provide it to downstream dependencies/handler, and clean up afterward—even on exceptions.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "async def get_session() -> AsyncIterator[AsyncSession]:\n    async with session_factory() as session:\n        try:\n            yield session\n            await session.commit()\n        except BaseException:\n            await session.rollback()\n            raise\n\nSessionDep = Annotated[AsyncSession, Depends(get_session)]"
+          }],
+          "callouts": [{ "title": "Define Transaction Boundaries Deliberately", "type": "danger", "icon": "🗃️", "text": "Automatic commit after every request may be wrong for streaming responses, partial work, or multiple use cases. Prefer explicit unit-of-work semantics and test rollback/cancellation.", "color": "red" }]
+        },
+        {
+          "id": "lifespan-state",
+          "title": "Application Lifespan & Shared Resources",
+          "description": "Use lifespan for process-level initialization/cleanup such as pools, clients, models, and telemetry; store handles in app state or explicit containers.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from contextlib import asynccontextmanager\n\n@asynccontextmanager\nasync def lifespan(app: FastAPI):\n    app.state.http = httpx.AsyncClient(timeout=5)\n    app.state.pool = await create_pool()\n    try:\n        yield\n    finally:\n        await app.state.http.aclose()\n        await app.state.pool.close()\n\napp = FastAPI(lifespan=lifespan)"
+          }],
+          "callouts": [{ "title": "Every Worker Has Its Own Lifespan", "type": "note", "icon": "📌", "text": "In-memory state/pools/models are per process. Coordinate migrations, singleton jobs, rate limits, and shared state through external systems or deployment jobs.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "async-database-background",
+      "title": "Async Execution, Databases & Background Work",
+      "description": "Match function type and workload so blocking operations do not stall the event loop.",
+      "subtopics": [
+        {
+          "id": "async-vs-def",
+          "title": "async def vs def",
+          "description": "Use async def when calling awaitable libraries; FastAPI runs normal def path/dependencies in a thread pool. Blocking calls inside async def block the event loop.",
+          "table": {
+            "title": "FastAPI Handler Execution Model",
+            "headers": ["Declaration", "Use With", "Execution", "Critical Caution"],
+            "rows": [
+              ["async def", "Async database, HTTP, queue, and file APIs", "Runs on the event loop and yields at await", "Never call blocking libraries directly"],
+              ["def", "Blocking libraries without async support", "FastAPI runs it in a worker thread pool", "Thread-pool capacity is finite"],
+              ["async def + thread offload", "Mostly async work with an isolated blocking call", "Explicitly moves blocking work off the event loop", "Cancellation may not stop the underlying blocking operation"],
+              ["External worker", "CPU-heavy or durable long-running jobs", "Runs outside the request process", "Requires queueing, idempotency, retries, and job status"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.get('/async')\nasync def async_route(client: HttpClientDep):\n    return await client.get_data()       # non-blocking awaitable\n\n@app.get('/blocking-sdk')\ndef sync_route(client: BlockingClientDep):\n    return client.get_data()             # FastAPI thread-pool execution"
+          }],
+          "callouts": [{ "title": "async Does Not Make CPU Work Parallel", "type": "danger", "icon": "🛑", "text": "Image processing, ML inference, compression, or large serialization blocks the worker unless moved to processes/native workers or external jobs.", "color": "red" }]
+        },
+        {
+          "id": "database-boundaries",
+          "title": "Database Sessions, Repositories & Pagination",
+          "description": "Create request/unit-of-work sessions, parameterize queries, avoid lazy-loading during serialization, and paginate bounded responses with stable ordering.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@router.get('', response_model=Page[OrderRead])\nasync def list_orders(\n    cursor: Annotated[str | None, Query()] = None,\n    limit: Annotated[int, Query(ge=1, le=100)] = 50,\n    repository: OrderRepositoryDep = ...,\n):\n    return await repository.page_after(cursor=cursor, limit=limit)"
+          }],
+          "callouts": [{ "title": "Avoid N+1 and Unbounded Lists", "type": "warning", "icon": "⚠️", "text": "Select required relations/columns explicitly, cap page sizes, use stable cursor keys, and measure query count/latency. response_model cannot fix inefficient fetching.", "color": "amber" }]
+        },
+        {
+          "id": "background-tasks-queues",
+          "title": "BackgroundTasks vs Durable Queues",
+          "description": "BackgroundTasks runs small in-process work after sending the response. Durable, retryable, scheduled, long, CPU-heavy, or cross-instance work belongs in a queue/worker system.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.post('/notifications', status_code=202)\nasync def notify(command: NotificationCreate, tasks: BackgroundTasks):\n    record = await repository.create(command)\n    tasks.add_task(send_best_effort_metric, record.id)\n    await durable_queue.publish(NotificationRequested(record.id))\n    return {'id': record.id, 'status': 'queued'}"
+          }],
+          "callouts": [{ "title": "BackgroundTasks Dies with the Process", "type": "danger", "icon": "🛑", "text": "It provides no durable delivery, distributed coordination, retry policy, or status. Do not use it for payments, required emails, exports, or important jobs.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "security-auth",
+      "title": "Authentication, Authorization & Security",
+      "description": "Use standards-based identity while enforcing resource-level policy on every operation.",
+      "subtopics": [
+        {
+          "id": "oauth2-bearer",
+          "title": "OAuth2/Bearer Identity Dependencies",
+          "description": "FastAPI security utilities describe schemes in OpenAPI and extract credentials; your code must validate issuer, audience, signature, expiry, claims, and user/session state.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "oauth2 = OAuth2PasswordBearer(tokenUrl='/v1/auth/token')\n\nasync def current_user(token: Annotated[str, Security(oauth2)]) -> User:\n    claims = verifier.verify(token, issuer=ISSUER, audience=AUDIENCE)\n    user = await users.find_active(claims.subject)\n    if not user: raise HTTPException(401, 'invalid credentials', headers={'WWW-Authenticate': 'Bearer'})\n    return user"
+          }],
+          "callouts": [{ "title": "Do Not Invent Token Cryptography", "type": "danger", "icon": "🔐", "text": "Use a maintained identity provider/library and key rotation. Never trust unverified JWT claims or select algorithms from attacker-controlled headers without policy.", "color": "red" }]
+        },
+        {
+          "id": "authorization-scopes",
+          "title": "Scopes, Roles & Resource Authorization",
+          "description": "Authentication answers who; authorization answers whether this principal may perform this action on this resource/tenant now.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "async def editable_order(\n    order_id: UUID,\n    user: CurrentUserDep,\n    repository: OrderRepositoryDep,\n) -> Order:\n    order = await repository.get(order_id)\n    if order.tenant_id != user.tenant_id or not user.can('orders:write'):\n        raise HTTPException(status_code=404)  # avoid cross-tenant existence leak\n    return order"
+          }],
+          "callouts": [{ "title": "Dependency Reuse Helps Consistency", "type": "tip", "icon": "💡", "text": "Create focused policy dependencies for repeated rules, but keep authoritative checks near data mutation so alternate entry points cannot bypass them.", "color": "green" }]
+        },
+        {
+          "id": "cors-csrf-limits",
+          "title": "CORS, CSRF, Trusted Hosts & Limits",
+          "description": "CORS controls browsers, not server authorization. Cookie credentials require CSRF defense; proxy/host/origin/body/rate/time limits belong in an end-to-end deployment policy.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "app.add_middleware(\n    CORSMiddleware,\n    allow_origins=['https://app.example.com'],\n    allow_credentials=True,\n    allow_methods=['GET', 'POST', 'PATCH'],\n    allow_headers=['Authorization', 'Content-Type', 'X-CSRF-Token'],\n)\napp.add_middleware(TrustedHostMiddleware, allowed_hosts=['api.example.com'])"
+          }],
+          "callouts": [{ "title": "Wildcard Credentials Are Unsafe/Invalid", "type": "danger", "icon": "🛑", "text": "Use exact origins when credentials are allowed. Enforce HTTPS, secure cookie attributes, CSRF tokens/origin checks, request limits, and proxy-header trust at known hops.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "responses-errors-middleware",
+      "title": "Responses, Errors & Middleware",
+      "description": "Return stable public errors and use middleware only for true cross-cutting request concerns.",
+      "subtopics": [
+        {
+          "id": "response-types-streaming",
+          "title": "Status Codes, Headers, Files & Streaming",
+          "description": "Use response_model for data contracts and specialized responses for redirects, files, streams, and no-content behavior; set correct media/cache/content-disposition headers.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.get('/exports/{id}')\nasync def download(id: UUID, export: ExportDep):\n    path = await export.authorized_path(id)\n    return FileResponse(\n        path, media_type='text/csv', filename=f'export-{id}.csv',\n        headers={'Cache-Control': 'private, no-store'},\n    )\n\n@app.delete('/items/{id}', status_code=204)\nasync def delete_item(id: UUID) -> Response:\n    await service.delete(id); return Response(status_code=204)"
+          }],
+          "callouts": [{ "title": "Streaming Holds Resources", "type": "warning", "icon": "⚠️", "text": "Handle disconnect/cancellation, close generators/files, avoid holding database transactions for long streams, and ensure proxies do not buffer unexpectedly.", "color": "amber" }]
+        },
+        {
+          "id": "exception-handlers",
+          "title": "HTTPException & Global Exception Mapping",
+          "description": "Raise HTTPException for transport-level expected failures or map domain exceptions centrally into a consistent safe error envelope.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.exception_handler(OrderConflict)\nasync def order_conflict(request: Request, exc: OrderConflict):\n    return JSONResponse(\n        status_code=409,\n        content={'type': 'order_conflict', 'message': 'Order changed; reload and retry', 'request_id': request.state.request_id},\n    )"
+          }],
+          "callouts": [{ "title": "Do Not Leak Internal Exceptions", "type": "danger", "icon": "🔐", "text": "Log stack/context server-side with correlation ID, but return stable messages/codes. Avoid SQL, paths, tokens, stack traces, or cross-tenant existence details.", "color": "red" }]
+        },
+        {
+          "id": "middleware-order",
+          "title": "Middleware, Request IDs & Timing",
+          "description": "Middleware wraps the ASGI app; ordering is nested and affects errors, CORS, compression, sessions, logging, and timing. Prefer pure ASGI middleware for advanced streaming/context behavior.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.middleware('http')\nasync def request_context(request: Request, call_next):\n    request.state.request_id = request.headers.get('x-request-id') or str(uuid4())\n    started = monotonic()\n    try:\n        response = await call_next(request)\n    finally:\n        metrics.observe('http_duration', monotonic() - started)\n    response.headers['x-request-id'] = request.state.request_id\n    return response"
+          }],
+          "callouts": [{ "title": "Cardinality and Personal Data", "type": "warning", "icon": "⚠️", "text": "Do not use raw paths, user IDs, tokens, request bodies, or arbitrary error text as metric labels/log fields. Normalize routes and apply privacy/redaction policy.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "websockets-openapi-testing",
+      "title": "WebSockets, OpenAPI & Testing",
+      "description": "Treat long-lived connections and generated API descriptions as production contracts.",
+      "subtopics": [
+        {
+          "id": "websockets",
+          "title": "WebSockets & Connection Management",
+          "description": "Accept, authenticate, receive/send, handle disconnect, bound queues/message sizes, heartbeat, and cleanup. Multi-worker broadcast requires external pub/sub.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@app.websocket('/ws/updates')\nasync def updates(socket: WebSocket):\n    user = await authenticate_websocket(socket)\n    await socket.accept()\n    subscription = await broker.subscribe(user.tenant_id)\n    try:\n        async for event in subscription:\n            await socket.send_json(event.to_public_dict())\n    except WebSocketDisconnect:\n        pass\n    finally:\n        await subscription.close()"
+          }],
+          "callouts": [{ "title": "Backpressure and Slow Clients", "type": "danger", "icon": "📡", "text": "A slow client can grow memory indefinitely. Bound per-connection queues, define drop/disconnect policy, limit message rate/size, and monitor active connections.", "color": "red" }]
+        },
+        {
+          "id": "openapi-docs",
+          "title": "OpenAPI, Documentation & SDK Contracts",
+          "description": "Operation IDs, tags, summaries, examples, response models, security requirements, and deprecations shape generated docs and clients.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "@router.post(\n    '',\n    operation_id='createOrder',\n    response_model=OrderRead,\n    status_code=201,\n    responses={409: {'model': ErrorResponse, 'description': 'Order conflict'}},\n    summary='Create an order',\n)\nasync def create_order(...): ..."
+          }],
+          "callouts": [{ "title": "Schema Diff in CI", "type": "tip", "icon": "💡", "text": "Export OpenAPI, lint it, detect breaking changes, and run consumer/contract tests. Generated docs are not a substitute for semantic guarantees and examples.", "color": "green" }]
+        },
+        {
+          "id": "fastapi-testing",
+          "title": "TestClient, Async Tests & Dependency Overrides",
+          "description": "Test services/domain directly; use TestClient for synchronous API tests or HTTPX ASGI transport for async integration; override dependencies with fakes and reset afterward.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "def test_create_order(client: TestClient, fake_service: FakeOrderService):\n    app.dependency_overrides[get_order_service] = lambda: fake_service\n    try:\n        response = client.post('/v1/orders', json={'sku': 'ABC-1', 'quantity': 2})\n        assert response.status_code == 201\n        assert response.json()['sku'] == 'ABC-1'\n    finally:\n        app.dependency_overrides.clear()"
+          }],
+          "callouts": [{ "title": "Run Lifespan in Tests", "type": "warning", "icon": "⚠️", "text": "Use TestClient as a context manager or an explicit lifespan manager when startup resources/events matter. Isolate databases and avoid live network/time.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "deployment-observability-performance",
+      "title": "Deployment, Observability & Performance",
+      "description": "Operate ASGI workers with correct proxy, lifecycle, capacity, and telemetry behavior.",
+      "subtopics": [
+        {
+          "id": "serve-workers",
+          "title": "ASGI Server, Workers & Graceful Shutdown",
+          "description": "Run with a production ASGI server, configure trusted proxy headers, concurrency/backlog/keep-alive/grace timeouts, and choose worker count from measured CPU/memory/workload.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "fastapi run app/main.py --port 8000 --proxy-headers\n# or deployment-approved ASGI command with explicit workers/timeouts\n\n# Development only:\nfastapi dev app/main.py"
+          }],
+          "callouts": [{ "title": "Do Not Multiply Workers Blindly", "type": "warning", "icon": "⚠️", "text": "Each process duplicates memory, pools, caches, and startup work. In Kubernetes, balance workers per Pod versus Pod replicas and downstream connection limits.", "color": "amber" }]
+        },
+        {
+          "id": "containers-migrations-health",
+          "title": "Containers, Migrations & Health",
+          "description": "Build one immutable image, run non-root, execute migrations as a coordinated deployment job, and expose lightweight distinct liveness/readiness endpoints.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Liveness: event loop/process can respond; avoid dependency fan-out\nReadiness: instance can accept traffic; include critical local initialization\nStartup: slow model/config warmup completed\nMigration: one controlled job, backward-compatible expand/contract\nShutdown: stop intake, cancel/drain work, close pools/clients within grace"
+          }],
+          "callouts": [{ "title": "Never Run Uncoordinated Migrations in Every Worker", "type": "danger", "icon": "🗃️", "text": "Concurrent startup migrations race, delay readiness, and complicate rollback. Use a deployment job/lock and schema compatible with mixed app versions.", "color": "red" }]
+        },
+        {
+          "id": "observability-performance",
+          "title": "Logs, Metrics, Traces & Capacity",
+          "description": "Measure route-normalized request rate, latency, errors, saturation, event-loop/thread-pool behavior, database/upstream pools, queue depth, payload size, and worker memory.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Logs: request ID/trace ID, route, status, duration; redact secrets/PII\nMetrics: RED + pool/queue/event-loop/worker resource signals\nTraces: inbound → dependencies → database/queue\nLoad test: realistic payloads, auth, DB, failure, keep-alive, slow clients\nProfile: serialization/validation, queries, CPU, memory—not only framework overhead"
+          }],
+          "callouts": [{ "title": "Tail Latency and Saturation", "type": "tip", "icon": "📈", "text": "Average response time hides overload. Track p95/p99, timeouts, pool waits, rejected work, and recovery after spikes; enforce concurrency/backpressure.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "fastapi-production-checklist",
+      "title": "Production Readiness Checklist",
+      "description": "Review API contract, trust, ownership, async behavior, data, resilience, and deployment together.",
+      "subtopics": [
+        {
+          "id": "fastapi-checklist",
+          "title": "API & Operations Checklist",
+          "description": "A typed route is only one layer of a secure reliable API.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Routes are thin and public request/response models are separate\n□ Unknown write fields, sizes, formats, and pagination are bounded\n□ Responses expose only explicit safe fields\n□ Every operation authenticates/authorizes resource and tenant\n□ Token issuer/audience/signature/expiry and rotation are verified\n□ Cookie APIs have CSRF defense; CORS/host/proxy trust is exact\n□ async routes call no blocking libraries or CPU-heavy work\n□ Sessions/transactions/resources have clear ownership and cleanup\n□ Database queries avoid N+1 and unbounded results\n□ Important background work uses a durable queue\n□ Errors are stable safe envelopes with correlation IDs\n□ Streaming/WebSockets bound queues, sizes, time, and disconnect cleanup\n□ OpenAPI is linted/diffed and contracts are tested\n□ Lifespan and dependency overrides are exercised in tests\n□ Worker/Pod/pool/concurrency settings derive from load tests\n□ Migrations are coordinated and compatible with rolling versions\n□ Health, graceful shutdown, logs, metrics, traces, and alerts are proven"
+          }],
+          "callouts": [{ "title": "Framework Convenience Does Not Replace System Design", "type": "note", "icon": "📌", "text": "Automatic validation, DI, and OpenAPI reduce plumbing. They do not provide authorization, transaction correctness, durability, backpressure, capacity planning, secret management, or safe deployment automatically.", "color": "blue" }]
+        }
+      ]
+    }
+  ]
+}

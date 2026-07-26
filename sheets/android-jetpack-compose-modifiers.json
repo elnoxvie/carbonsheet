@@ -1,0 +1,277 @@
+{
+  "id": "android-jetpack-compose-modifiers",
+  "title": "Android Jetpack Compose Modifiers",
+  "slug": "android-jetpack-compose-modifiers",
+  "category": "Android",
+  "technology": "Jetpack Compose Modifier",
+  "version": "Modern Jetpack Compose",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 42,
+  "description": "Beginner-to-advanced reference for modifier order, constraints, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
+  "tags": ["ANDROID", "JETPACK COMPOSE", "MODIFIER", "LAYOUT", "SEMANTICS", "GESTURES"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["compose modifier", "modifier order", "compose padding", "compose custom modifier", "modifier node", "compose constraints"],
+  "relatedSheets": ["android-jetpack-compose", "android-testing", "android-naming-conventions"],
+  "prerequisites": [{ "title": "Android Jetpack Compose", "slug": "android-jetpack-compose" }],
+  "sections": [
+    {
+      "id": "modifier-model",
+      "title": "Modifier Model & API Contract",
+      "description": "A Modifier is an immutable ordered chain of elements wrapping a layout node.",
+      "subtopics": [
+        {
+          "id": "ordered-chain",
+          "title": "Order Changes Behavior",
+          "description": "Each modifier wraps everything after it. Earlier elements are outer wrappers; layout constraints travel inward and size/placement return outward.",
+          "tabs": [
+            { "label": "Padding Clickable", "language": "kotlin", "code": "Modifier\n    .padding(16.dp)\n    .clickable(onClick)\n    .background(Color.Blue)\n// Outer padding is not clickable or blue." },
+            { "label": "Clickable Padding", "language": "kotlin", "code": "Modifier\n    .clickable(onClick)\n    .background(Color.Blue)\n    .padding(16.dp)\n// Click/background include the padded area." }
+          ],
+          "callouts": [{ "title": "Read Outside In", "type": "tip", "icon": "💡", "text": "Reason through a chain from top to bottom as nested wrappers. Ask which wrapper owns hit testing, clipping, drawing, constraints, and semantics.", "color": "green" }]
+        },
+        {
+          "id": "modifier-parameter",
+          "title": "Accept and Respect modifier",
+          "description": "Reusable UI elements should accept one optional Modifier parameter, default to Modifier, and apply it to the first emitted UI node.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun UserCard(\n    user: UserUiModel,\n    onClick: () -> Unit,\n    modifier: Modifier = Modifier\n) {\n    Row(\n        modifier = modifier.clickable(onClick = onClick)\n    ) { /* content */ }\n}"
+          }],
+          "callouts": [{ "title": "Do Not Replace the Caller Chain", "type": "danger", "icon": "🛑", "text": "Apply behavior by extending the received modifier. Starting from Modifier inside the component discards caller size, test tags, semantics, and placement expectations.", "color": "red" }]
+        },
+        {
+          "id": "modifier-categories",
+          "title": "Layout, Draw, Input, Semantics & Parent Data",
+          "description": "Modifier elements participate in different phases. A chain may affect measurement, placement, drawing, pointer/focus input, accessibility, or a specific parent layout.",
+          "table": {
+            "title": "Modifier Category Reference",
+            "headers": ["Category", "Common APIs", "Primary Effect", "Order Sensitivity"],
+            "rows": [
+              ["Layout", "padding, size, fillMaxWidth, offset", "Measurement or placement", "High; changes constraints and bounds seen downstream"],
+              ["Draw", "background, border, drawBehind, graphicsLayer", "Pixels, clipping, and transforms", "High; wraps or transforms later drawing"],
+              ["Input", "clickable, pointerInput, focusable", "Pointer, key, and focus behavior", "High; hit area follows its position in the chain"],
+              ["Semantics", "semantics, clearAndSetSemantics, testTag", "Accessibility and test tree", "Medium; merge and clear operations can replace descendants"],
+              ["Parent data", "weight, align, matchParentSize", "Instructions consumed by a specific parent", "Scope-bound; ignored outside the matching parent scope"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Layout: size, padding, offset, aspectRatio, layout\nDraw: background, border, clip, alpha, drawBehind\nInput: clickable, scrollable, pointerInput, focusable\nSemantics: contentDescription, role, stateDescription, testTag\nParent data: weight in Row/Column, align in Box, matchParentSize\nGraphics: graphicsLayer, transform, render effects"
+          }]
+        }
+      ]
+    },
+    {
+      "id": "constraints-size-position",
+      "title": "Constraints, Size & Position",
+      "description": "Use constraints deliberately and distinguish measurement from visual translation.",
+      "subtopics": [
+        {
+          "id": "size-required-fill",
+          "title": "size, requiredSize, fill & sizeIn",
+          "description": "size requests a preferred size constrained by the parent; requiredSize can force a child beyond incoming constraints; fill consumes available bounded space; sizeIn sets ranges.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Modifier\n    .fillMaxWidth()\n    .heightIn(min = 48.dp, max = 96.dp)\n\nModifier.size(64.dp)          // respects parent constraints\nModifier.requiredSize(64.dp)  // may violate them; parent masks/centers view of child"
+          }],
+          "callouts": [{ "title": "Unbounded Axes", "type": "warning", "icon": "⚠️", "text": "fillMaxHeight inside a vertically scrolling/unbounded parent cannot consume infinity. Understand which axis the parent bounds and prefer intrinsic/content sizing when appropriate.", "color": "amber" }]
+        },
+        {
+          "id": "padding-offset",
+          "title": "padding vs offset",
+          "description": "padding changes measurement constraints and reported size; offset changes placement without changing the size reported to the parent.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Modifier.padding(start = 16.dp) // siblings account for space\nModifier.offset(x = 16.dp)       // visual shift; siblings do not reflow\nModifier.offset { IntOffset(animatedX.roundToInt(), 0) } // defer state read to layout"
+          }],
+          "callouts": [{ "title": "Logical vs Absolute Direction", "type": "note", "icon": "📌", "text": "offset(x=...) follows layout direction; absoluteOffset does not. Prefer logical start/end behavior for RTL-compatible UI.", "color": "blue" }]
+        },
+        {
+          "id": "aspect-intrinsic-wrap",
+          "title": "aspectRatio, wrapContent & Intrinsics",
+          "description": "aspectRatio chooses a size satisfying a ratio within constraints; wrapContent changes how minimum constraints and placement are handled; intrinsic measurement should be used sparingly.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Image(\n    painter = painter,\n    contentDescription = null,\n    modifier = Modifier\n        .fillMaxWidth()\n        .aspectRatio(16f / 9f)\n)"
+          }],
+          "callouts": [{ "title": "Intrinsic Measurement Costs", "type": "warning", "icon": "⚠️", "text": "Intrinsic queries add a pre-measure pass and some custom layouts do not support meaningful intrinsics. Prefer explicit constraints or a custom single-pass layout when performance matters.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "appearance-drawing",
+      "title": "Appearance, Clipping & Drawing",
+      "description": "Control which area is painted, clipped, transformed, and cached.",
+      "subtopics": [
+        {
+          "id": "background-border-clip",
+          "title": "background, border & clip Order",
+          "description": "Drawing modifiers paint within the size at their position in the chain. Clip affects subsequent drawing and content.",
+          "tabs": [
+            { "label": "Rounded Surface", "language": "kotlin", "code": "Modifier\n    .clip(RoundedCornerShape(12.dp))\n    .background(MaterialTheme.colorScheme.surface)\n    .clickable(onClick)\n    .padding(16.dp)" },
+            { "label": "Shadow Outside Clip", "language": "kotlin", "code": "Modifier\n    .shadow(8.dp, RoundedCornerShape(12.dp))\n    .clip(RoundedCornerShape(12.dp))\n    .background(MaterialTheme.colorScheme.surface)" }
+          ],
+          "callouts": [{ "title": "Visual and Touch Shapes Differ", "type": "note", "icon": "📌", "text": "Clipping changes pixels, but gesture hit testing and semantics may still use rectangular bounds depending on APIs. Verify both visuals and interaction.", "color": "blue" }]
+        },
+        {
+          "id": "draw-apis",
+          "title": "drawBehind, drawWithContent & drawWithCache",
+          "description": "drawBehind paints before content; drawWithContent controls ordering; drawWithCache caches objects until size/state dependencies change.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun Modifier.selectionOutline(selected: Boolean) = drawWithCache {\n    val stroke = Stroke(width = 2.dp.toPx())\n    onDrawWithContent {\n        drawContent()\n        if (selected) drawRect(Color.Cyan, style = stroke)\n    }\n}"
+          }],
+          "callouts": [{ "title": "Cache Expensive Draw Objects", "type": "tip", "icon": "💡", "text": "Use drawWithCache when brushes, paths, or other allocations depend on size/state. Do not add caching when the drawing is already trivial.", "color": "green" }]
+        },
+        {
+          "id": "graphics-layer",
+          "title": "graphicsLayer & Transformations",
+          "description": "graphicsLayer can transform drawing without remeasurement and isolate content into a layer when needed.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Modifier.graphicsLayer {\n    alpha = animatedAlpha\n    translationX = dragOffset\n    rotationZ = rotation\n    scaleX = scale\n    scaleY = scale\n    clip = true\n    shape = RoundedCornerShape(16.dp)\n}"
+          }],
+          "callouts": [{ "title": "Layers Have Cost", "type": "warning", "icon": "⚠️", "text": "A graphics layer can improve repeated transformations but consumes rendering resources. Add it for a measured need, not as a universal optimization.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "interaction-focus-scroll",
+      "title": "Interaction, Gestures, Focus & Scrolling",
+      "description": "Prefer high-level components and modifiers before raw pointer handling.",
+      "subtopics": [
+        {
+          "id": "clickable-selectable-toggleable",
+          "title": "clickable, selectable & toggleable",
+          "description": "Choose a semantic interaction modifier matching the control: action, single selection, or boolean state.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Row(\n    Modifier\n        .fillMaxWidth()\n        .toggleable(\n            value = enabled,\n            role = Role.Switch,\n            onValueChange = onEnabledChange\n        )\n        .padding(16.dp)\n) {\n    Text(\"Notifications\", Modifier.weight(1f))\n    Switch(checked = enabled, onCheckedChange = null)\n}"
+          }],
+          "callouts": [{ "title": "One Interaction Target", "type": "tip", "icon": "♿", "text": "Making the row toggleable and the child Switch passive creates one large accessible target without duplicate click actions or semantics.", "color": "green" }]
+        },
+        {
+          "id": "pointer-input",
+          "title": "pointerInput & Gesture Detectors",
+          "description": "Use pointerInput for custom gestures not covered by clickable, draggable, scrollable, transformable, or nested-scroll APIs.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Modifier.pointerInput(itemId) {\n    detectDragGesturesAfterLongPress(\n        onDragStart = { onDragStarted(itemId) },\n        onDrag = { change, amount ->\n            change.consume()\n            onDragBy(amount)\n        },\n        onDragEnd = onDragEnded\n    )\n}"
+          }],
+          "callouts": [{ "title": "Keys Restart Gesture Handling", "type": "warning", "icon": "🔑", "text": "pointerInput cancels and restarts its coroutine when keys change. Include values whose change must alter the handler, or use rememberUpdatedState for latest callbacks without restart.", "color": "amber" }]
+        },
+        {
+          "id": "scroll-focus-key",
+          "title": "Scroll, Focus & Key Input",
+          "description": "Use verticalScroll for small eager content, lazy containers for large lists, focus APIs for input navigation, and onPreviewKeyEvent only when early interception is required.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val requester = remember { FocusRequester() }\nTextField(\n    value = query,\n    onValueChange = onQueryChange,\n    modifier = Modifier\n        .focusRequester(requester)\n        .onFocusChanged { onFocusChanged(it.isFocused) }\n)"
+          }],
+          "callouts": [{ "title": "Request Focus from an Effect or Event", "type": "danger", "icon": "🛑", "text": "Do not call requestFocus directly during composition. Trigger it from LaunchedEffect or a user callback after the node is attached.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "semantics-testing",
+      "title": "Semantics, Accessibility & Testing",
+      "description": "Semantics describe meaning and actions to accessibility services and test tooling.",
+      "subtopics": [
+        {
+          "id": "semantics-properties",
+          "title": "Labels, Roles, State & Actions",
+          "description": "Expose what the element is, its current state, and available actions; avoid restating visible child content unnecessarily.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Modifier.semantics {\n    role = Role.ProgressBar\n    stateDescription = \"${progressPercent}% complete\"\n    progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f)\n}"
+          }],
+          "callouts": [{ "title": "Use Built-In Semantics First", "type": "tip", "icon": "♿", "text": "Material components and interaction modifiers already expose roles/actions. Add custom semantics to fill gaps, not to duplicate or conflict with built-in meaning.", "color": "green" }]
+        },
+        {
+          "id": "merge-clear-semantics",
+          "title": "mergeDescendants & clearAndSetSemantics",
+          "description": "Merge related child information into one focus target; clear and replace semantics only when the default tree is misleading.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Row(\n    Modifier\n        .clickable(onClick = onOpen)\n        .semantics(mergeDescendants = true) {}\n) {\n    Avatar(contentDescription = null)\n    Column { Text(name); Text(status) }\n}"
+          }],
+          "callouts": [{ "title": "Inspect the Tree", "type": "note", "icon": "🔍", "text": "Use the Layout Inspector or test printToLog to compare merged and unmerged semantics. Clearing semantics can accidentally remove actions and accessibility information.", "color": "blue" }]
+        },
+        {
+          "id": "test-tags",
+          "title": "testTag & Stable Selectors",
+          "description": "Prefer user-visible semantics in tests. Use testTag when nodes cannot be selected reliably by accessible properties.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "LazyColumn(Modifier.testTag(\"message_list\")) { /*...*/ }\n\ncompose.onNodeWithTag(\"message_list\").assertExists()"
+          }],
+          "callouts": [{ "title": "Tags Are an API", "type": "warning", "icon": "⚠️", "text": "Tests depend on tag values, so centralize or name them semantically. Avoid tagging every node or encoding layout structure in tags.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "parent-data-reuse",
+      "title": "Parent Data, Reuse & Performance",
+      "description": "Some modifiers are meaningful only to a particular parent; reuse long stable chains when profiling justifies it.",
+      "subtopics": [
+        {
+          "id": "scoped-modifiers",
+          "title": "weight, align & matchParentSize",
+          "description": "Scoped modifiers write parent data consumed by a specific layout. Their availability signals the required receiver scope.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "Row {\n    Text(\"Title\", Modifier.weight(1f)) // RowScope parent data\n    IconButton(onClick = onClose) { /*...*/ }\n}\n\nBox {\n    Background(Modifier.matchParentSize()) // matches measured Box, does not size it\n    Content(Modifier.align(Alignment.Center))\n}"
+          }],
+          "callouts": [{ "title": "Parent Data Is Not General Styling", "type": "note", "icon": "📌", "text": "A scoped modifier outside its intended parent cannot express the same contract. Keep it near the parent-child layout relationship.", "color": "blue" }]
+        },
+        {
+          "id": "modifier-reuse",
+          "title": "Extract & Reuse Modifier Chains",
+          "description": "Modifiers are immutable and safe to reuse. Hoisting long unscoped chains can reduce allocation and comparison work in frequently recomposed UI.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val avatarModifier = Modifier\n    .size(40.dp)\n    .clip(CircleShape)\n\n@Composable\nfun AvatarList(users: List<User>) {\n    LazyColumn { items(users, key = { it.id }) { Avatar(it, avatarModifier) } }\n}"
+          }],
+          "callouts": [{ "title": "Do Not Prematurely Globalize", "type": "tip", "icon": "💡", "text": "Extract for clarity or measured hot paths. Theme-dependent, stateful, or scoped modifiers may belong inside the relevant composable/scope.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "custom-modifiers",
+      "title": "Custom Modifiers & Debugging",
+      "description": "Start by composing existing modifiers; use Modifier.Node for reusable lower-level behavior.",
+      "subtopics": [
+        {
+          "id": "modifier-factory",
+          "title": "Modifier Factory Functions",
+          "description": "An extension factory preserves fluent chaining. Always include this in the returned chain.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun Modifier.cardSurface(\n    shape: Shape,\n    color: Color\n): Modifier = this\n    .clip(shape)\n    .background(color)\n    .border(1.dp, color.copy(alpha = 0.12f), shape)"
+          }],
+          "callouts": [{ "title": "Do Not Break the Chain", "type": "danger", "icon": "🛑", "text": "Returning Modifier.background(...) instead of this.background(...) silently removes every modifier the caller supplied before the factory.", "color": "red" }]
+        },
+        {
+          "id": "modifier-node",
+          "title": "Modifier.Node for Advanced Behavior",
+          "description": "Use a ModifierNodeElement plus a focused node interface such as DrawModifierNode, LayoutModifierNode, or PointerInputModifierNode when existing factories cannot express reusable behavior efficiently.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "data class OutlineElement(val color: Color) : ModifierNodeElement<OutlineNode>() {\n    override fun create() = OutlineNode(color)\n    override fun update(node: OutlineNode) { node.color = color }\n}\n\nclass OutlineNode(var color: Color) : Modifier.Node(), DrawModifierNode {\n    override fun ContentDrawScope.draw() {\n        drawContent()\n        drawRect(color, style = Stroke(1.dp.toPx()))\n    }\n}\n\nfun Modifier.outline(color: Color) = this then OutlineElement(color)"
+          }],
+          "callouts": [{ "title": "Update Every Mutable Parameter", "type": "warning", "icon": "⚠️", "text": "The element update method must transfer changed parameters into the reused node and invalidate the relevant phase when required. Missing updates create stale behavior.", "color": "amber" }]
+        },
+        {
+          "id": "modifier-debug-checklist",
+          "title": "Debugging & Production Checklist",
+          "description": "Trace constraints, phase participation, order, scope, identity, and semantics.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Public composables accept modifier: Modifier = Modifier\n□ Received modifier is applied to the first emitted node\n□ Chain order matches hit, clip, draw, and padding intent\n□ size/fill requests are compatible with parent constraints\n□ offset is not mistaken for layout spacing\n□ Lazy/container axes are not accidentally unbounded\n□ Parent-data modifiers are in the correct scope\n□ Custom factories preserve this\n□ Node update propagates every changed parameter\n□ Gestures use high-level semantic modifiers when possible\n□ Focus is requested from an effect/event\n□ Semantics are useful in merged and unmerged trees\n□ Layers, intrinsics, and custom drawing are measured"
+          }],
+          "callouts": [{ "title": "Inspect One Wrapper at a Time", "type": "tip", "icon": "🔍", "text": "Temporarily add colored backgrounds/borders at different chain positions and inspect layout bounds and semantics. Most modifier bugs become obvious when the nested wrappers are visible.", "color": "green" }]
+        }
+      ]
+    }
+  ]
+}

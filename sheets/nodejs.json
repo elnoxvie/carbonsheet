@@ -1,0 +1,273 @@
+{
+  "id": "nodejs-runtime-reference",
+  "title": "Node.js Web Development",
+  "slug": "nodejs",
+  "category": "Backend",
+  "technology": "Node.js",
+  "version": "Node.js 24 LTS / 26 Current",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 62,
+  "description": "Beginner-to-advanced Node.js runtime reference covering modules, packages, event loop, async design, files, streams, HTTP, processes, workers, testing, diagnostics, security, and production operation.",
+  "tags": ["NODEJS", "JAVASCRIPT", "BACKEND", "STREAMS", "HTTP", "ASYNC"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["node", "node js", "node runtime", "server javascript", "node streams", "npm"],
+  "relatedSheets": ["typescript", "vite", "nextjs", "docker", "vscode"],
+  "sections": [
+    {
+      "id": "runtime-modules-packages",
+      "title": "Runtime, Modules & Packages",
+      "description": "Choose a supported runtime and make module/package boundaries explicit.",
+      "subtopics": [
+        {
+          "id": "versions-stability",
+          "title": "Release Lines & API Stability",
+          "description": "Production applications should use an Active or Maintenance LTS release. Check each API's stability marker before depending on experimental behavior.",
+          "codeBlocks": [{ "language": "bash", "code": "node --version\nnode --help\nnode --run test\nnode --watch src/server.js\nnode --env-file=.env src/server.js" }],
+          "callouts": [{ "title": "Pin the Runtime", "type": "warning", "icon": "⚠️", "text": "Declare engines and pin CI/container/runtime versions. Even-numbered release 24 is LTS in July 2026; 26 is Current and should not be assumed production LTS yet.", "color": "amber" }]
+        },
+        {
+          "id": "esm-commonjs",
+          "title": "ES Modules & CommonJS",
+          "description": "ESM uses import/export and URL-based resolution; CommonJS uses require/module.exports. Select with package.json type and file extensions.",
+          "tabs": [
+            { "label": "ESM", "language": "javascript", "code": "// package.json: { \"type\": \"module\" }\nimport { readFile } from 'node:fs/promises';\nimport config from './config.json' with { type: 'json' };\nconst here = new URL('.', import.meta.url);\nexport async function load() { return readFile(new URL('data.txt', here), 'utf8'); }" },
+            { "label": "CommonJS", "language": "javascript", "code": "const { readFile } = require('node:fs/promises');\nmodule.exports = { load };\n// .cjs always CommonJS; .mjs always ESM." }
+          ],
+          "callouts": [{ "title": "Do Not Mix Mental Models", "type": "danger", "icon": "🛑", "text": "__dirname, require cache, extension resolution, top-level await, and interop differ. Publish explicit exports and test both import/require entry points if supporting both.", "color": "red" }]
+        },
+        {
+          "id": "package-json-lockfiles",
+          "title": "package.json, Exports & Lockfiles",
+          "description": "Define scripts, engine support, entry points, dependency types, and a public export map; commit one package-manager lockfile.",
+          "codeBlocks": [{
+            "language": "json",
+            "code": "{\n  \"type\": \"module\",\n  \"engines\": { \"node\": \">=24 <27\" },\n  \"exports\": {\n    \".\": { \"types\": \"./dist/index.d.ts\", \"import\": \"./dist/index.js\" },\n    \"./client\": \"./dist/client.js\"\n  },\n  \"scripts\": { \"test\": \"node --test\", \"start\": \"node dist/server.js\" }\n}"
+          }],
+          "callouts": [{ "title": "Dependencies Have Meaning", "type": "note", "icon": "📌", "text": "Runtime imports belong in dependencies; build/test tools in devDependencies; peerDependencies express a host-provided compatibility contract for plugins/libraries.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "event-loop-async",
+      "title": "Event Loop & Asynchronous Design",
+      "description": "Keep the event-loop thread responsive and make cancellation/failure explicit.",
+      "subtopics": [
+        {
+          "id": "event-loop-phases",
+          "title": "Event Loop, Microtasks & Blocking",
+          "description": "JavaScript callbacks run on the event-loop thread. I/O can be concurrent through the OS/libuv pool, but CPU-heavy JavaScript blocks every request in that process.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Current callback → process.nextTick queue → Promise microtasks → event-loop phases\nTimers: setTimeout/setInterval\nPoll: I/O callbacks\nCheck: setImmediate\nClose callbacks\n\nAvoid long synchronous JSON, crypto, compression, regex, loops, and sync fs on request paths."
+          }],
+          "callouts": [{ "title": "Microtask Starvation", "type": "warning", "icon": "⚠️", "text": "Recursive process.nextTick or Promise scheduling can starve I/O. Yield intentionally and move sustained CPU work to worker threads or another service.", "color": "amber" }]
+        },
+        {
+          "id": "promises-errors",
+          "title": "Promises, async/await & Error Boundaries",
+          "description": "Await promises, return them to callers, and catch failures at a layer that can add context or produce an appropriate response.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "async function loadUser(id, { signal }) {\n  try {\n    const response = await fetch(`${baseUrl}/users/${encodeURIComponent(id)}`, { signal });\n    if (!response.ok) throw new UpstreamError(response.status);\n    return await response.json();\n  } catch (error) {\n    throw new UserLoadError(id, { cause: error });\n  }\n}"
+          }],
+          "callouts": [{ "title": "Unhandled Rejections Are Bugs", "type": "danger", "icon": "🛑", "text": "Do not fire-and-forget promises without an owner and rejection handler. Crash/restart on unknown corrupted process state; do not continue blindly after uncaught failures.", "color": "red" }]
+        },
+        {
+          "id": "abort-timeouts-concurrency",
+          "title": "AbortSignal, Timeouts & Bounded Concurrency",
+          "description": "Propagate AbortSignal through supported APIs and limit concurrent work to protect memory, connections, and upstreams.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "const signal = AbortSignal.timeout(5_000);\nconst response = await fetch(url, { signal });\n\nasync function mapLimit(items, limit, worker) {\n  const queue = [...items];\n  return Promise.all(Array.from({ length: limit }, async () => {\n    const out = [];\n    while (queue.length) out.push(await worker(queue.shift()));\n    return out;\n  })).then(parts => parts.flat());\n}"
+          }],
+          "callouts": [{ "title": "Promise.all Is Unbounded", "type": "warning", "icon": "⚠️", "text": "Mapping thousands of records into Promise.all starts them immediately. Use a pool/queue and define partial failure, cancellation, and retry policy.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "files-buffers-streams",
+      "title": "Files, Buffers & Streams",
+      "description": "Choose whole-value or streaming APIs based on size and flow control.",
+      "subtopics": [
+        {
+          "id": "path-url-files",
+          "title": "Paths, URLs & File APIs",
+          "description": "Use node:path for filesystem paths and URL for URLs/ESM-relative resources. Prefer promise APIs and atomic replacement for critical writes.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { readFile, rename, writeFile } from 'node:fs/promises';\nconst configUrl = new URL('../config/app.json', import.meta.url);\nconst config = JSON.parse(await readFile(configUrl, 'utf8'));\n\nawait writeFile(`${target}.tmp`, JSON.stringify(value), { mode: 0o600 });\nawait rename(`${target}.tmp`, target);"
+          }],
+          "callouts": [{ "title": "Validate User Paths", "type": "danger", "icon": "🔐", "text": "Resolve against an allowed root and verify containment; reject traversal and symlink surprises. Never concatenate untrusted paths into shell commands.", "color": "red" }]
+        },
+        {
+          "id": "buffers-encoding",
+          "title": "Buffer, Text Encoding & Binary Data",
+          "description": "Buffer is a byte sequence. Decode/encode with explicit character encodings and distinguish byte length from JavaScript string length.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "const bytes = Buffer.from('café', 'utf8');\nconsole.log(bytes.length);               // 5 bytes\nconsole.log(bytes.toString('base64'));\nconst unsafe = Buffer.allocUnsafe(1024); // overwrite fully before reading/sending\nconst safe = Buffer.alloc(1024);"
+          }],
+          "callouts": [{ "title": "Uninitialized Memory", "type": "danger", "icon": "🛑", "text": "allocUnsafe may contain prior memory. Use only when every byte is overwritten before exposure; use alloc for security-sensitive or partial writes.", "color": "red" }]
+        },
+        {
+          "id": "streams-backpressure",
+          "title": "Streams, pipeline & Backpressure",
+          "description": "Streams process large data incrementally. pipeline connects stages, propagates errors, and cleans up; respect write() false/drain for manual producers.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { pipeline } from 'node:stream/promises';\nimport { createReadStream, createWriteStream } from 'node:fs';\nimport { createGzip } from 'node:zlib';\n\nawait pipeline(\n  createReadStream('access.log'),\n  createGzip(),\n  createWriteStream('access.log.gz'),\n  { signal }\n);"
+          }],
+          "callouts": [{ "title": "Do Not Buffer Unbounded Inputs", "type": "warning", "icon": "⚠️", "text": "readFile, request body concatenation, and Response.text load everything into memory. Enforce size limits and stream uploads/downloads where appropriate.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "http-networking",
+      "title": "HTTP, Networking & Services",
+      "description": "Define request limits, response contracts, timeouts, and graceful connection behavior.",
+      "subtopics": [
+        {
+          "id": "http-server",
+          "title": "HTTP Server Fundamentals",
+          "description": "The built-in HTTP server is low-level: parse URLs, route methods, stream bodies, set headers/status, and handle errors explicitly.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { createServer } from 'node:http';\n\nconst server = createServer(async (req, res) => {\n  try {\n    const url = new URL(req.url, `http://${req.headers.host}`);\n    if (req.method === 'GET' && url.pathname === '/health') {\n      res.writeHead(200, { 'content-type': 'application/json' });\n      return res.end(JSON.stringify({ status: 'ok' }));\n    }\n    res.writeHead(404).end();\n  } catch (error) {\n    res.writeHead(500).end();\n  }\n});"
+          }],
+          "callouts": [{ "title": "Set Defensive Limits", "type": "danger", "icon": "🛡️", "text": "Configure header, body, request, idle, and upstream timeouts. Validate method/content type/input and avoid reflecting unsanitized values into headers or HTML.", "color": "red" }]
+        },
+        {
+          "id": "fetch-url-dns",
+          "title": "fetch, URL & Outbound Requests",
+          "description": "Use WHATWG URL to construct requests, AbortSignal for deadlines, explicit status checks, and bounded retries only for safe operations.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "const url = new URL('/v1/search', baseUrl);\nurl.searchParams.set('q', query);\nconst response = await fetch(url, {\n  headers: { accept: 'application/json' },\n  signal: AbortSignal.timeout(3_000),\n});\nif (!response.ok) throw new UpstreamError(response.status);"
+          }],
+          "callouts": [{ "title": "SSRF Boundary", "type": "danger", "icon": "🔐", "text": "Do not fetch arbitrary user-provided URLs. Allowlist schemes/hosts, protect private networks and redirects, and resolve DNS-rebinding concerns in the deployment layer.", "color": "red" }]
+        },
+        {
+          "id": "events-async-context",
+          "title": "EventEmitter & Async Context",
+          "description": "EventEmitter dispatches synchronously in registration order. AsyncLocalStorage propagates request-scoped context through supported async operations.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { AsyncLocalStorage } from 'node:async_hooks';\nconst requestContext = new AsyncLocalStorage();\n\nserver.on('request', (req, res) => {\n  requestContext.run({ requestId: crypto.randomUUID() }, () => handle(req, res));\n});\n\nfunction log(message) { logger.info({ ...requestContext.getStore(), message }); }"
+          }],
+          "callouts": [{ "title": "Always Handle error Events", "type": "warning", "icon": "⚠️", "text": "An EventEmitter error event without a listener throws. Define listener cleanup/lifetime and avoid turning a global event bus into invisible control flow.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "process-workers-operation",
+      "title": "Processes, Workers & Lifecycle",
+      "description": "Use the right isolation boundary and shut down predictably.",
+      "subtopics": [
+        {
+          "id": "process-config-signals",
+          "title": "process, Environment & Signals",
+          "description": "Read environment at startup, validate into typed configuration, and handle termination signals by stopping new work and draining owned resources.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "const config = Config.parse(process.env);\n\nasync function shutdown(signal) {\n  logger.info({ signal }, 'shutting down');\n  server.close();\n  await Promise.all([server.closeAllConnections?.(), database.close(), queue.close()]);\n  process.exitCode = 0;\n}\nprocess.once('SIGTERM', () => void shutdown('SIGTERM'));\nprocess.once('SIGINT', () => void shutdown('SIGINT'));"
+          }],
+          "callouts": [{ "title": "Do Not Call process.exit During Drain", "type": "warning", "icon": "⚠️", "text": "Immediate exit can truncate logs and pending writes. Set exitCode and let handles drain, with an external or bounded forced-shutdown deadline.", "color": "amber" }]
+        },
+        {
+          "id": "workers-child-processes",
+          "title": "Worker Threads & Child Processes",
+          "description": "Worker threads parallelize CPU-heavy JavaScript with message/shared memory. Child processes isolate programs and are required for external commands.",
+          "table": {
+            "title": "Node.js Concurrency and Isolation Tools",
+            "headers": ["Tool", "Best For", "Memory / Isolation", "Communication", "Avoid For"],
+            "rows": [
+              ["Event loop + async I/O", "Many concurrent I/O operations", "Single JavaScript heap", "Promises, callbacks, streams", "Long CPU-bound work"],
+              ["worker_threads", "CPU-heavy JavaScript", "Separate isolate; optional shared memory", "MessagePort, structured clone, SharedArrayBuffer", "Routine non-blocking I/O"],
+              ["child_process.spawn", "External commands and streamed output", "Separate OS process", "stdin/stdout/stderr and IPC when configured", "Tiny high-frequency tasks"],
+              ["child_process.exec", "Small shell commands with bounded output", "Separate OS process plus shell", "Buffered callback or promise result", "Untrusted input or large output"],
+              ["cluster / multiple app processes", "Use multiple CPU cores for a network service", "Separate processes", "OS scheduling and process IPC", "Shared in-memory session state"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { Worker } from 'node:worker_threads';\nconst worker = new Worker(new URL('./hash-worker.js', import.meta.url), { workerData: input });\nconst result = await new Promise((resolve, reject) => {\n  worker.once('message', resolve);\n  worker.once('error', reject);\n  worker.once('exit', code => code && reject(new Error(`exit ${code}`)));\n});"
+          }],
+          "callouts": [{ "title": "Use execFile/spawn Without a Shell", "type": "danger", "icon": "🔐", "text": "Never interpolate untrusted input into exec command strings. Pass executable and argument arrays, restrict allowed commands, and handle stdout/stderr backpressure and exit codes.", "color": "red" }]
+        },
+        {
+          "id": "resource-ownership",
+          "title": "Timers, Handles & Resource Ownership",
+          "description": "Clear timers/listeners, close sockets/files, unref optional background timers, and expose explicit start/close lifecycle for long-lived services.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "class Poller {\n  #timer;\n  start() { this.#timer = setInterval(() => void this.poll(), 30_000); }\n  close() { clearInterval(this.#timer); }\n}\n\nconst timeout = setTimeout(flushMetrics, 1_000);\ntimeout.unref(); // should not keep the process alive"
+          }],
+          "callouts": [{ "title": "Open Handles Explain Hanging Tests", "type": "tip", "icon": "💡", "text": "Servers, intervals, sockets, workers, and database pools keep the event loop alive. Make lifecycle explicit and close them in test cleanup.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "testing-diagnostics-performance",
+      "title": "Testing, Diagnostics & Performance",
+      "description": "Use built-in observability and profile the correct bottleneck.",
+      "subtopics": [
+        {
+          "id": "node-test-runner",
+          "title": "node:test, Assertions & Mocking",
+          "description": "The stable built-in test runner supports suites, hooks, mocking, snapshots, coverage, and concurrency controls.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { test, mock } from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('retries a transient failure once', async t => {\n  const request = mock.fn(async () => request.mock.callCount() === 1 ? Promise.reject(new Error('busy')) : 'ok');\n  const result = await retry(request, { attempts: 2, delay: 0 });\n  assert.equal(result, 'ok');\n  assert.equal(request.mock.callCount(), 2);\n});"
+          }],
+          "callouts": [{ "title": "Control Time and I/O", "type": "tip", "icon": "🧪", "text": "Inject clocks, clients, and randomness; use temporary directories and local fake servers. Avoid live network and shared ports in unit tests.", "color": "green" }]
+        },
+        {
+          "id": "diagnostics-observability",
+          "title": "Inspector, Reports & Observability",
+          "description": "Use structured logs, metrics, traces, diagnostic reports, heap/CPU profiles, and event-loop delay/utilization measurements.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "node --inspect src/server.js\nnode --cpu-prof src/server.js\nnode --heap-prof src/server.js\nnode --report-on-fatalerror src/server.js\nnode --trace-warnings src/server.js"
+          }],
+          "callouts": [{ "title": "Protect Diagnostic Endpoints", "type": "danger", "icon": "🔐", "text": "Inspector, heap snapshots, reports, environment, and stack traces can expose secrets and enable control. Never publish them unauthenticated.", "color": "red" }]
+        },
+        {
+          "id": "performance-memory",
+          "title": "Event-Loop Latency, Memory & Profiling",
+          "description": "Measure throughput and tail latency under realistic load. Distinguish CPU saturation, I/O wait, garbage collection, memory retention, and downstream bottlenecks.",
+          "codeBlocks": [{
+            "language": "javascript",
+            "code": "import { monitorEventLoopDelay, performance } from 'node:perf_hooks';\nconst delay = monitorEventLoopDelay({ resolution: 20 });\ndelay.enable();\nsetInterval(() => metrics.gauge('event_loop_p99_ms', delay.percentile(99) / 1e6), 10_000).unref();"
+          }],
+          "callouts": [{ "title": "Streams Do Not Guarantee Low Memory", "type": "note", "icon": "📌", "text": "Ignoring backpressure, retaining chunks/listeners, or accumulating results still grows memory. Profile heap retainers rather than guessing.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "security-production",
+      "title": "Security & Production Checklist",
+      "description": "Treat dependencies, inputs, privileges, resources, and runtime lifecycle as security boundaries.",
+      "subtopics": [
+        {
+          "id": "node-security",
+          "title": "Input, Dependency & Runtime Security",
+          "description": "Validate inputs, encode for output context, use parameterized queries, pin dependencies, minimize permissions, and keep supported runtime releases patched.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Reject unknown/oversized fields and ambiguous content types\nUse parameterized SQL; never construct commands from input\nAllowlist redirect/URL targets and filesystem roots\nKeep secrets out of source, logs, client bundles, and image layers\nCommit lockfiles; review install scripts and supply-chain changes\nRun as non-root with least filesystem/network capability\nSet rate, body, header, connection, and execution limits"
+          }],
+          "callouts": [{ "title": "The Permission Model Is Defense in Depth", "type": "note", "icon": "📌", "text": "Node permission flags can reduce accidental access but do not replace OS/container isolation, dependency review, and application authorization.", "color": "blue" }]
+        },
+        {
+          "id": "node-production-checklist",
+          "title": "Production Checklist",
+          "description": "Review support, ownership, bounded resources, observability, and graceful failure before deployment.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Supported LTS runtime is pinned across CI and production\n□ ESM/CJS and package exports are intentional\n□ Every promise, timer, listener, stream, worker, and socket has an owner\n□ CPU-heavy work cannot block request event loops\n□ Concurrency, bodies, queues, and retries are bounded\n□ AbortSignal/timeouts propagate to downstream work\n□ Streams use pipeline and respect backpressure\n□ Inputs, paths, URLs, queries, and commands are validated\n□ Errors add context without leaking secrets\n□ SIGTERM drains traffic and closes dependencies\n□ Health endpoints distinguish liveness/readiness\n□ Logs, metrics, traces, event-loop delay, memory, and profiles are available\n□ Tests clean all open handles and avoid live dependencies"
+          }]
+        }
+      ]
+    }
+  ]
+}

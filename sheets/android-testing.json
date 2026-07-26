@@ -1,0 +1,245 @@
+{
+  "id": "android-testing",
+  "title": "Android Testing",
+  "slug": "android-testing",
+  "category": "Android",
+  "technology": "JUnit / AndroidX Test / Compose Test",
+  "version": "Modern Android Testing",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 48,
+  "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, test doubles, coroutines and Flow, Compose UI, navigation, storage, reliability, and CI.",
+  "tags": ["ANDROID", "TESTING", "JUNIT", "COMPOSE TEST", "COROUTINE TEST", "ESPRESSO"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["android unit test", "instrumented test", "compose ui test", "coroutine test", "androidx test", "test doubles"],
+  "relatedSheets": ["android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
+  "sections": [
+    {
+      "id": "testing-strategy",
+      "title": "Testing Strategy",
+      "description": "Build confidence around user-visible risks rather than maximizing raw test count.",
+      "subtopics": [
+        {
+          "id": "test-scope-pyramid",
+          "title": "Unit, Integration, UI & End-to-End",
+          "description": "Use fast local tests for decision-heavy logic, integration tests for boundaries, UI tests for behavior and navigation, and a small number of critical end-to-end journeys.",
+          "table": {
+            "title": "Android Test Level Selection",
+            "headers": ["Level", "Primary Target", "Environment", "Speed / Fidelity", "Good Examples"],
+            "rows": [
+              ["Unit", "Pure logic and state transitions", "Local JVM", "Fastest / lowest platform fidelity", "Reducer, mapper, validator, use case"],
+              ["Integration", "Two or more real boundaries", "JVM, Robolectric, or device", "Medium / targeted fidelity", "Repository with Room or network fake"],
+              ["UI", "Visible behavior and semantics", "Instrumented device or emulator", "Slower / high UI fidelity", "Compose screen actions and assertions"],
+              ["End-to-end", "Critical user journey across the app", "Production-like device and services", "Slowest / highest system fidelity", "Sign-in, purchase, migration smoke path"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Unit: pure functions, use cases, ViewModels, reducers\nIntegration: repository + fake server/database, serialization, migrations\nUI/component: one screen, semantics, user actions, state rendering\nNavigation: destination transitions and back behavior\nEnd-to-end: a few release-critical journeys on realistic infrastructure"
+          }],
+          "callouts": [{ "title": "Test Observable Behavior", "type": "tip", "icon": "💡", "text": "Assert outputs, state, persisted records, and visible semantics. Tests coupled to private methods or call order block safe refactoring without adding confidence.", "color": "green" }]
+        },
+        {
+          "id": "what-to-test",
+          "title": "Risk-Based Coverage",
+          "description": "Prioritize money, identity, data loss, permissions, migrations, offline behavior, concurrency, process restoration, accessibility, and critical journeys.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "For each feature test:\n1. Happy path and user-visible result\n2. Empty/loading/error/retry states\n3. Boundary values and malformed external input\n4. Cancellation, duplicate actions, and races\n5. Rotation/process recreation where state matters\n6. Accessibility semantics and large content\n7. Persistence or network contract changes"
+          }],
+          "callouts": [{ "title": "Coverage Is a Clue", "type": "note", "icon": "📌", "text": "Line coverage can reveal untested code but cannot prove useful assertions, correct concurrency, or covered user journeys. Mutation testing and defect history provide stronger signals.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "local-tests",
+      "title": "Local JVM Unit Tests",
+      "description": "Keep most business logic free of Android runtime dependencies so tests remain fast and deterministic.",
+      "subtopics": [
+        {
+          "id": "junit-structure",
+          "title": "Arrange, Act, Assert",
+          "description": "Name tests as behavior statements and keep one reason for failure per test.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class PriceCalculatorTest {\n    @Test\n    fun `premium member receives discount before tax`() {\n        val calculator = PriceCalculator(taxRate = 0.10)\n\n        val total = calculator.total(subtotal = 100.0, premium = true)\n\n        assertEquals(99.0, total, 0.001)\n    }\n}"
+          }],
+          "callouts": [{ "title": "One Concept, Useful Failure", "type": "tip", "icon": "💡", "text": "Parameterized tests are excellent for input matrices; separate scenarios when a failure should explain different behavior or require different setup.", "color": "green" }]
+        },
+        {
+          "id": "viewmodel-test",
+          "title": "ViewModel State Tests",
+          "description": "Construct the ViewModel with fakes, trigger public actions, and assert its public state contract.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Test\nfun `retry changes failure to content`() = runTest {\n    val repository = FakeFeedRepository(\n        results = ArrayDeque(listOf(Result.failure(Offline()), Result.success(items)))\n    )\n    val vm = FeedViewModel(repository)\n\n    vm.retry()\n    advanceUntilIdle()\n\n    assertEquals(FeedUiState.Content(items), vm.uiState.value)\n}"
+          }],
+          "callouts": [{ "title": "Test the Contract", "type": "warning", "icon": "⚠️", "text": "Avoid asserting that a particular private coroutine or helper was invoked. Assert the state, repository effect, or navigation decision consumers can observe.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "test-doubles",
+      "title": "Fakes, Stubs, Spies & Mocks",
+      "description": "Choose the simplest controllable substitute that preserves useful behavior.",
+      "subtopics": [
+        {
+          "id": "double-selection",
+          "title": "Prefer Fakes for Stateful Boundaries",
+          "description": "Fakes implement a working simplified contract; stubs return configured answers; spies record calls; mocks define interaction expectations.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class FakeUserRepository : UserRepository {\n    private val users = mutableMapOf<UserId, User>()\n    var saveFailure: Throwable? = null\n\n    override suspend fun save(user: User) {\n        saveFailure?.let { throw it }\n        users[user.id] = user\n    }\n\n    override suspend fun find(id: UserId): User? = users[id]\n}"
+          }],
+          "callouts": [{ "title": "A Fake Is Shared Test Infrastructure", "type": "tip", "icon": "💡", "text": "Keep fakes faithful to important contract semantics such as uniqueness, ordering, and errors. Overly permissive fakes let invalid production usage pass.", "color": "green" }]
+        },
+        {
+          "id": "interaction-tests",
+          "title": "When Interaction Verification Helps",
+          "description": "Verify calls when the call itself is the contract: analytics, notifications, external commands, or ensuring a dangerous action happens once.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class RecordingAnalytics : Analytics {\n    val events = mutableListOf<Event>()\n    override fun track(event: Event) { events += event }\n}\n\nassertEquals(listOf(Event.PurchaseCompleted(orderId)), analytics.events)"
+          }],
+          "callouts": [{ "title": "Avoid Overspecification", "type": "warning", "icon": "⚠️", "text": "Do not verify every collaborator call or exact ordering unless required by behavior. Such tests mirror implementation and become refactoring taxes.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "coroutine-flow-testing",
+      "title": "Coroutines, Flow & Virtual Time",
+      "description": "Use one scheduler and explicit collection so asynchronous tests remain deterministic.",
+      "subtopics": [
+        {
+          "id": "run-test-dispatchers",
+          "title": "runTest & Test Dispatchers",
+          "description": "runTest supplies a TestScope and scheduler, skips virtual delays, propagates child failures, and waits for scheduled work.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Test\nfun `refresh waits then publishes content`() = runTest {\n    val dispatcher = StandardTestDispatcher(testScheduler)\n    val repository = FakeRepository(delayMs = 1_000)\n    val vm = FeedViewModel(repository, dispatcher)\n\n    vm.refresh()\n    assertEquals(FeedUiState.Loading, vm.uiState.value)\n    advanceTimeBy(1_000)\n    runCurrent()\n    assertEquals(FeedUiState.Content(items), vm.uiState.value)\n}"
+          }],
+          "callouts": [{ "title": "Share the Scheduler", "type": "danger", "icon": "⏱️", "text": "Every TestDispatcher in a test must use testScheduler. Independent schedulers create work that advanceUntilIdle cannot see and produce hanging or flaky tests.", "color": "red" }]
+        },
+        {
+          "id": "main-dispatcher-rule",
+          "title": "Replace Dispatchers.Main",
+          "description": "ViewModels use Main by default. Install a test dispatcher before construction and always reset it afterward through a rule/extension.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class MainDispatcherRule(\n    val dispatcher: TestDispatcher = UnconfinedTestDispatcher()\n) : TestWatcher() {\n    override fun starting(description: Description) = Dispatchers.setMain(dispatcher)\n    override fun finished(description: Description) = Dispatchers.resetMain()\n}\n\n@get:Rule val mainDispatcherRule = MainDispatcherRule()"
+          }],
+          "callouts": [{ "title": "Standard vs Unconfined", "type": "note", "icon": "📌", "text": "StandardTestDispatcher queues work for precise control. UnconfinedTestDispatcher eagerly enters launched coroutines and can simplify collection, but it does not model production scheduling order.", "color": "blue" }]
+        },
+        {
+          "id": "flow-testing",
+          "title": "Finite Flow, StateFlow & Ongoing Collection",
+          "description": "Use first/take/toList for finite assertions. Activate stateIn WhileSubscribed streams with a background collector and cancel it automatically with backgroundScope.",
+          "tabs": [
+            { "label": "Finite", "language": "kotlin", "code": "val values = repository.events.take(3).toList()\nassertEquals(listOf(A, B, C), values)" },
+            { "label": "Ongoing State", "language": "kotlin", "code": "backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {\n    viewModel.uiState.collect()\n}\nfakeRepository.emit(items)\nrunCurrent()\nassertEquals(items, viewModel.uiState.value.items)" }
+          ],
+          "callouts": [{ "title": "Never Await an Infinite Flow", "type": "danger", "icon": "🛑", "text": "toList on an infinite stream never completes. Bound collection, use a background collector, or use a dedicated Flow assertion library with explicit cancellation.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "instrumented-tests",
+      "title": "Instrumented & Integration Tests",
+      "description": "Run on a device when Android framework behavior, resources, storage, or real rendering matters.",
+      "subtopics": [
+        {
+          "id": "local-vs-device",
+          "title": "Choose the Correct Environment",
+          "description": "Local JVM tests are fastest; Robolectric can emulate selected framework behavior; instrumented tests provide real runtime and device integration.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Pure logic/contract → local JVM\nResource/configuration behavior with supported shadows → Robolectric\nRoom migration and SQLite behavior → device/emulator test\nPermissions, intents, services, rendering → device/emulator\nCritical OEM/API/form-factor behavior → representative device matrix"
+          }],
+          "callouts": [{ "title": "Use the Lowest Faithful Layer", "type": "tip", "icon": "💡", "text": "Moving every test onto a device slows feedback. Keeping framework-dependent behavior out of business logic reduces both test cost and production coupling.", "color": "green" }]
+        },
+        {
+          "id": "room-migration-test",
+          "title": "Database & Migration Tests",
+          "description": "Test DAO behavior and every supported historical migration path against actual schemas.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Test\nfun migrate1To2_preservesUsers() {\n    helper.createDatabase(TEST_DB, 1).apply {\n        execSQL(\"INSERT INTO users(id, name) VALUES(1, 'Ada')\")\n        close()\n    }\n    helper.runMigrationsAndValidate(TEST_DB, 2, true, MIGRATION_1_2)\n}"
+          }],
+          "callouts": [{ "title": "Export Schemas", "type": "warning", "icon": "⚠️", "text": "Migration tests require historical schema artifacts. Keep them in version control and test upgrade paths used by real installed versions.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "compose-ui-testing",
+      "title": "Compose UI, Semantics & Navigation",
+      "description": "Interact as a user through the semantics tree and assert visible outcomes.",
+      "subtopics": [
+        {
+          "id": "compose-rule-semantics",
+          "title": "Compose Test Rule & Semantics",
+          "description": "Find nodes by accessible text, content description, role, state, or stable test tag only when user-facing semantics are insufficient.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@get:Rule val compose = createComposeRule()\n\n@Test\nfun savingShowsConfirmation() {\n    compose.setContent { ProfileScreen(state, onSave) }\n    compose.onNodeWithText(\"Save\").performClick()\n    compose.onNodeWithText(\"Profile saved\").assertIsDisplayed()\n}"
+          }],
+          "callouts": [{ "title": "Semantics Improve Accessibility Too", "type": "tip", "icon": "♿", "text": "Tests that query meaningful roles, labels, and states encourage an accessible UI. Test tags are implementation hooks; use them sparingly for otherwise ambiguous nodes.", "color": "green" }]
+        },
+        {
+          "id": "compose-clock",
+          "title": "Synchronization & Animation Clock",
+          "description": "Compose tests synchronize with known Compose work. Control the main clock for animations or delayed UI behavior.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "compose.mainClock.autoAdvance = false\ncompose.onNodeWithText(\"Expand\").performClick()\ncompose.mainClock.advanceTimeBy(300)\ncompose.onNodeWithTag(\"details\").assertIsDisplayed()"
+          }],
+          "callouts": [{ "title": "External Work Needs Idling", "type": "warning", "icon": "⚠️", "text": "Compose cannot automatically observe every executor, callback, or network client. Inject controllable dependencies or register an idling resource rather than sleeping.", "color": "amber" }]
+        },
+        {
+          "id": "navigation-tests",
+          "title": "Navigation & Back Stack",
+          "description": "Test destinations through a test navigation controller or host and assert route/back-stack outcomes after user actions.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Test deep-link entry and invalid arguments\nTest forward navigation after user action\nTest Up versus system Back semantics\nTest result delivery and cancelled flows\nTest state restoration after recreation\nKeep navigation callbacks injectable in isolated screen tests"
+          }],
+          "callouts": [{ "title": "Do Not Mock NavController Deeply", "type": "tip", "icon": "💡", "text": "A real test navigation host gives more confidence in route configuration and back-stack behavior than verifying method calls on a mock.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "reliability-ci",
+      "title": "Reliability, Performance & CI",
+      "description": "Make failures reproducible and keep the suite fast enough to run continuously.",
+      "subtopics": [
+        {
+          "id": "flakiness",
+          "title": "Eliminate Flaky Tests",
+          "description": "Control time, randomness, locale, network, storage, dispatchers, and shared state. Wait for conditions, never arbitrary time.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Replace sleep with scheduler/idling/condition synchronization\nInject Clock and deterministic Random\nUse hermetic fake server responses\nReset databases, files, preferences, and app state\nAvoid test ordering and global mutable fixtures\nCapture seed, API level, locale, and device configuration on failure\nTreat retries as diagnosis telemetry, not a fix"
+          }],
+          "callouts": [{ "title": "Quarantine With Ownership", "type": "danger", "icon": "🚨", "text": "A flaky test erodes trust in all failures. If quarantine is unavoidable, assign an owner and expiry while preserving failure evidence.", "color": "red" }]
+        },
+        {
+          "id": "ci-matrix",
+          "title": "CI Layers & Device Matrix",
+          "description": "Run fast checks on every change, broader device suites after merge, and release-critical journeys before deployment.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Pull request: compile, lint, local unit tests, focused UI smoke\nMain branch: integration, migrations, broader instrumented suite\nNightly: API/form-factor/locale matrix, accessibility, stress\nRelease: critical journeys, upgrade path, performance baselines\nTrack duration, flake rate, failure clusters, and slowest tests"
+          }],
+          "callouts": [{ "title": "Shard by Historical Duration", "type": "tip", "icon": "⚡", "text": "Balance shards using measured runtime rather than test count. Keep emulator snapshots and dependencies pinned so infrastructure changes are deliberate.", "color": "green" }]
+        },
+        {
+          "id": "test-review-checklist",
+          "title": "Test Review Checklist",
+          "description": "Review value, determinism, isolation, readability, fidelity, and failure diagnostics.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Test name states behavior and condition\n□ Assertions cover an observable contract\n□ Correct environment is used\n□ Time and dispatchers are controllable\n□ No sleeps, live network, or order dependence\n□ Fakes preserve important contract semantics\n□ Cleanup runs even after assertion failure\n□ Failure output identifies expected versus actual\n□ Error, cancellation, empty, and restoration paths exist\n□ UI queries use meaningful semantics\n□ Migration paths and critical journeys are represented\n□ Suite placement matches feedback-speed needs"
+          }]
+        }
+      ]
+    }
+  ]
+}

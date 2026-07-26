@@ -1,0 +1,268 @@
+{
+  "id": "android-naming-conventions",
+  "title": "Android Naming Conventions",
+  "slug": "android-naming-conventions",
+  "category": "Android",
+  "technology": "Kotlin / Android / Compose",
+  "version": "Modern Android",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 36,
+  "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, resources, Compose APIs, state, events, streams, tests, and implementation variants.",
+  "tags": ["ANDROID", "KOTLIN", "NAMING", "CONVENTIONS", "RESOURCES", "API DESIGN"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["android code style", "kotlin naming", "android resource naming", "compose naming", "test naming", "android conventions"],
+  "relatedSheets": ["android-kotlin", "android-kotlin-flows", "android-jetpack-compose", "android-jetpack-compose-modifiers", "android-testing"],
+  "sections": [
+    {
+      "id": "core-kotlin-names",
+      "title": "Core Kotlin Names",
+      "description": "Names should reveal the domain role without requiring type or implementation archaeology.",
+      "subtopics": [
+        {
+          "id": "case-reference",
+          "title": "Case & Declaration Quick Reference",
+          "description": "Follow Kotlin conventions unless an Android tool imposes a resource or manifest format.",
+          "table": {
+            "title": "Kotlin and Android Case Reference",
+            "headers": ["Element", "Convention", "Example", "Note"],
+            "rows": [
+              ["Class, interface, object, enum", "UpperCamelCase", "UserRepository", "Prefer a concrete domain noun"],
+              ["Function and property", "lowerCamelCase", "loadUser, isLoading", "Use verbs for actions and predicates for booleans"],
+              ["Compile-time constant", "UPPER_SNAKE_CASE", "MAX_RETRY_COUNT", "Reserve for const val and true constants"],
+              ["Package", "lowercase dotted", "com.example.checkout", "Avoid underscores and redundant layer nesting"],
+              ["Composable function", "UpperCamelCase", "CheckoutScreen", "Composable functions that emit UI are noun-like"],
+              ["Android resource", "lower_snake_case", "checkout_submit_button", "Encode feature, element, and role consistently"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Package: com.example.payments.checkout (lowercase, no underscores)\nClass/interface/object/typealias: PaymentRepository, CheckoutState (PascalCase)\nFunction/property/local/parameter: calculateTotal, selectedItem (camelCase)\nCompile-time-style constant: MAX_RETRY_COUNT (UPPER_SNAKE_CASE)\nGeneric type: T, R, Key, Value, RequestT (concise or descriptive)\nResource/file identifier: checkout_submit_button (lower_snake_case)"
+          }],
+          "callouts": [{ "title": "Tooling Consistency Wins", "type": "tip", "icon": "💡", "text": "Use the project's formatter and static analysis rules. Local consistency improves search and review even where more than one style is technically valid.", "color": "green" }]
+        },
+        {
+          "id": "functions-properties-booleans",
+          "title": "Functions, Properties & Booleans",
+          "description": "Functions usually use verb phrases; properties use noun phrases; booleans read as assertions or capabilities.",
+          "tabs": [
+            { "label": "Prefer", "language": "kotlin", "code": "fun calculateTotal(): Money\nfun saveDraft(draft: Draft)\nval selectedAccount: Account\nval isLoading: Boolean\nval hasUnsavedChanges: Boolean\nval canSubmit: Boolean\nval shouldShowRationale: Boolean" },
+            { "label": "Avoid", "language": "kotlin", "code": "fun total(): Money       // action or property?\nfun process(data: Data)   // says nothing about outcome\nval loadingFlag: Boolean  // type-encoded suffix\nval check: Boolean        // check what?\nval data: Any             // domain meaning lost" }
+          ],
+          "callouts": [{ "title": "Name the Outcome", "type": "tip", "icon": "💡", "text": "Replace vague verbs such as handle, process, manage, do, and execute with the domain result: validateAddress, chargePayment, cacheProfile, or publishReceipt.", "color": "green" }]
+        },
+        {
+          "id": "acronyms-units",
+          "title": "Acronyms, Units & Encoded Context",
+          "description": "Treat acronyms as words in Pascal/camel case and include units when the type cannot express them.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class XmlParser\nclass HttpClient\nval userId: UserId\nval apiUrl: Url\nval timeoutMillis: Long\nval retryDelay: Duration\nval distanceMeters: Double"
+          }],
+          "callouts": [{ "title": "Prefer Types Over Suffixes", "type": "note", "icon": "📌", "text": "Duration, Money, UserId, and other domain types prevent unit/identity confusion better than names alone. Keep a unit suffix at platform boundaries that still use primitives.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "files-packages-modules",
+      "title": "Files, Packages & Modules",
+      "description": "Make navigation predictable from a symbol or feature name.",
+      "subtopics": [
+        {
+          "id": "file-names",
+          "title": "Kotlin File Names",
+          "description": "Name a file after its primary declaration; use a descriptive PascalCase topic for related top-level declarations and extensions.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "UserRepository.kt → UserRepository\nCheckoutViewModel.kt → CheckoutViewModel\nMoneyFormatting.kt → related money formatting functions\nContextExtensions.kt → only if extensions form one coherent Context topic\nAvoid Utils.kt, Helpers.kt, Common.kt, Misc.kt"
+          }],
+          "callouts": [{ "title": "Utility Buckets Hide Cohesion", "type": "warning", "icon": "⚠️", "text": "A growing Utils file usually contains several domain concepts. Split by responsibility so names communicate ownership and dependencies.", "color": "amber" }]
+        },
+        {
+          "id": "package-feature-names",
+          "title": "Feature & Layer Packages",
+          "description": "Choose a consistent feature-first or layer-first structure. In larger apps, feature-first naming keeps related UI, domain, and data code discoverable.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "com.example.app.feature.checkout.ui\ncom.example.app.feature.checkout.data\ncom.example.app.feature.checkout.domain\ncom.example.app.core.network\ncom.example.app.core.database\n\nGradle modules:\n:feature:checkout\n:core:network\n:core:designsystem"
+          }],
+          "callouts": [{ "title": "Avoid Redundant Prefixes", "type": "tip", "icon": "💡", "text": "Inside feature.checkout, names such as CheckoutCheckoutScreen or CheckoutFeatureRepository repeat context. Retain the domain word only when it distinguishes the public symbol during imports/search.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "android-components-layers",
+      "title": "Android Components & Architecture Layers",
+      "description": "Use suffixes when they identify a real framework contract or architectural responsibility.",
+      "subtopics": [
+        {
+          "id": "component-suffixes",
+          "title": "Activity, Fragment, Service, Receiver & Worker",
+          "description": "Framework entry points keep conventional suffixes because the lifecycle contract matters.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class MainActivity : ComponentActivity()\nclass LegacyProfileFragment : Fragment()\nclass PlaybackService : Service()\nclass BootCompletedReceiver : BroadcastReceiver()\nclass SyncWorker(...) : CoroutineWorker(...)"
+          }],
+          "callouts": [{ "title": "Name the Responsibility, Not Screen Shape", "type": "tip", "icon": "💡", "text": "Prefer CheckoutActivity or PlaybackService over generic BaseActivity2 or MyService. Abstract base types should state the behavior they standardize, if one is needed at all.", "color": "green" }]
+        },
+        {
+          "id": "repositories-data-sources-use-cases",
+          "title": "Repositories, Data Sources & Use Cases",
+          "description": "Interfaces use the domain capability. Implementations name their strategy; data sources name the system boundary; use cases name a user/business action.",
+          "tabs": [
+            { "label": "Contracts", "language": "kotlin", "code": "interface UserRepository\ninterface PaymentGateway\nfun interface ValidateAddress\nclass SubmitOrder" },
+            { "label": "Implementations", "language": "kotlin", "code": "class OfflineFirstUserRepository\nclass InMemoryUserRepository\nclass DefaultUserRepository // only when no meaningful strategy name exists\nclass HttpUserDataSource\nclass RoomUserDataSource\nclass FakeUserRepository" }
+          ],
+          "callouts": [{ "title": "Avoid Impl When Strategy Exists", "type": "warning", "icon": "⚠️", "text": "UserRepositoryImpl reveals no behavior. OfflineFirst, Cached, InMemory, Room, or Default helps readers choose and configure the implementation.", "color": "amber" }]
+        },
+        {
+          "id": "models-per-layer",
+          "title": "Models Across Boundaries",
+          "description": "Use a simple domain name in its owning layer and a suffix only where several representations coexist or imports would be ambiguous.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "data class UserDto(...)      // transport contract\n@Entity data class UserEntity(...) // database schema\ndata class User(...)               // domain model\ndata class UserUiModel(...)        // presentation-only projection\ndata class UserPayload(...)        // outbound request when clearer than Dto"
+          }],
+          "callouts": [{ "title": "Suffixes Must Mean One Thing", "type": "note", "icon": "📌", "text": "Define DTO, Entity, Model, Payload, and UiModel meanings for the project. Do not use Model as a universal suffix on every class.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "state-events-streams",
+      "title": "State, Events, Streams & Async APIs",
+      "description": "Names should distinguish durable state, user actions, domain results, and changing streams.",
+      "subtopics": [
+        {
+          "id": "ui-state-actions",
+          "title": "UiState & User Actions",
+          "description": "Name screen state after the screen; name action methods after the domain result rather than UI control details.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "data class CheckoutUiState(\n    val cartItems: List<CartItemUiModel>,\n    val isSubmitting: Boolean,\n    val validationErrors: Map<Field, String>\n)\n\nfun updateShippingAddress(address: Address)\nfun submitOrder()\nfun retryPayment()\n\n// Avoid: onBlueButtonClicked(), handleEvent(), process()"
+          }],
+          "callouts": [{ "title": "Keep ViewModel Names UI-Agnostic", "type": "tip", "icon": "💡", "text": "A ViewModel method may be called from touch, keyboard, voice, or another form factor. Name the business intent instead of the current widget.", "color": "green" }]
+        },
+        {
+          "id": "mutable-backing-state",
+          "title": "Private Mutable Backing Properties",
+          "description": "A leading underscore clearly pairs private mutable state with its immutable public view.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val _uiState = MutableStateFlow(CheckoutUiState())\nval uiState: StateFlow<CheckoutUiState> = _uiState.asStateFlow()\n\nprivate val _items = mutableListOf<Item>()\nval items: List<Item> get() = _items.toList()"
+          }],
+          "callouts": [{ "title": "Use the Pattern Only for a Pair", "type": "note", "icon": "📌", "text": "Do not prefix every private property with an underscore. It is useful when both mutable backing and public property share the same conceptual name.", "color": "blue" }]
+        },
+        {
+          "id": "stream-names",
+          "title": "Flow & Stream Names",
+          "description": "Properties use noun/state names. Functions that create or query changing data use an observe/get...Stream convention consistently; avoid unnecessary Flow suffixes when the type is obvious.",
+          "tabs": [
+            { "label": "State Properties", "language": "kotlin", "code": "val uiState: StateFlow<ProfileUiState>\nval connectivity: Flow<Connectivity>\nval messages: Flow<List<Message>>" },
+            { "label": "Repository Functions", "language": "kotlin", "code": "fun observeUser(id: UserId): Flow<User>\nfun getUsersStream(): Flow<List<User>>\nsuspend fun getUser(id: UserId): User\nsuspend fun refreshUsers(): Result<Unit>" }
+          ],
+          "callouts": [{ "title": "One-Shot vs Stream Must Be Obvious", "type": "warning", "icon": "⚠️", "text": "A suspend getUser and Flow getUser with similar names invite misuse. Establish verbs such as observe or Stream for changing values and reserve refresh/sync/save for actions.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "compose-names",
+      "title": "Jetpack Compose Names",
+      "description": "Compose naming communicates whether an API emits UI, creates state, or extends Modifier.",
+      "subtopics": [
+        {
+          "id": "composable-names",
+          "title": "Composable Functions & Layers",
+          "description": "Composable functions that emit UI and return Unit use PascalCase nouns. Use Route for screen wiring and Screen/content names for stateless presentation when that project convention adds clarity.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable fun CheckoutRoute(...)\n@Composable fun CheckoutScreen(...)\n@Composable fun OrderSummary(...)\n@Composable fun EmptyCart(...)\n\n// Value-returning composable follows normal function style:\n@Composable fun rememberCheckoutState(): CheckoutState"
+          }],
+          "callouts": [{ "title": "Name What It Is", "type": "tip", "icon": "💡", "text": "Prefer ProfileHeader and PaymentMethodPicker over RenderHeader or CreatePaymentView. Declarative UI functions describe an element, not an imperative rendering command.", "color": "green" }]
+        },
+        {
+          "id": "compose-params-callbacks",
+          "title": "modifier, State & Callbacks",
+          "description": "Place modifier after required parameters and before optional parameters; callbacks use on + event/result names.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun AddressForm(\n    address: AddressInput,\n    onAddressChange: (AddressInput) -> Unit,\n    onSubmit: () -> Unit,\n    modifier: Modifier = Modifier,\n    enabled: Boolean = true\n)"
+          }],
+          "callouts": [{ "title": "Callback Name Describes Occurrence", "type": "note", "icon": "📌", "text": "onClick is fine for a generic Button; a domain component should expose onSubmit, onAccountSelected, or onRetry so callers understand intent.", "color": "blue" }]
+        },
+        {
+          "id": "modifier-local-preview",
+          "title": "Modifier Factories, CompositionLocals & Previews",
+          "description": "Modifier factories use camelCase extension names; CompositionLocals use a Local prefix; private previews use descriptive PascalCase names ending in Preview.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun Modifier.selectionOutline(selected: Boolean): Modifier\nval LocalAnalytics = staticCompositionLocalOf<Analytics> { error(\"Missing Analytics\") }\n\n@Preview\n@Composable\nprivate fun CheckoutErrorDarkPreview()"
+          }],
+          "callouts": [{ "title": "Avoid Modifier Suffix on Factories", "type": "tip", "icon": "💡", "text": "Call sites already read Modifier.selectionOutline(...). Names like selectionOutlineModifier add redundant type information.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "resource-names",
+      "title": "Android Resource & Manifest Names",
+      "description": "Resource names are global within their type and should remain searchable, stable, and feature-oriented.",
+      "subtopics": [
+        {
+          "id": "resource-patterns",
+          "title": "Strings, IDs, Layouts & Drawables",
+          "description": "Use lower_snake_case with feature/component/purpose order; avoid screen position, temporary appearance, and translated words in identifiers.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "string: checkout_submit_order, checkout_error_payment_declined\nplurals: cart_item_count\nid: checkout_email_field, checkout_submit_button\nlayout: activity_main, fragment_legacy_profile, item_order\ndrawable: ic_add_24, bg_checkout_card, illustration_empty_cart\nmenu: menu_order_details\nnavigation: nav_checkout\ncolor: checkout_status_error (or design-system semantic token)"
+          }],
+          "callouts": [{ "title": "Name by Meaning, Not Current Appearance", "type": "warning", "icon": "⚠️", "text": "red_text or left_button becomes wrong after redesign or RTL. Prefer error_text and previous_button; semantic names survive visual change.", "color": "amber" }]
+        },
+        {
+          "id": "string-format-names",
+          "title": "Formatted Strings & Plurals",
+          "description": "Name the complete message purpose. Add translator comments when placeholders or context are ambiguous.",
+          "codeBlocks": [{
+            "language": "xml",
+            "code": "<!-- Greeting shown on profile header; %1$s is display name. -->\n<string name=\"profile_greeting\">Hello, %1$s</string>\n<plurals name=\"download_file_count\">\n    <item quantity=\"one\">%d file</item>\n    <item quantity=\"other\">%d files</item>\n</plurals>"
+          }],
+          "callouts": [{ "title": "Identifier Is Not Source Text", "type": "note", "icon": "📌", "text": "Resource keys should remain stable when wording changes. Use the message's role, not an English sentence transliterated into an identifier.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "tests-anti-patterns",
+      "title": "Tests, Exceptions & Naming Review",
+      "description": "Tests should state behavior; exceptions should state failure; review names at API boundaries.",
+      "subtopics": [
+        {
+          "id": "test-names",
+          "title": "Test Classes, Methods & Fixtures",
+          "description": "Test classes name the subject. Backtick test functions can read as behavior sentences; fixtures use domain roles rather than unexplained numbers.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class CheckoutViewModelTest {\n    @Test\n    fun `submit exposes validation errors when address is incomplete`() { /*...*/ }\n}\n\nval validAddress = Address(...)\nval expiredCard = Card(...)\nval expectedOrder = Order(...)\n// Avoid user1, data2, temp, resultX"
+          }],
+          "callouts": [{ "title": "Name Condition and Outcome", "type": "tip", "icon": "💡", "text": "A test report should explain the broken rule without opening code. Include the relevant precondition and observable result, not implementation steps.", "color": "green" }]
+        },
+        {
+          "id": "error-names",
+          "title": "Errors, Results & Exceptions",
+          "description": "Name exceptions as failures and result alternatives as domain outcomes; avoid catch-all Error when callers need recovery decisions.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class PaymentDeclinedException(...) : Exception(...)\nclass InvalidDeepLinkException(...) : IllegalArgumentException(...)\n\nsealed interface SubmitOrderResult {\n    data class Success(val orderId: OrderId) : SubmitOrderResult\n    data class ValidationFailed(val fields: Set<Field>) : SubmitOrderResult\n    data object Offline : SubmitOrderResult\n}"
+          }],
+          "callouts": [{ "title": "Do Not Encode Transport in Domain Names", "type": "warning", "icon": "⚠️", "text": "A domain layer usually cares about Unauthenticated or PaymentDeclined, not Http401Exception. Translate infrastructure details at the boundary.", "color": "amber" }]
+        },
+        {
+          "id": "naming-checklist",
+          "title": "Naming Review Checklist",
+          "description": "A strong name is precise, searchable, consistent, durable, pronounceable, and appropriate to its abstraction level.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Name states domain meaning, not only type\n□ Verb/noun/boolean grammar reads naturally\n□ Acronyms and casing follow one convention\n□ Units or domain value types prevent ambiguity\n□ Implementation names reveal strategy, not Impl\n□ Stream versus one-shot semantics are obvious\n□ Mutable backing state is private and intentionally paired\n□ Compose UI names are nouns; callbacks state events\n□ Resource keys use feature + purpose and semantic wording\n□ Test names state condition and result\n□ Vague words (data, info, manager, helper, utils, process) are justified\n□ Name will remain correct after likely UI/implementation changes"
+          }],
+          "callouts": [{ "title": "Rename During Design", "type": "tip", "icon": "💡", "text": "If a precise name is difficult, the responsibility may be mixed or the abstraction unclear. Use naming friction to discover a better boundary before adding comments.", "color": "green" }]
+        }
+      ]
+    }
+  ]
+}

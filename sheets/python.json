@@ -1,0 +1,324 @@
+{
+  "id": "python-language-reference",
+  "title": "Python Programming",
+  "slug": "python",
+  "category": "Languages",
+  "technology": "Python",
+  "version": "Python 3.14",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 78,
+  "description": "Beginner-to-advanced Python reference covering syntax, values, collections, functions, typing, iterators, classes, dataclasses, exceptions, context managers, modules, packaging, I/O, concurrency, testing, performance, and security.",
+  "tags": ["PYTHON", "PROGRAMMING", "TYPING", "ASYNCIO", "PACKAGING", "TESTING"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["python3", "python syntax", "python tutorial", "python typing", "python async", "pyproject"],
+  "relatedSheets": ["fastapi", "python-design-patterns", "docker", "vscode"],
+  "sections": [
+    {
+      "id": "syntax-values-control",
+      "title": "Syntax, Values & Control Flow",
+      "description": "Use Python's object model, truth rules, and structured control flow explicitly.",
+      "subtopics": [
+        {
+          "id": "variables-types-identity",
+          "title": "Names, Objects, Equality & Identity",
+          "description": "Assignment binds a name to an object; it does not copy. == compares values, is compares identity and should normally be used only for singletons such as None.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "items = [1, 2]\nalias = items\ncopy = items.copy()\nalias.append(3)\nassert items == [1, 2, 3]\nassert alias is items\nassert copy == [1, 2] and copy is not items\n\nvalue = None\nif value is None: ..."
+          }],
+          "callouts": [{ "title": "Mutable Default and Aliasing Bugs Share a Cause", "type": "warning", "icon": "⚠️", "text": "Several names can reference the same mutable object. Copy or publish immutable values when ownership must be independent.", "color": "amber" }]
+        },
+        {
+          "id": "numbers-strings-fstrings",
+          "title": "Numbers, Strings, Bytes & f-Strings",
+          "description": "int has arbitrary precision; float is binary floating point; str is Unicode text; bytes is binary data. Use Decimal for decimal policy and explicit encodings at boundaries.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from decimal import Decimal\nprice = Decimal('19.99')\nquantity = 3\nmessage = f'{quantity=} total={price * quantity:.2f}'\n\ntext = 'café'\ndata = text.encode('utf-8')\nassert data.decode('utf-8') == text"
+          }],
+          "callouts": [{ "title": "Never Construct Decimal from float", "type": "danger", "icon": "💰", "text": "Decimal(0.1) preserves the binary approximation. Parse decimal strings/integers and define rounding/quantization as domain policy.", "color": "red" }]
+        },
+        {
+          "id": "conditions-loops-match",
+          "title": "Conditions, Loops & Pattern Matching",
+          "description": "Use truthiness and short-circuiting carefully; for iterates; loop else runs only without break; match destructures values with ordered guarded cases.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "match event:\n    case {'type': 'payment', 'amount': amount} if amount > 0:\n        process_payment(amount)\n    case {'type': 'cancel', 'order_id': str(order_id)}:\n        cancel(order_id)\n    case _:\n        raise ValueError(f'unsupported event: {event!r}')\n\nfor item in items:\n    if predicate(item): break\nelse:\n    handle_no_match()"
+          }],
+          "callouts": [{ "title": "Empty and Missing May Differ", "type": "note", "icon": "📌", "text": "if value treats 0, false, empty containers, and None alike. Use is None or explicit checks when those states have different meaning.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "collections-processing",
+      "title": "Collections & Comprehensions",
+      "description": "Choose containers by ordering, uniqueness, lookup, mutability, and algorithmic needs.",
+      "subtopics": [
+        {
+          "id": "list-tuple-set-dict",
+          "title": "list, tuple, set, frozenset & dict",
+          "description": "Lists are mutable sequences; tuples immutable records/sequences; sets unique hashable values; dicts insertion-ordered key/value mappings.",
+          "table": {
+            "title": "Python Built-in Collection Selection",
+            "headers": ["Type", "Mutable", "Ordered", "Duplicates", "Typical Lookup", "Best Use"],
+            "rows": [
+              ["list", "Yes", "Yes", "Yes", "Index O(1); membership O(n)", "Resizable ordered sequence"],
+              ["tuple", "No", "Yes", "Yes", "Index O(1); membership O(n)", "Fixed record or immutable sequence"],
+              ["set", "Yes", "No positional order", "No", "Membership average O(1)", "Uniqueness and set algebra"],
+              ["frozenset", "No", "No positional order", "No", "Membership average O(1)", "Hashable set or immutable membership group"],
+              ["dict", "Yes", "Insertion-ordered", "Keys unique", "Key lookup average O(1)", "Key/value records and indexes"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "python",
+            "code": "numbers = [3, 1, 3]\npoint = (10, 20)\nunique = {3, 1, 3}\npermissions = frozenset({'read', 'write'})\nuser_by_id = {'u1': {'name': 'Ada'}}\n\nfirst, *middle, last = numbers\nmerged = defaults | overrides"
+          }],
+          "callouts": [{ "title": "Keys Must Be Hash-Stable", "type": "danger", "icon": "🔑", "text": "Dict/set keys must be hashable and their hash/equality-relevant state must not change while stored. Prefer immutable IDs, strings, tuples, or frozen dataclasses.", "color": "red" }]
+        },
+        {
+          "id": "comprehensions-generators",
+          "title": "Comprehensions & Generator Expressions",
+          "description": "Comprehensions eagerly build containers; generator expressions produce lazily. Keep transformations readable and free of side effects.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "active_names = [user.name for user in users if user.active]\nby_id = {user.id: user for user in users}\ninitials = {user.name[0] for user in users}\ntotal = sum(order.total for order in orders if order.paid)"
+          }],
+          "callouts": [{ "title": "Split Complex Comprehensions", "type": "tip", "icon": "💡", "text": "Multiple nested loops/conditions or mutation hide intent. Use named helpers and an ordinary loop when it improves debugging or error handling.", "color": "green" }]
+        },
+        {
+          "id": "sorting-grouping-complexity",
+          "title": "Sorting, Grouping & Complexity",
+          "description": "sorted returns a stable list; key runs once per element. Use set/dict for average constant-time membership/indexing and itertools/collections for specialized operations.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from collections import Counter, defaultdict, deque\nordered = sorted(users, key=lambda u: (u.team, u.name.casefold()))\ncounts = Counter(word.casefold() for word in words)\ngroups = defaultdict(list)\nfor user in users: groups[user.team].append(user)\nqueue = deque(tasks); task = queue.popleft()"
+          }],
+          "callouts": [{ "title": "Avoid Quadratic Membership", "type": "warning", "icon": "⚠️", "text": "Filtering a large list with x in another list is O(n×m). Convert the lookup side to set/dict when semantics allow.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "functions-typing",
+      "title": "Functions, Closures & Typing",
+      "description": "Design explicit function contracts and use typing to communicate, not replace runtime validation.",
+      "subtopics": [
+        {
+          "id": "function-parameters",
+          "title": "Parameters, Defaults, *args & **kwargs",
+          "description": "Use / for positional-only and * for keyword-only boundaries; defaults evaluate once at definition time.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "def connect(host: str, /, *, port: int = 443, headers: dict[str, str] | None = None) -> Client:\n    headers = {} if headers is None else dict(headers)\n    return Client(host, port=port, headers=headers)\n\ndef log(message: str, *values: object, **context: object) -> None: ..."
+          }],
+          "callouts": [{ "title": "Mutable Default Gotcha", "type": "danger", "icon": "🛑", "text": "Never use [] or {} as a default when calls need independent values. Use None or a sentinel, then allocate inside.", "color": "red" }]
+        },
+        {
+          "id": "closures-decorators",
+          "title": "First-Class Functions, Closures & Decorators",
+          "description": "Functions can be passed/stored/returned; closures capture bindings; decorators wrap definitions and should preserve metadata/signatures.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from functools import wraps\nfrom time import monotonic\n\ndef timed(fn):\n    @wraps(fn)\n    def wrapper(*args, **kwargs):\n        start = monotonic()\n        try: return fn(*args, **kwargs)\n        finally: metrics.observe(fn.__qualname__, monotonic() - start)\n    return wrapper"
+          }],
+          "callouts": [{ "title": "Decorator Semantics Must Match", "type": "warning", "icon": "⚠️", "text": "A sync wrapper cannot transparently wrap async/generator/context-manager behavior. Preserve exceptions, cancellation, descriptor binding, and introspection.", "color": "amber" }]
+        },
+        {
+          "id": "typing-protocols-generics",
+          "title": "Type Hints, Protocols & Generics",
+          "description": "Annotations support static tools and documentation; Protocol expresses structural roles; generics preserve relationships between input and output types.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from collections.abc import Iterable\nfrom typing import Protocol, TypeVar\n\nclass SupportsClose(Protocol):\n    def close(self) -> None: ...\n\nT = TypeVar('T')\ndef first(items: Iterable[T]) -> T:\n    return next(iter(items))\n\ntype UserId = str"
+          }],
+          "callouts": [{ "title": "Typing Is Not Runtime Validation", "type": "danger", "icon": "🛡️", "text": "External JSON, CLI, database, and network values still require validation/parsing. Avoid Any at boundaries because it disables useful checking transitively.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "iterators-generators-context",
+      "title": "Iteration, Generators & Resource Context",
+      "description": "Stream values lazily and make cleanup deterministic.",
+      "subtopics": [
+        {
+          "id": "iterator-protocol",
+          "title": "Iterable vs Iterator",
+          "description": "An iterable creates an iterator; an iterator yields with __next__ until StopIteration and is normally one-pass.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Countdown:\n    def __init__(self, start: int): self.start = start\n    def __iter__(self):\n        current = self.start\n        while current > 0:\n            yield current\n            current -= 1\n\nassert list(Countdown(3)) == [3, 2, 1]"
+          }],
+          "callouts": [{ "title": "Do Not Reuse Exhausted Iterators", "type": "note", "icon": "📌", "text": "Generators and file objects are iterators. Convert to a collection only when bounded, or call the iterable factory again for a new pass.", "color": "blue" }]
+        },
+        {
+          "id": "generator-send-yield-from",
+          "title": "yield, yield from & Generator Cleanup",
+          "description": "A generator suspends local state between yields; yield from delegates iteration and return handling; finally runs when exhausted/closed/collected subject to ownership.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "def walk(node):\n    yield node\n    for child in node.children:\n        yield from walk(child)\n\ndef read_rows(path):\n    with path.open() as file:\n        for line in file:\n            yield parse(line)\n\nwith closing(read_rows(path)) as rows:\n    first = next(rows)"
+          }],
+          "callouts": [{ "title": "Lazy Resource Lifetime Can Surprise", "type": "warning", "icon": "⚠️", "text": "If a generator owns a file/socket, early exit may delay cleanup unless caller closes it. Prefer a context-managed iterable API for critical resources.", "color": "amber" }]
+        },
+        {
+          "id": "context-managers",
+          "title": "with, Context Managers & ExitStack",
+          "description": "Context managers pair acquisition and release across success/failure. contextmanager simplifies one-resource flows; ExitStack manages dynamic sets.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from contextlib import contextmanager, ExitStack\n\n@contextmanager\ndef transaction(db):\n    tx = db.begin()\n    try:\n        yield tx\n    except BaseException:\n        tx.rollback(); raise\n    else:\n        tx.commit()\n\nwith ExitStack() as stack:\n    files = [stack.enter_context(path.open()) for path in paths]"
+          }],
+          "callouts": [{ "title": "Do Not Suppress Unexpected Exceptions", "type": "danger", "icon": "🛑", "text": "__exit__ returning true suppresses an exception. Do so only for explicitly handled types; preserve BaseException behavior for cancellation/interrupt/system exit.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "classes-data-model",
+      "title": "Classes, Dataclasses & Data Model",
+      "description": "Use classes for cohesive state/behavior and special methods to integrate with Python protocols.",
+      "subtopics": [
+        {
+          "id": "classes-composition",
+          "title": "Classes, Instance/Class State & Composition",
+          "description": "Instance attributes belong to each object; class attributes are shared. Prefer composition for replaceable collaborators and shallow inheritance for true substitutable specialization.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class OrderService:\n    default_currency = 'USD'\n\n    def __init__(self, repository: OrderRepository, clock: Clock):\n        self._repository = repository\n        self._clock = clock\n\n    def place(self, cart: Cart) -> Order:\n        order = Order.from_cart(cart, placed_at=self._clock.now())\n        self._repository.save(order)\n        return order"
+          }],
+          "callouts": [{ "title": "Shared Mutable Class Attributes", "type": "danger", "icon": "🛑", "text": "A class-level list/dict is shared by every instance. Initialize per-instance mutable state in __init__ or dataclass default_factory.", "color": "red" }]
+        },
+        {
+          "id": "dataclasses-enums",
+          "title": "Dataclasses, Frozen Values & Enum",
+          "description": "Dataclasses generate value-oriented boilerplate; frozen improves assignment immutability; slots can reduce memory; Enum models a fixed named set.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from dataclasses import dataclass, field\nfrom enum import StrEnum\n\nclass Status(StrEnum):\n    PENDING = 'pending'\n    SHIPPED = 'shipped'\n\n@dataclass(frozen=True, slots=True, kw_only=True)\nclass Order:\n    id: str\n    status: Status = Status.PENDING\n    tags: tuple[str, ...] = field(default_factory=tuple)"
+          }],
+          "callouts": [{ "title": "Frozen Is Shallow", "type": "warning", "icon": "⚠️", "text": "A frozen dataclass can still contain a mutable list. Use immutable field types when hashability/value semantics matter.", "color": "amber" }]
+        },
+        {
+          "id": "dunder-properties-descriptors",
+          "title": "Special Methods, Properties & Descriptors",
+          "description": "Implement protocols such as repr, equality, hashing, iteration, containers, call, context, and numeric operations consistently; properties preserve attribute syntax around derived/validated access.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Percentage:\n    def __init__(self, value: float): self.value = value\n    @property\n    def value(self) -> float: return self._value\n    @value.setter\n    def value(self, value: float) -> None:\n        if not 0 <= value <= 100: raise ValueError('0..100 required')\n        self._value = float(value)\n    def __repr__(self) -> str: return f'Percentage({self.value!r})'"
+          }],
+          "callouts": [{ "title": "Equality and Hash Must Agree", "type": "danger", "icon": "🔑", "text": "Equal objects must have equal hashes. Mutable value-equality objects generally should not be hashable while mutation can affect equality.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "exceptions-modules-packaging",
+      "title": "Exceptions, Modules & Packaging",
+      "description": "Create contextual failure boundaries and reproducible import/install behavior.",
+      "subtopics": [
+        {
+          "id": "exceptions-chaining-groups",
+          "title": "Exceptions, Chaining & ExceptionGroup",
+          "description": "Catch only failures you can handle, raise domain-specific errors with context, preserve causes, and use ExceptionGroup/except* for unrelated concurrent failures.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "try:\n    record = json.loads(raw)\nexcept json.JSONDecodeError as exc:\n    raise InvalidRecord(source=name) from exc\nelse:\n    persist(record)\nfinally:\n    temporary.close()\n\ntry: run_many()\nexcept* OSError as group: log_io_failures(group.exceptions)"
+          }],
+          "callouts": [{ "title": "Never Use Bare except to Continue", "type": "danger", "icon": "🛑", "text": "It catches KeyboardInterrupt/SystemExit and can hide corrupted state. Catch specific Exception subclasses, log context, and re-raise when no safe recovery exists.", "color": "red" }]
+        },
+        {
+          "id": "modules-imports-main",
+          "title": "Modules, Packages, Imports & __main__",
+          "description": "A module is executed once per interpreter/import cache; packages organize modules; absolute imports clarify project boundaries; main guard separates importable API from script entry.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "# src/acme/cli.py\ndef main() -> int:\n    args = parse_args()\n    return run(args)\n\nif __name__ == '__main__':\n    raise SystemExit(main())\n\n# Prefer: python -m acme.cli\n# Avoid executing package files by relative filesystem path."
+          }],
+          "callouts": [{ "title": "Import-Time Side Effects", "type": "warning", "icon": "⚠️", "text": "Do not open network connections, start threads, parse environment unpredictably, or perform migrations at import. Imports should be fast, deterministic, and safe for tools/tests.", "color": "amber" }]
+        },
+        {
+          "id": "pyproject-venv-packaging",
+          "title": "Virtual Environments, pyproject.toml & Builds",
+          "description": "Use an isolated environment, declare metadata/dependencies/build backend in pyproject, lock applications with one tool, and test built wheel/sdist artifacts.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "python -m venv .venv\nsource .venv/bin/activate        # Windows PowerShell: .venv\\Scripts\\Activate.ps1\npython -m pip install --upgrade pip\npython -m pip install -e '.[dev]'\npython -m build\npython -m pip install dist/*.whl"
+          }],
+          "callouts": [{ "title": "Libraries and Applications Pin Differently", "type": "note", "icon": "📌", "text": "Libraries declare compatible ranges and test them; applications lock complete resolved versions for reproducible deployment. Avoid mixing global/system packages.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "io-concurrency",
+      "title": "I/O, Asyncio & Parallelism",
+      "description": "Select synchronous, threaded, asynchronous, or process execution from workload and cancellation needs.",
+      "subtopics": [
+        {
+          "id": "files-json-pathlib",
+          "title": "pathlib, Files, JSON & CSV",
+          "description": "Use pathlib for paths, context managers for files, explicit encoding/newline behavior, and schema validation for external structured data.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from pathlib import Path\nimport json\npath = Path('config/app.json')\nwith path.open(encoding='utf-8') as file:\n    value = json.load(file)\n\ntemporary = path.with_suffix('.tmp')\ntemporary.write_text(json.dumps(value, indent=2), encoding='utf-8')\ntemporary.replace(path)"
+          }],
+          "callouts": [{ "title": "Untrusted Deserialization", "type": "danger", "icon": "🔐", "text": "Never unpickle untrusted data. Limit sizes/depth, validate JSON/CSV fields, normalize allowed paths, and handle encoding/newline explicitly.", "color": "red" }]
+        },
+        {
+          "id": "asyncio-structured",
+          "title": "asyncio, TaskGroup & Cancellation",
+          "description": "asyncio multiplexes cooperative I/O on an event loop. TaskGroup owns child tasks and groups failures; cancellation must propagate through cleanup.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "import asyncio\n\nasync def load_all(urls: list[str]) -> list[bytes]:\n    async with asyncio.TaskGroup() as group:\n        tasks = [group.create_task(fetch(url), name=f'fetch:{url}') for url in urls]\n    return [task.result() for task in tasks]\n\nasync def main():\n    async with asyncio.timeout(10):\n        return await load_all(urls)\n\nasyncio.run(main())"
+          }],
+          "callouts": [{ "title": "Blocking Code Blocks the Event Loop", "type": "danger", "icon": "🛑", "text": "Use async-compatible libraries or asyncio.to_thread for bounded blocking I/O. CPU-heavy work belongs in processes/native code, not an async task.", "color": "red" }]
+        },
+        {
+          "id": "threads-processes",
+          "title": "Threads, Processes & Shared State",
+          "description": "Threads suit blocking I/O/shared memory with synchronization; processes provide CPU parallelism/isolation with serialization and startup cost.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\nwith ThreadPoolExecutor(max_workers=16) as pool:\n    pages = list(pool.map(download, urls))\n\nwith ProcessPoolExecutor() as pool:\n    hashes = list(pool.map(cpu_hash, files, chunksize=16))"
+          }],
+          "callouts": [{ "title": "The GIL Is Not a Data-Race Lock", "type": "warning", "icon": "⚠️", "text": "Compound shared-state operations still require locks/queues/ownership and external resources have their own races. Free-threaded builds further require verified dependency/thread safety.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "testing-quality-production",
+      "title": "Testing, Debugging, Performance & Security",
+      "description": "Make behavior deterministic and optimize from profiles rather than folklore.",
+      "subtopics": [
+        {
+          "id": "testing-unittest-mocks",
+          "title": "unittest, Fixtures & Test Doubles",
+          "description": "Test public behavior with deterministic inputs, temporary resources, and narrow fakes/mocks; always clean up through context or framework fixtures.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from unittest import TestCase\nfrom tempfile import TemporaryDirectory\n\nclass ExportTest(TestCase):\n    def test_export_writes_sorted_records(self):\n        with TemporaryDirectory() as directory:\n            path = Path(directory) / 'out.json'\n            export(records, path)\n            self.assertEqual(json.loads(path.read_text()), expected)"
+          }],
+          "callouts": [{ "title": "Patch Where Looked Up", "type": "note", "icon": "📌", "text": "If mocking, patch the symbol in the module under test, not its original definition module. Prefer dependency injection/fakes when interaction setup becomes brittle.", "color": "blue" }]
+        },
+        {
+          "id": "debug-profile",
+          "title": "Debugger, Logging & Profiling",
+          "description": "Use breakpoint, structured logging, traceback chaining, timeit, cProfile, tracemalloc, and production telemetry for evidence.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "python -m pdb -m package.module\npython -X dev -W error -m unittest\npython -m cProfile -o profile.out -m package.module\npython -m timeit 'sum(range(1000))'\npython -X tracemalloc=25 -m package.module"
+          }],
+          "callouts": [{ "title": "Do Not Optimize Away Clarity Without Evidence", "type": "tip", "icon": "💡", "text": "Profile representative workload. Algorithm/data-structure, I/O batching, database queries, and serialization often dominate syntax-level changes.", "color": "green" }]
+        },
+        {
+          "id": "python-security-checklist",
+          "title": "Security & Production Checklist",
+          "description": "Review input, execution, dependencies, secrets, resource bounds, concurrency, and observability.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Supported Python version and dependencies are pinned for applications\n□ External data is parsed/validated with size and depth limits\n□ No eval/exec, unsafe pickle/YAML, shell=True, or string-built SQL on input\n□ Paths are constrained to allowed roots\n□ Secrets stay outside source, logs, tracebacks, and artifacts\n□ Mutable defaults/shared state and aliasing are intentional\n□ Files/connections/tasks/executors have deterministic cleanup\n□ Async code contains no blocking work and propagates cancellation\n□ Threads/processes have bounded concurrency and safe ownership\n□ Exceptions preserve cause/context without leaking sensitive details\n□ Built wheel/sdist and clean environment are tested\n□ Logs, metrics, traces, profiling, health, and graceful shutdown exist"
+          }],
+          "callouts": [{ "title": "Patterns and FastAPI Are Separate", "type": "note", "icon": "🔗", "text": "See Design Patterns with Python Examples for all 23 GoF patterns and FastAPI for HTTP validation, dependency injection, security, async request handling, and deployment.", "color": "blue" }]
+        }
+      ]
+    }
+  ]
+}

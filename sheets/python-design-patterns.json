@@ -1,0 +1,382 @@
+{
+  "id": "python-gof-design-patterns",
+  "title": "Design Patterns with Python Examples",
+  "slug": "python-design-patterns",
+  "category": "Software Design",
+  "technology": "Python",
+  "version": "Python 3.12+",
+  "difficulty": "ADVANCED",
+  "readTimeMinutes": 95,
+  "description": "Complete reference to all 23 Gang of Four design patterns using typed, Pythonic examples, selection guidance, trade-offs, implementation hints, and modern language alternatives.",
+  "tags": ["PYTHON", "DESIGN PATTERNS", "GANG OF FOUR", "GOF", "ARCHITECTURE", "OOP"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["gof patterns", "23 design patterns", "python patterns", "creational structural behavioral", "object oriented design"],
+  "sections": [
+    {
+      "id": "pattern-foundations",
+      "title": "Pattern Foundations & Selection",
+      "description": "Patterns name recurring design forces; they are decision vocabulary, not mandatory class templates.",
+      "subtopics": [
+        {
+          "id": "pattern-anatomy",
+          "title": "Intent, Context, Forces & Consequences",
+          "description": "Apply a pattern only after identifying the varying responsibility, collaborators, constraints, and accepted costs.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "1. Problem: what behavior or structure keeps changing?\n2. Context: where does the problem occur and who owns it?\n3. Forces: extensibility, consistency, latency, memory, testability\n4. Candidate: which pattern resolves those forces?\n5. Consequences: indirection, object count, lifecycle, debugging cost\n6. Exit test: would a function, dict, closure, dataclass, or Protocol be simpler?"
+          }],
+          "callouts": [{ "title": "Patterns Are Not Goals", "type": "danger", "icon": "🛑", "text": "Introducing a pattern without present variation usually creates speculative abstractions. Start simple, observe pressure, then refactor toward a named pattern.", "color": "red" }]
+        },
+        {
+          "id": "pythonic-tools",
+          "title": "Pythonic Pattern Toolkit",
+          "description": "Functions are objects, modules are singletons, protocols support structural typing, iterators are built in, decorators are syntax, and context managers encode setup/cleanup.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from collections.abc import Callable, Iterator\nfrom dataclasses import dataclass, replace\nfrom functools import singledispatch, wraps\nfrom typing import Protocol, Self\n\nclass Sender(Protocol):\n    def send(self, message: str) -> None: ...\n\nTransform = Callable[[str], str]"
+          }],
+          "callouts": [{ "title": "Prefer Structural Contracts", "type": "tip", "icon": "💡", "text": "A typing.Protocol often expresses a role without forcing inheritance. Use ABCs when shared implementation, runtime registration, or enforced instantiation rules are genuinely required.", "color": "green" }]
+        },
+        {
+          "id": "category-map",
+          "title": "Pattern Category Map",
+          "description": "Creational patterns vary construction, structural patterns vary composition, and behavioral patterns vary collaboration and algorithms.",
+          "table": {
+            "title": "Gang of Four Pattern Map",
+            "headers": ["Category", "Patterns", "Primary Design Question"],
+            "rows": [
+              ["Creational (5)", "Abstract Factory, Builder, Factory Method, Prototype, Singleton", "How should objects be created or supplied?"],
+              ["Structural (7)", "Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy", "How should objects and interfaces be composed?"],
+              ["Behavioral (11)", "Chain of Responsibility, Command, Interpreter, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor", "How should responsibilities, algorithms, and collaboration vary?"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "CREATIONAL (5): Abstract Factory, Builder, Factory Method, Prototype, Singleton\nSTRUCTURAL (7): Adapter, Bridge, Composite, Decorator, Facade, Flyweight, Proxy\nBEHAVIORAL (11): Chain of Responsibility, Command, Interpreter, Iterator, Mediator, Memento, Observer, State, Strategy, Template Method, Visitor"
+          }]
+        }
+      ]
+    },
+    {
+      "id": "creational-patterns",
+      "title": "Creational Patterns (5)",
+      "description": "Separate clients from concrete construction decisions and object assembly rules.",
+      "subtopics": [
+        {
+          "id": "abstract-factory",
+          "title": "1. Abstract Factory",
+          "description": "Create compatible families of related objects without exposing their concrete classes. Use when switching one product family must switch every related product consistently.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from typing import Protocol\n\nclass Button(Protocol):\n    def render(self) -> str: ...\nclass Dialog(Protocol):\n    def render(self) -> str: ...\nclass UiFactory(Protocol):\n    def button(self) -> Button: ...\n    def dialog(self) -> Dialog: ...\n\nclass DarkFactory:\n    def button(self) -> Button: return DarkButton()\n    def dialog(self) -> Dialog: return DarkDialog()\n\ndef build_settings(factory: UiFactory) -> str:\n    return factory.dialog().render() + factory.button().render()"
+          }],
+          "callouts": [{ "title": "Family Consistency Is the Point", "type": "note", "icon": "📌", "text": "If only one product type varies, a simple factory function is enough. Abstract Factory earns its cost when multiple products must remain compatible.", "color": "blue" }],
+          "tags": ["creational", "families", "dependency-injection"]
+        },
+        {
+          "id": "builder",
+          "title": "2. Builder",
+          "description": "Construct a complex object step by step, separating assembly from representation. Useful for validated configuration, staged protocols, or multiple representations.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from dataclasses import dataclass, field\nfrom typing import Self\n\n@dataclass(frozen=True)\nclass Request:\n    url: str\n    headers: dict[str, str]\n    timeout: float\n\nclass RequestBuilder:\n    def __init__(self, url: str):\n        self.url, self.headers, self.timeout = url, {}, 10.0\n    def header(self, key: str, value: str) -> Self:\n        self.headers[key] = value; return self\n    def with_timeout(self, seconds: float) -> Self:\n        if seconds <= 0: raise ValueError(\"timeout must be positive\")\n        self.timeout = seconds; return self\n    def build(self) -> Request:\n        return Request(self.url, dict(self.headers), self.timeout)"
+          }],
+          "callouts": [{ "title": "Dataclass May Be Enough", "type": "tip", "icon": "💡", "text": "Prefer a dataclass with defaults or a keyword-only constructor when construction is simple. Builder helps when assembly is staged, conditional, validated across fields, or reused by a director.", "color": "green" }],
+          "tags": ["creational", "construction", "validation"]
+        },
+        {
+          "id": "factory-method",
+          "title": "3. Factory Method",
+          "description": "Let a base workflow defer one creation step to subclasses or collaborators. The creator uses the product through a stable contract.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from abc import ABC, abstractmethod\n\nclass Exporter(ABC):\n    def export(self, rows: list[dict]) -> bytes:\n        encoder = self.create_encoder()\n        return encoder.encode(rows)\n    @abstractmethod\n    def create_encoder(self) -> \"Encoder\": ...\n\nclass CsvExporter(Exporter):\n    def create_encoder(self) -> \"Encoder\": return CsvEncoder()\n\nclass JsonExporter(Exporter):\n    def create_encoder(self) -> \"Encoder\": return JsonEncoder()"
+          }],
+          "callouts": [{ "title": "Function Factories Are Often Better", "type": "tip", "icon": "💡", "text": "If no creator workflow needs overriding, use create_encoder(format) or a registry dict. Factory Method specifically links polymorphic creation to an extensible creator operation.", "color": "green" }],
+          "tags": ["creational", "polymorphism", "factory"]
+        },
+        {
+          "id": "prototype",
+          "title": "4. Prototype",
+          "description": "Create objects by copying a configured exemplar when construction is expensive or runtime configuration matters more than class selection.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from copy import deepcopy\nfrom dataclasses import dataclass, field, replace\n\n@dataclass\nclass Report:\n    title: str\n    sections: list[str] = field(default_factory=list)\n\nprototype = Report(\"Monthly\", [\"Summary\", \"Metrics\"])\nindependent = deepcopy(prototype)\nrenamed = replace(prototype, title=\"Weekly\")  # shallow field reuse"
+          }],
+          "callouts": [{ "title": "Choose Copy Semantics Explicitly", "type": "danger", "icon": "🧬", "text": "Shallow copies share nested mutable objects; deep copies can duplicate resources or preserve relationships incorrectly. Implement __copy__/__deepcopy__ or a domain clone method when semantics matter.", "color": "red" }],
+          "tags": ["creational", "copy", "clone"]
+        },
+        {
+          "id": "singleton",
+          "title": "5. Singleton",
+          "description": "Guarantee one accessible instance for a process or scope. In Python, a module, dependency container, or cached factory is usually clearer than overriding __new__.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "# settings.py — imported modules are cached per interpreter.\nfrom dataclasses import dataclass\nfrom functools import cache\n\n@dataclass(frozen=True)\nclass Settings:\n    api_url: str\n\n@cache\ndef get_settings() -> Settings:\n    return Settings(api_url=load_api_url())"
+          }],
+          "callouts": [{ "title": "Global State in Disguise", "type": "danger", "icon": "🛑", "text": "Singletons hide dependencies, couple tests through shared state, and are only single per process/interpreter—not across workers or machines. Inject the instance and scope it deliberately.", "color": "red" }],
+          "tags": ["creational", "global-state", "lifetime"]
+        }
+      ]
+    },
+    {
+      "id": "structural-patterns",
+      "title": "Structural Patterns (7)",
+      "description": "Compose objects and interfaces while keeping responsibilities independently changeable.",
+      "subtopics": [
+        {
+          "id": "adapter",
+          "title": "6. Adapter",
+          "description": "Translate an existing incompatible interface into the contract a client expects. The adapter changes shape, names, units, or data representation.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class PaymentGateway(Protocol):\n    def charge(self, cents: int) -> str: ...\n\nclass LegacyPayments:\n    def make_payment(self, dollars: float) -> dict: ...\n\nclass LegacyPaymentAdapter:\n    def __init__(self, legacy: LegacyPayments): self._legacy = legacy\n    def charge(self, cents: int) -> str:\n        response = self._legacy.make_payment(cents / 100)\n        return str(response[\"transaction_id\"])"
+          }],
+          "callouts": [{ "title": "Keep Translation at the Boundary", "type": "tip", "icon": "💡", "text": "Convert vendor exceptions, units, and response models inside the adapter so vendor concepts do not leak into the domain.", "color": "green" }],
+          "tags": ["structural", "integration", "translation"]
+        },
+        {
+          "id": "bridge",
+          "title": "7. Bridge",
+          "description": "Separate two independently varying dimensions—an abstraction and its implementation—so combinations grow additively rather than through a subclass explosion.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Renderer(Protocol):\n    def text(self, value: str) -> str: ...\n\nclass Report:\n    def __init__(self, renderer: Renderer): self.renderer = renderer\n    def render(self, title: str, body: str) -> str:\n        return self.renderer.text(title) + self.renderer.text(body)\n\nhtml_report = Report(HtmlRenderer())\nplain_report = Report(PlainTextRenderer())"
+          }],
+          "callouts": [{ "title": "Bridge vs Adapter", "type": "note", "icon": "📌", "text": "Bridge is designed up front to vary two dimensions; Adapter repairs an interface mismatch, often around legacy or third-party code.", "color": "blue" }],
+          "tags": ["structural", "dimensions", "composition"]
+        },
+        {
+          "id": "composite",
+          "title": "8. Composite",
+          "description": "Represent part-whole trees so clients treat leaves and containers through one interface. Useful for files, UI trees, rules, and organization structures.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Node(Protocol):\n    def size(self) -> int: ...\n\n@dataclass(frozen=True)\nclass File:\n    bytes: int\n    def size(self) -> int: return self.bytes\n\n@dataclass\nclass Directory:\n    children: list[Node]\n    def size(self) -> int: return sum(child.size() for child in self.children)"
+          }],
+          "callouts": [{ "title": "Protect Tree Invariants", "type": "warning", "icon": "⚠️", "text": "If cycles are invalid, prevent or detect them. Decide who owns parent links, mutation, traversal order, and error handling; a uniform interface can hide important leaf/container differences.", "color": "amber" }],
+          "tags": ["structural", "tree", "recursive"]
+        },
+        {
+          "id": "decorator",
+          "title": "9. Decorator",
+          "description": "Wrap an object with the same contract to add behavior dynamically and compositionally. Python function decorators are a closely related language feature.",
+          "tabs": [
+            { "label": "Object Decorator", "language": "python", "code": "class Store(Protocol):\n    def get(self, key: str) -> bytes: ...\n\nclass LoggingStore:\n    def __init__(self, wrapped: Store, log: Logger):\n        self.wrapped, self.log = wrapped, log\n    def get(self, key: str) -> bytes:\n        self.log.info(\"get %s\", key)\n        return self.wrapped.get(key)" },
+            { "label": "Function Decorator", "language": "python", "code": "from functools import wraps\n\ndef timed(fn):\n    @wraps(fn)\n    def wrapper(*args, **kwargs):\n        start = monotonic()\n        try: return fn(*args, **kwargs)\n        finally: metrics.timing(fn.__name__, monotonic() - start)\n    return wrapper" }
+          ],
+          "callouts": [{ "title": "Preserve the Contract", "type": "danger", "icon": "🛑", "text": "A decorator must honor return values, exceptions, metadata, async behavior, and side-effect semantics. Wrapper order is observable and should be tested.", "color": "red" }],
+          "tags": ["structural", "wrapper", "cross-cutting"]
+        },
+        {
+          "id": "facade",
+          "title": "10. Facade",
+          "description": "Provide a cohesive high-level API over a complex subsystem. A facade coordinates collaborators but should not become a universal god object.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class CheckoutFacade:\n    def __init__(self, inventory, payments, orders, events):\n        self.inventory = inventory; self.payments = payments\n        self.orders = orders; self.events = events\n\n    def place_order(self, cart: Cart, token: str) -> OrderId:\n        reservation = self.inventory.reserve(cart.items)\n        try:\n            charge = self.payments.charge(cart.total, token)\n            order = self.orders.create(cart, reservation, charge)\n            self.events.publish(OrderPlaced(order.id))\n            return order.id\n        except Exception:\n            self.inventory.release(reservation)\n            raise"
+          }],
+          "callouts": [{ "title": "Facade vs Mediator", "type": "note", "icon": "📌", "text": "Facade gives clients a simpler one-way entry to a subsystem. Mediator coordinates peer components that otherwise communicate in a many-to-many network.", "color": "blue" }],
+          "tags": ["structural", "api", "subsystem"]
+        },
+        {
+          "id": "flyweight",
+          "title": "11. Flyweight",
+          "description": "Share immutable intrinsic state among many logical objects while callers supply extrinsic state. Useful only when measured object duplication is significant.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from dataclasses import dataclass\nfrom functools import cache\n\n@dataclass(frozen=True, slots=True)\nclass GlyphStyle:\n    font: str\n    size: int\n    color: str\n\n@cache\ndef style(font: str, size: int, color: str) -> GlyphStyle:\n    return GlyphStyle(font, size, color)\n\n@dataclass(slots=True)\nclass Glyph:\n    char: str\n    x: int\n    y: int\n    style: GlyphStyle  # shared intrinsic object"
+          }],
+          "callouts": [{ "title": "Bound the Cache", "type": "warning", "icon": "⚠️", "text": "Interning unbounded user-controlled keys trades object duplication for a memory leak. Use bounded LRU/weak references or explicit lifecycle where the key space is not finite.", "color": "amber" }],
+          "tags": ["structural", "memory", "sharing"]
+        },
+        {
+          "id": "proxy",
+          "title": "12. Proxy",
+          "description": "Stand in for another object to control access, lazily initialize, cross a remote boundary, cache, authorize, or instrument calls while preserving its interface.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class DocumentStore(Protocol):\n    def read(self, document_id: str) -> Document: ...\n\nclass AuthorizedStoreProxy:\n    def __init__(self, target: DocumentStore, actor: Actor):\n        self.target, self.actor = target, actor\n    def read(self, document_id: str) -> Document:\n        if not self.actor.can_read(document_id):\n            raise PermissionError(document_id)\n        return self.target.read(document_id)"
+          }],
+          "callouts": [{ "title": "Remote Proxies Are Not Local Objects", "type": "danger", "icon": "🌐", "text": "Network calls add latency, partial failure, retries, serialization, and idempotency. A transparent-looking proxy must not hide these semantics from API design.", "color": "red" }],
+          "tags": ["structural", "access-control", "lazy", "remote"]
+        }
+      ]
+    },
+    {
+      "id": "behavioral-patterns",
+      "title": "Behavioral Patterns (11)",
+      "description": "Assign algorithms, requests, state transitions, traversal, and collaboration to explicit roles.",
+      "subtopics": [
+        {
+          "id": "chain-of-responsibility",
+          "title": "13. Chain of Responsibility",
+          "description": "Pass a request through ordered handlers until one handles it or all contribute. Useful for validation, middleware, authorization, and event pipelines.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "Handler = Callable[[Request, Callable[[Request], Response]], Response]\n\ndef compose(handlers: list[Handler], endpoint: Callable[[Request], Response]):\n    next_handler = endpoint\n    for handler in reversed(handlers):\n        downstream = next_handler\n        next_handler = lambda req, h=handler, n=downstream: h(req, n)\n    return next_handler\n\napp = compose([authenticate, rate_limit, log_request], endpoint)"
+          }],
+          "callouts": [{ "title": "Order and Termination Are Contracts", "type": "warning", "icon": "⚠️", "text": "Document whether handlers may stop, transform, retry, or invoke downstream multiple times. Incorrect order can bypass authorization or duplicate side effects.", "color": "amber" }],
+          "tags": ["behavioral", "pipeline", "middleware"]
+        },
+        {
+          "id": "command",
+          "title": "14. Command",
+          "description": "Encapsulate a request as an object so it can be queued, logged, retried, authorized, composed, or undone independently of the invoker.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Command(Protocol):\n    def execute(self) -> None: ...\n    def undo(self) -> None: ...\n\n@dataclass\nclass MoveFile:\n    source: Path\n    target: Path\n    def execute(self) -> None: self.source.rename(self.target)\n    def undo(self) -> None: self.target.rename(self.source)\n\nhistory: list[Command] = []\ncommand = MoveFile(old, new)\ncommand.execute(); history.append(command)"
+          }],
+          "callouts": [{ "title": "Undo Needs Captured Reality", "type": "danger", "icon": "↩️", "text": "An inverse operation is not always true undo. Capture prior state, handle external changes, and define transaction boundaries; remote side effects may require compensation rather than reversal.", "color": "red" }],
+          "tags": ["behavioral", "request", "undo", "queue"]
+        },
+        {
+          "id": "interpreter",
+          "title": "15. Interpreter",
+          "description": "Represent a small language grammar as expressions that evaluate against a context. Suitable for limited, stable DSLs—not general-purpose parsing.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Expr(Protocol):\n    def eval(self, context: dict[str, bool]) -> bool: ...\n\n@dataclass(frozen=True)\nclass Variable:\n    name: str\n    def eval(self, context): return context[self.name]\n\n@dataclass(frozen=True)\nclass And:\n    left: Expr\n    right: Expr\n    def eval(self, context): return self.left.eval(context) and self.right.eval(context)\n\nrule = And(Variable(\"paid\"), Variable(\"in_stock\"))"
+          }],
+          "callouts": [{ "title": "Use Parser Tools as Grammar Grows", "type": "warning", "icon": "⚠️", "text": "Precedence, diagnostics, ambiguity, optimization, and untrusted input rapidly outgrow a class-per-rule design. Use a proper parser/AST and sandbox evaluation; never eval untrusted text.", "color": "amber" }],
+          "tags": ["behavioral", "dsl", "grammar", "ast"]
+        },
+        {
+          "id": "iterator",
+          "title": "16. Iterator",
+          "description": "Traverse a collection without exposing representation. Python's iterator protocol and generators are the idiomatic implementation.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class Tree:\n    def __init__(self, value, children=()):\n        self.value, self.children = value, tuple(children)\n\n    def __iter__(self):\n        yield self.value\n        for child in self.children:\n            yield from child\n\nfor value in tree:\n    print(value)"
+          }],
+          "callouts": [{ "title": "Iterators Are Stateful and One-Pass", "type": "note", "icon": "📌", "text": "iter(generator) returns the same exhausted object. Return a fresh generator from __iter__, document mutation during traversal, and close resource-backed generators deterministically.", "color": "blue" }],
+          "tags": ["behavioral", "iteration", "generator"]
+        },
+        {
+          "id": "mediator",
+          "title": "17. Mediator",
+          "description": "Centralize collaboration among peer objects so they do not reference and coordinate each other directly. Useful for dialogs, workflows, and bounded event coordination.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class CheckoutMediator:\n    def __init__(self, form, summary, submit):\n        self.form, self.summary, self.submit = form, summary, submit\n\n    def address_changed(self, address: Address) -> None:\n        quote = pricing.quote(address, self.summary.items)\n        self.summary.show_quote(quote)\n        self.submit.enabled = self.form.valid and quote.available\n\n    def inventory_changed(self) -> None:\n        self.submit.enabled = self.form.valid and self.summary.in_stock"
+          }],
+          "callouts": [{ "title": "Avoid a God Mediator", "type": "danger", "icon": "🕸️", "text": "Split mediators by cohesive workflow. If every component event and business rule accumulates in one coordinator, coupling has moved rather than decreased.", "color": "red" }],
+          "tags": ["behavioral", "coordination", "decoupling"]
+        },
+        {
+          "id": "memento",
+          "title": "18. Memento",
+          "description": "Capture and restore an object's state without exposing its internal representation. Useful for undo, checkpoints, editors, and simulations.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from dataclasses import dataclass, replace\n\n@dataclass(frozen=True)\nclass EditorState:\n    text: str\n    cursor: int\n\nclass Editor:\n    def __init__(self): self._state = EditorState(\"\", 0)\n    def snapshot(self) -> EditorState: return self._state\n    def restore(self, state: EditorState) -> None: self._state = state\n\nhistory.append(editor.snapshot())\neditor.restore(history.pop())"
+          }],
+          "callouts": [{ "title": "Snapshots Need Limits and Versions", "type": "warning", "icon": "⚠️", "text": "Large snapshots consume memory and serialized snapshots couple to schema. Consider deltas, bounded history, compression, versioning, and explicit handling of external resources.", "color": "amber" }],
+          "tags": ["behavioral", "snapshot", "undo"]
+        },
+        {
+          "id": "observer",
+          "title": "19. Observer",
+          "description": "Notify subscribers when a subject changes without hard-coding consumers. Useful for in-process domain notifications and UI bindings.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from collections.abc import Callable\n\nclass EventBus:\n    def __init__(self): self._handlers: dict[type, list[Callable]] = {}\n    def subscribe(self, event_type: type, handler: Callable) -> Callable[[], None]:\n        handlers = self._handlers.setdefault(event_type, [])\n        handlers.append(handler)\n        return lambda: handlers.remove(handler)\n    def publish(self, event: object) -> None:\n        for handler in tuple(self._handlers.get(type(event), ())):\n            handler(event)"
+          }],
+          "callouts": [{ "title": "Define Delivery Semantics", "type": "danger", "icon": "📣", "text": "Specify sync/async delivery, ordering, error isolation, reentrancy, unsubscribe lifetime, and backpressure. Strong subscriber references can leak owners; distributed events require a durable broker, not this pattern alone.", "color": "red" }],
+          "tags": ["behavioral", "events", "publish-subscribe"]
+        },
+        {
+          "id": "state",
+          "title": "20. State",
+          "description": "Delegate behavior to an object representing the current state so transitions replace large conditional branches and invalid operations become explicit.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "class OrderState(Protocol):\n    def pay(self, order: \"Order\") -> None: ...\n    def ship(self, order: \"Order\") -> None: ...\n\nclass Pending:\n    def pay(self, order): order.state = Paid()\n    def ship(self, order): raise InvalidTransition(\"pay before shipping\")\n\nclass Paid:\n    def pay(self, order): raise InvalidTransition(\"already paid\")\n    def ship(self, order): order.state = Shipped()\n\n@dataclass\nclass Order:\n    state: OrderState = field(default_factory=Pending)"
+          }],
+          "callouts": [{ "title": "State vs Strategy", "type": "note", "icon": "📌", "text": "State usually changes internally as the object's lifecycle progresses and each state controls valid transitions. Strategy is normally selected externally to vary an algorithm.", "color": "blue" }],
+          "tags": ["behavioral", "finite-state", "transitions"]
+        },
+        {
+          "id": "strategy",
+          "title": "21. Strategy",
+          "description": "Encapsulate interchangeable algorithms behind one contract so the client can select or inject policy independently of the workflow.",
+          "tabs": [
+            { "label": "Callable Strategy", "language": "python", "code": "Discount = Callable[[Cart], Decimal]\n\ndef no_discount(cart: Cart) -> Decimal: return Decimal(0)\ndef vip_discount(cart: Cart) -> Decimal: return cart.subtotal * Decimal(\"0.10\")\n\ndef total(cart: Cart, discount: Discount) -> Decimal:\n    return cart.subtotal - discount(cart)" },
+            { "label": "Protocol Strategy", "language": "python", "code": "class RouteStrategy(Protocol):\n    def route(self, graph: Graph, start: Node, end: Node) -> list[Node]: ...\n\nclass Navigator:\n    def __init__(self, strategy: RouteStrategy): self.strategy = strategy" }
+          ],
+          "callouts": [{ "title": "Use a Function for Stateless Policy", "type": "tip", "icon": "💡", "text": "A callable is the simplest Python strategy. Use a class when the algorithm needs configuration, dependencies, state, several related methods, or a richer contract.", "color": "green" }],
+          "tags": ["behavioral", "algorithm", "policy"]
+        },
+        {
+          "id": "template-method",
+          "title": "22. Template Method",
+          "description": "Define an algorithm skeleton in a base class while subclasses override selected steps and hooks without changing the workflow order.",
+          "codeBlocks": [{
+            "language": "python",
+            "code": "from abc import ABC, abstractmethod\n\nclass Importer(ABC):\n    def import_file(self, path: Path) -> int:\n        raw = path.read_bytes()\n        rows = self.parse(raw)\n        valid = [row for row in rows if self.validate(row)]\n        self.persist(valid)\n        return len(valid)\n    @abstractmethod\n    def parse(self, raw: bytes) -> list[dict]: ...\n    def validate(self, row: dict) -> bool: return True\n    @abstractmethod\n    def persist(self, rows: list[dict]) -> None: ..."
+          }],
+          "callouts": [{ "title": "Inheritance Couples the Workflow", "type": "warning", "icon": "⚠️", "text": "Document required super calls, hook order, and invariants. Prefer composition/Strategy when steps must vary at runtime or subclasses would override many interdependent hooks.", "color": "amber" }],
+          "tags": ["behavioral", "workflow", "inheritance"]
+        },
+        {
+          "id": "visitor",
+          "title": "23. Visitor",
+          "description": "Add operations across a stable object structure without modifying every element class for each operation. Classic double dispatch trades easy operations for harder new element types.",
+          "tabs": [
+            { "label": "Classic Visitor", "language": "python", "code": "class Visitor(Protocol):\n    def visit_number(self, node: \"Number\"): ...\n    def visit_add(self, node: \"Add\"): ...\n\n@dataclass(frozen=True)\nclass Number:\n    value: int\n    def accept(self, visitor: Visitor): return visitor.visit_number(self)\n\n@dataclass(frozen=True)\nclass Add:\n    left: \"Expr\"; right: \"Expr\"\n    def accept(self, visitor: Visitor): return visitor.visit_add(self)" },
+            { "label": "Python singledispatch", "language": "python", "code": "from functools import singledispatch\n\n@singledispatch\ndef evaluate(node): raise TypeError(type(node))\n\n@evaluate.register\ndef _(node: Number): return node.value\n\n@evaluate.register\ndef _(node: Add): return evaluate(node.left) + evaluate(node.right)" }
+          ],
+          "callouts": [{ "title": "Choose the Stable Axis", "type": "note", "icon": "📌", "text": "Visitor fits when element types are stable and new operations are frequent. If new element variants are frequent, methods/pattern matching or a different data representation may be easier.", "color": "blue" }],
+          "tags": ["behavioral", "double-dispatch", "operations"]
+        }
+      ]
+    },
+    {
+      "id": "comparison-production",
+      "title": "Comparisons, Combinations & Production Review",
+      "description": "Distinguish similar patterns, combine only compatible responsibilities, and test the added indirection.",
+      "subtopics": [
+        {
+          "id": "pattern-comparisons",
+          "title": "Commonly Confused Patterns",
+          "description": "Compare intent before comparing class diagrams.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Adapter changes an interface; Decorator adds behavior; Proxy controls access\nBridge separates planned dimensions; Adapter integrates an existing mismatch\nStrategy swaps an algorithm; State changes behavior with lifecycle state\nFacade simplifies a subsystem; Mediator coordinates peer collaboration\nFactory Method varies one creation hook; Abstract Factory creates product families\nBuilder assembles stepwise; Prototype copies configured exemplars\nCommand represents a request; Memento represents captured state\nComposite models a tree; Chain models ordered request handling"
+          }],
+          "callouts": [{ "title": "Intent Beats Shape", "type": "tip", "icon": "💡", "text": "Several patterns wrap an object or use composition. Name the pattern from the force it resolves, not from superficial code structure.", "color": "green" }]
+        },
+        {
+          "id": "pattern-combinations",
+          "title": "Useful Pattern Combinations",
+          "description": "Real designs often combine patterns, but each should retain one clear reason to exist.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Abstract Factory + Bridge → compatible implementations across dimensions\nComposite + Iterator + Visitor → tree storage, traversal, and operations\nCommand + Memento → undoable actions with prior-state snapshots\nState + Strategy → lifecycle state selects configurable algorithms\nFacade + Adapter → stable subsystem API over vendor integrations\nProxy + Decorator → access control plus orthogonal instrumentation\nObserver + Mediator → notifications feed a bounded workflow coordinator"
+          }],
+          "callouts": [{ "title": "Avoid Pattern Stacks by Default", "type": "warning", "icon": "⚠️", "text": "Every layer adds naming, navigation, testing, and failure semantics. Add combinations incrementally in response to distinct forces, not to reproduce a catalog architecture.", "color": "amber" }]
+        },
+        {
+          "id": "pattern-testing",
+          "title": "Testing Pattern-Based Designs",
+          "description": "Test contracts, substitutions, ordering, transitions, cleanup, and failure policy introduced by indirection.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Factories/builders: every variant, invariant, invalid configuration\nAdapters/proxies/decorators: contract parity and exception translation\nComposite/iterator/visitor: empty/deep trees, traversal order, cycles\nChain/middleware: order, short-circuit, downstream call count\nCommand/memento: execute/undo, compensation, bounded history\nObserver/mediator: unsubscribe, reentrancy, subscriber failure\nState: transition table and invalid transitions\nStrategy/template: shared contract suite for every implementation"
+          }],
+          "callouts": [{ "title": "Contract Test Suites", "type": "tip", "icon": "💡", "text": "Run the same behavioral tests against every implementation of a Protocol—real, adapter, proxy, decorator, and fake—to detect semantic drift.", "color": "green" }]
+        },
+        {
+          "id": "pattern-review-checklist",
+          "title": "Pattern Selection Checklist",
+          "description": "Confirm current pressure, clearer ownership, preserved semantics, and an exit path before accepting abstraction cost.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ The recurring problem and varying axis are concrete\n□ A function/dict/dataclass/closure/Protocol is insufficient\n□ Pattern intent is documented in domain language\n□ Object lifetime and ownership are explicit\n□ Error, cancellation, ordering, and concurrency semantics are defined\n□ Contracts are smaller than their implementations\n□ Extension does not require editing a central conditional everywhere\n□ New indirection improves testing or substitution\n□ Performance/memory costs are measured where relevant\n□ The pattern does not hide network or transaction boundaries\n□ A simpler refactor path remains possible\n□ Team members can explain why this pattern fits"
+          }],
+          "callouts": [{ "title": "Delete Patterns That Lost Their Force", "type": "tip", "icon": "🧹", "text": "Requirements change. If only one implementation remains and variation is unlikely, collapsing an abstraction can improve the design.", "color": "green" }]
+        }
+      ]
+    }
+  ]
+}

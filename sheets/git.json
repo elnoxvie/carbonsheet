@@ -1,0 +1,174 @@
+{
+  "id": "git-cheatsheet",
+  "title": "Git Modern Command Reference & Internal Architecture",
+  "slug": "git",
+  "category": "DevOps",
+  "technology": "Git",
+  "version": "v2.45",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 12,
+  "description": "High-density Git cheat sheet covering interactive staging, branch rebase workflows, reflog recovery, and visual branch architecture.",
+  "tags": ["GIT", "DEVOPS", "REBASE", "REFLOG", "BRANCHING"],
+  "aliases": ["vcs", "version control", "rebase", "reflog", "git add", "git commit"],
+  "relatedSheets": ["docker"],
+  "githubEditUrl": "https://github.com/org/repo/edit/main/src/content/sheets/git.json",
+  "updatedAt": "Oct 2026",
+  "sections": [
+    {
+      "id": "core-staging",
+      "title": "Core Commands & Staging",
+      "description": "Staging files, interactive hunk commits, and status checking.",
+      "subtopics": [
+        {
+          "id": "staging-commits",
+          "title": "Interactive Staging & Commits",
+          "description": "Selectively stage hunks and format conventional commits.",
+          "table": {
+            "title": "Staging Command Reference",
+            "headers": ["Command", "Scope", "Working Tree Effect", "Use Case"],
+            "rows": [
+              ["git add <path>", "Selected file or path", "None", "Stage a complete intentional change"],
+              ["git add -p", "Selected hunks", "None", "Split mixed edits into focused commits"],
+              ["git restore --staged <path>", "Selected staged path", "Keeps working-tree edits", "Remove a file from the next commit"],
+              ["git diff", "Unstaged changes", "None", "Review what remains outside the index"],
+              ["git diff --staged", "Staged changes", "None", "Review the exact next commit"]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Quick Reference",
+              "language": "BASH",
+              "code": "# Interactive hunk staging\ngit add -p\n\n# Stage all tracked modifications\ngit add -u\n\n# Commit with inline message\ngit commit -m \"feat: add user authentication flow\"",
+              "playground": {
+                "type": "external_link",
+                "url": "https://git-school.github.io/visualizing-git/",
+                "buttonLabel": "Open Visualizing Git Sandbox"
+              },
+              "annotations": [
+                {
+                  "id": "ann-add-p",
+                  "targetToken": "git add -p",
+                  "text": "Interactively prompts to stage individual code hunks instead of entire files",
+                  "position": "right"
+                }
+              ]
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Conventional Commits",
+              "type": "tip",
+              "icon": "💡",
+              "text": "Use prefixes like feat:, fix:, docs:, refactor:, or test: for automated changelogs.",
+              "color": "green"
+            }
+          ],
+          "tags": ["staging", "commit", "add"]
+        }
+      ]
+    },
+    {
+      "id": "branching-rebase",
+      "title": "Branching & Interactive Rebase",
+      "description": "Branch management, rebasing onto main, and interactive squashing.",
+      "subtopics": [
+        {
+          "id": "interactive-rebase",
+          "title": "Branch Workflows & Interactive Rebase",
+          "description": "Maintain a clean linear git history with interactive rebasing.",
+          "diagram": {
+            "type": "mermaid",
+            "content": "graph TD\n  MainBranch[\"Main Branch: C1 -> C2 -> C3\"]\n  FeatureBranch[\"Feature Branch: C2 -> F1 -> F2\"]\n  RebaseResult[\"Rebased Linear: C1 -> C2 -> C3 -> F1' -> F2'\"]\n  MainBranch --> RebaseResult\n  FeatureBranch --> RebaseResult"
+          },
+          "tabs": [
+            {
+              "label": "Quick Reference",
+              "language": "BASH",
+              "code": "# Create and switch to feature branch\ngit checkout -b feature/login\n\n# Rebase feature branch onto updated main\ngit fetch origin\ngit rebase origin/main\n\n# Interactive rebase last 4 commits\ngit rebase -i HEAD~4",
+              "playground": {
+                "type": "external_link",
+                "url": "https://learngitbranching.js.org/",
+                "buttonLabel": "Practice on Learn Git Branching"
+              },
+              "annotations": [
+                {
+                  "id": "ann-rebase-i",
+                  "targetToken": "git rebase -i HEAD~4",
+                  "text": "Launches interactive editor to pick, reword, squash, or drop commits",
+                  "position": "bottom"
+                }
+              ]
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Golden Rule of Rebasing",
+              "type": "danger",
+              "icon": "⚡",
+              "text": "Never rebase a public branch that other team members are actively pulling from.",
+              "color": "amber"
+            },
+            {
+              "title": "Autostash On Rebase",
+              "type": "note",
+              "icon": "📌",
+              "text": "Use git rebase --autostash to automatically stash uncommitted changes before rebasing.",
+              "color": "blue"
+            }
+          ],
+          "tags": ["branching", "rebase", "merge"]
+        }
+      ]
+    },
+    {
+      "id": "undo-recovery",
+      "title": "Undo & Reflog Recovery",
+      "description": "Recovering lost commits, soft/hard resets, and reflog time travel.",
+      "subtopics": [
+        {
+          "id": "reflog-time-travel",
+          "title": "Git Reflog & Emergency Recovery",
+          "description": "Recovering deleted branches or bad resets using HEAD history.",
+          "tabs": [
+            {
+              "label": "Quick Reference",
+              "language": "BASH",
+              "code": "# Inspect HEAD movement reflog\ngit reflog\n\n# Restore lost commit HEAD@{2}\ngit checkout -b recovered-branch HEAD@{2}\n\n# Hard reset to specific reflog entry\ngit reset --hard HEAD@{1}",
+              "annotations": [
+                {
+                  "id": "ann-reflog",
+                  "targetToken": "git reflog",
+                  "text": "Logs every single HEAD movement locally, even for deleted branches or resets",
+                  "position": "bottom"
+                }
+              ],
+              "evaluations": [
+                {
+                  "input": "git reflog",
+                  "output": "314f44c HEAD@{0}: commit: feat: initial DevSheets MVP"
+                }
+              ]
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Reflog Expiration",
+              "type": "tip",
+              "icon": "💡",
+              "text": "Git keeps reflog entries for 90 days before garbage collection runs.",
+              "color": "green"
+            },
+            {
+              "title": "Hard Reset Danger",
+              "type": "danger",
+              "icon": "⚡",
+              "text": "git reset --hard permanently discards uncommitted working directory changes.",
+              "color": "amber"
+            }
+          ],
+          "tags": ["reflog", "undo", "recovery"]
+        }
+      ]
+    }
+  ]
+}

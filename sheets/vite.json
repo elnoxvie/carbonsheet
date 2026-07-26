@@ -1,0 +1,283 @@
+{
+  "id": "vite-web-tooling-reference",
+  "title": "Vite Web Development",
+  "slug": "vite",
+  "category": "Frontend Tooling",
+  "technology": "Vite",
+  "version": "Current Vite",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 46,
+  "description": "Beginner-to-advanced Vite reference covering project setup, native-ESM development, configuration, environments, assets, CSS, plugins, dependency optimization, production builds, libraries, SSR, testing, and deployment.",
+  "tags": ["VITE", "FRONTEND", "BUILD TOOL", "ESM", "HMR", "ROLLUP"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["vitejs", "vite config", "vite build", "vite plugins", "frontend dev server"],
+  "relatedSheets": ["react", "typescript", "nodejs", "vscode"],
+  "prerequisites": [{ "title": "Node.js Web Development", "slug": "nodejs" }],
+  "sections": [
+    {
+      "id": "vite-foundations",
+      "title": "Project & Development Server",
+      "description": "Understand Vite's source-oriented development model and entry points.",
+      "subtopics": [
+        {
+          "id": "create-project-cli",
+          "title": "Create a Project & CLI",
+          "description": "Vite serves source modules during development and produces an optimized deployment build. Framework templates add their official integration plugin.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "npm create vite@latest my-app -- --template react-ts\ncd my-app\nnpm install\nnpm run dev\nnpm run build\nnpm run preview\n\n# Direct CLI\nnpx vite --host 127.0.0.1 --port 5173\nnpx vite build --mode staging"
+          }],
+          "callouts": [{ "title": "preview Is Not a Production Server", "type": "warning", "icon": "⚠️", "text": "vite preview locally checks built output. Deploy dist through a production static host/CDN or the server runtime required by your framework.", "color": "amber" }]
+        },
+        {
+          "id": "index-html-root",
+          "title": "index.html, Root & Entry Graph",
+          "description": "index.html is source and part of the module graph, not a passive public-file template. Module script URLs resolve from the configured root/base.",
+          "codeBlocks": [{
+            "language": "html",
+            "code": "<!doctype html>\n<html lang=\"en\">\n  <head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>App</title></head>\n  <body><div id=\"root\"></div><script type=\"module\" src=\"/src/main.tsx\"></script></body>\n</html>"
+          }],
+          "callouts": [{ "title": "public Is Escape-Hatch Storage", "type": "note", "icon": "📌", "text": "Files in public are copied unchanged and referenced from root paths. Prefer imported assets when hashing, dependency tracking, or missing-file diagnostics are useful.", "color": "blue" }]
+        },
+        {
+          "id": "hmr-model",
+          "title": "Native ESM & Hot Module Replacement",
+          "description": "Development transforms modules on demand and invalidates affected graph nodes. Framework plugins preserve component state only when refresh boundaries remain valid.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "if (import.meta.hot) {\n  import.meta.hot.accept('./config', module => {\n    applyConfig(module.currentConfig);\n  });\n  import.meta.hot.dispose(() => cleanup());\n}"
+          }],
+          "callouts": [{ "title": "HMR Is Development Semantics", "type": "warning", "icon": "⚠️", "text": "Always test clean reloads and production builds. Module side effects, stale singleton state, and refresh behavior can hide initialization bugs.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "configuration-resolution",
+      "title": "Configuration & Module Resolution",
+      "description": "Keep configuration typed, portable, and explicit about mode-dependent behavior.",
+      "subtopics": [
+        {
+          "id": "define-config",
+          "title": "vite.config & defineConfig",
+          "description": "Configuration may be an object or function receiving command/mode. Use loadEnv when config itself needs mode files.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "import { defineConfig, loadEnv } from 'vite';\nimport react from '@vitejs/plugin-react';\n\nexport default defineConfig(({ command, mode }) => {\n  const env = loadEnv(mode, process.cwd(), 'APP_');\n  return {\n    plugins: [react()],\n    base: env.APP_BASE ?? '/',\n    server: { port: 5173, strictPort: true },\n    build: { sourcemap: mode !== 'production' },\n  };\n});"
+          }],
+          "callouts": [{ "title": "Config Runs in Node", "type": "note", "icon": "📌", "text": "vite.config executes in the tooling runtime, while application modules run in browser/SSR environments. Do not import browser-only source into config.", "color": "blue" }]
+        },
+        {
+          "id": "aliases-dedupe-conditions",
+          "title": "Aliases, Dedupe & Resolution Conditions",
+          "description": "Aliases should use absolute filesystem replacements. Dedupe forces one package copy; conditional exports select environment-specific package entry points.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "import { fileURLToPath, URL } from 'node:url';\nexport default defineConfig({\n  resolve: {\n    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },\n    dedupe: ['react', 'react-dom'],\n  },\n});"
+          }],
+          "callouts": [{ "title": "Align TypeScript Paths", "type": "warning", "icon": "⚠️", "text": "Editor/type-checker aliases and Vite resolution are separate unless integrated. Configure both or use an appropriate plugin; test production resolution.", "color": "amber" }]
+        },
+        {
+          "id": "server-proxy-cors",
+          "title": "Dev Server Proxy, CORS & Host",
+          "description": "Proxy API paths during development to avoid browser cross-origin setup while preserving a stable frontend URL contract.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "server: {\n  host: '127.0.0.1',\n  proxy: {\n    '/api': {\n      target: 'http://127.0.0.1:8080',\n      changeOrigin: true,\n      rewrite: path => path.replace(/^\\/api/, ''),\n    },\n  },\n}"
+          }],
+          "callouts": [{ "title": "Development Proxy Is Not Deployment", "type": "danger", "icon": "🛑", "text": "Configure the production reverse proxy/API origin separately. Do not expose the dev server broadly or disable host/CORS protections without understanding network risk.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "env-assets-css",
+      "title": "Environment, Assets & CSS",
+      "description": "Know which values become public build output and which files enter the dependency graph.",
+      "subtopics": [
+        {
+          "id": "env-modes",
+          "title": "import.meta.env & Modes",
+          "description": "Vite statically replaces built-ins and exposed prefixes. Mode selects .env files; it is distinct from NODE_ENV.",
+          "table": {
+            "title": "Vite Environment File Priority",
+            "headers": ["Source", "Loaded When", "Priority", "Commit Guidance"],
+            "rows": [
+              ["Process environment", "Already present when Vite starts", "Highest", "Set in shell or CI secret store"],
+              [".env.[mode].local", "Only for the active mode", "Higher", "Do not commit; machine-specific secrets"],
+              [".env.[mode]", "Only for the active mode", "High", "Commit non-secret mode defaults if useful"],
+              [".env.local", "All modes except Vite's test conventions may vary by runner", "Medium", "Do not commit; local overrides"],
+              [".env", "All modes", "Base", "Commit safe shared defaults only"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "const apiBase = import.meta.env.VITE_API_BASE;\nif (import.meta.env.DEV) enableDebugPanel();\nconsole.log(import.meta.env.MODE);\n\n// .env, .env.local, .env.production, .env.production.local\n// Restart the dev server after env-file changes."
+          }],
+          "callouts": [{ "title": "VITE_ Values Are Public", "type": "danger", "icon": "🔐", "text": "Exposed variables are bundled into client code. Never place secrets, private tokens, or server credentials in them; use a backend/secret manager.", "color": "red" }]
+        },
+        {
+          "id": "static-assets-workers",
+          "title": "Imported Assets, URLs & Workers",
+          "description": "Imported assets receive hashed deployment URLs. new URL with import.meta.url supports relative assets; worker constructors are statically analyzed.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "import logoUrl from './logo.svg';\nconst helpUrl = new URL('./help.pdf', import.meta.url).href;\nconst worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });\n\n<img src={logoUrl} alt=\"Product\" />"
+          }],
+          "callouts": [{ "title": "Dynamic URL Analysis Is Limited", "type": "warning", "icon": "⚠️", "text": "Arbitrary runtime strings cannot always be discovered at build time. Use import.meta.glob or an explicit map for finite dynamic assets/modules.", "color": "amber" }]
+        },
+        {
+          "id": "css-modules-preprocessors",
+          "title": "CSS, Modules & Preprocessors",
+          "description": "CSS imports participate in HMR/build extraction. CSS Modules provide locally scoped class mappings; supported preprocessors require their compiler package.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "import styles from './Button.module.css';\nexport function Button() { return <button className={styles.primary}>Save</button>; }\n\n// CSS\n// .primary { color: var(--button-foreground); }"
+          }],
+          "callouts": [{ "title": "Order Still Matters", "type": "note", "icon": "📌", "text": "Scope prevents class-name collisions, not cascade/order issues. Define layers/tokens and avoid depending on incidental import order across code-split chunks.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "plugins-dependencies",
+      "title": "Plugins & Dependency Optimization",
+      "description": "Extend the pipeline deliberately and understand development pre-bundling.",
+      "subtopics": [
+        {
+          "id": "using-plugins",
+          "title": "Plugin Selection & Ordering",
+          "description": "Vite plugins extend Rollup-compatible hooks plus dev-server features. Use official/framework-maintained plugins and limit conditional application with apply/enforce.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "function buildMetadata(): Plugin {\n  return {\n    name: 'app-build-metadata',\n    apply: 'build',\n    config() { return { define: { __BUILD_SHA__: JSON.stringify(process.env.GIT_SHA ?? 'dev') } }; },\n  };\n}\n\nexport default defineConfig({ plugins: [react(), buildMetadata()] });"
+          }],
+          "callouts": [{ "title": "Plugins Execute Trusted Code", "type": "danger", "icon": "🔐", "text": "A plugin runs during development/build with filesystem and environment access. Review ownership, permissions, dependencies, and update changes.", "color": "red" }]
+        },
+        {
+          "id": "custom-plugin-hooks",
+          "title": "Custom Plugin Hooks & Virtual Modules",
+          "description": "Use resolveId/load for virtual modules and transform for source changes. Prefix internal resolved virtual IDs with a null byte convention.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "function featureFlags(): Plugin {\n  const publicId = 'virtual:feature-flags';\n  const resolvedId = '\\0' + publicId;\n  return {\n    name: 'feature-flags',\n    resolveId(id) { if (id === publicId) return resolvedId; },\n    load(id) { if (id === resolvedId) return `export default ${JSON.stringify(loadFlags())}`; },\n  };\n}"
+          }],
+          "callouts": [{ "title": "Return Source Maps", "type": "tip", "icon": "💡", "text": "Transform plugins that change line/column positions should return accurate source maps so debugging and error locations remain useful.", "color": "green" }]
+        },
+        {
+          "id": "dependency-optimizer",
+          "title": "Dependency Pre-Bundling & Linked Packages",
+          "description": "Development pre-bundles dependencies for CommonJS/ESM compatibility and request efficiency. Source/linked packages may need include, exclude, dedupe, or correct package metadata.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "optimizeDeps: {\n  include: ['legacy-dependency'],\n  exclude: ['linked-source-package'],\n}\n\n// Diagnose stale optimization:\n// vite --force"
+          }],
+          "callouts": [{ "title": "Do Not Cargo-Cult optimizeDeps", "type": "warning", "icon": "⚠️", "text": "Add overrides only for diagnosed packages. Verify workspace packages declare ESM/CJS and exports correctly rather than relying on permanent cache resets.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "production-build",
+      "title": "Production Builds & Deployment",
+      "description": "Control base paths, chunking, compatibility, source maps, and hosting fallback behavior.",
+      "subtopics": [
+        {
+          "id": "build-output-base",
+          "title": "build, base & Output",
+          "description": "vite build emits hashed assets to outDir. base rewrites public paths for root, subpath, or relative deployment.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "export default defineConfig({\n  base: '/dashboard/',\n  build: {\n    outDir: 'dist',\n    assetsDir: 'assets',\n    sourcemap: 'hidden',\n    manifest: true,\n  },\n});"
+          }],
+          "callouts": [{ "title": "SPA Fallback Is Host Configuration", "type": "warning", "icon": "⚠️", "text": "Client-side routes need unknown paths rewritten to index.html while real assets/404s remain correct. Configure CDN/server caching separately: immutable hashed assets, short-lived HTML.", "color": "amber" }]
+        },
+        {
+          "id": "chunks-analysis",
+          "title": "Code Splitting, Dynamic Import & Analysis",
+          "description": "Dynamic import creates asynchronous boundaries. Inspect build output before manually grouping chunks.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "const AdminPage = lazy(() => import('./pages/AdminPage'));\n\n// Finite file-based registry:\nconst pages = import.meta.glob('./pages/*.tsx');\nconst loadPage = pages[`./pages/${name}.tsx`];"
+          }],
+          "callouts": [{ "title": "Chunking Is a Network Trade-off", "type": "note", "icon": "📌", "text": "Too few chunks overfetch; too many add requests and waterfalls. Measure initial bytes, cache reuse, and navigation latency before manualChunks changes.", "color": "blue" }]
+        },
+        {
+          "id": "browser-targets-polyfills",
+          "title": "Browser Targets & Polyfills",
+          "description": "Build target controls syntax transformation, not every missing runtime API. Add polyfills based on an explicit support matrix.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "build: {\n  target: ['es2022', 'chrome107', 'safari16'],\n  cssTarget: 'chrome107',\n}\n\n// Test real supported browsers; syntax target does not polyfill APIs."
+          }],
+          "callouts": [{ "title": "Modern by Default", "type": "tip", "icon": "💡", "text": "Supporting obsolete browsers increases JavaScript and testing cost. Define support from user/product data and use a legacy plugin only when justified.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "library-ssr-advanced",
+      "title": "Library Mode, SSR & Advanced Environments",
+      "description": "Treat libraries and multi-environment applications as explicit output contracts.",
+      "subtopics": [
+        {
+          "id": "library-mode",
+          "title": "Library Mode & External Dependencies",
+          "description": "Library mode builds one or more public entry points. Externalize peer dependencies and publish types/exports/files deliberately.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "build: {\n  lib: { entry: { index: 'src/index.ts', react: 'src/react.tsx' }, formats: ['es'] },\n  rollupOptions: { external: ['react', 'react-dom'] },\n}\n\n// package.json exports must match emitted files and declarations."
+          }],
+          "callouts": [{ "title": "Test the Packed Artifact", "type": "tip", "icon": "📦", "text": "Use npm pack and install the tarball into ESM/CJS consumer fixtures. Source-workspace imports can hide missing files, bad exports, and duplicate peers.", "color": "green" }]
+        },
+        {
+          "id": "ssr-api",
+          "title": "SSR Entry Points & Manifest",
+          "description": "SSR uses separate server/client entries; server rendering, asset preload, hydration, routing, and data serialization must agree.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "vite build --outDir dist/client\nvite build --ssr src/entry-server.ts --outDir dist/server\n\n# Use --ssrManifest/manifest to map modules to emitted client assets."
+          }],
+          "callouts": [{ "title": "Prefer a Framework for Product SSR", "type": "warning", "icon": "⚠️", "text": "Bare Vite SSR is low-level. A framework handles routing, streaming, data, serialization, errors, and deployment integrations; do not improvise security-sensitive hydration payloads.", "color": "amber" }]
+        },
+        {
+          "id": "environment-api",
+          "title": "Environment API & Version-Sensitive Features",
+          "description": "Advanced APIs can model client, SSR, worker, and custom runtimes with environment-specific graphs and plugin pipelines.",
+          "codeBlocks": [{ "language": "text", "code": "Use framework-supported environment configuration first.\nCheck current Vite stability and migration notes before adopting Environment API internals.\nPlugin authors must avoid shared mutable state assumptions across environments/builds.\nTest dev and build because environment pipelines can differ." }],
+          "callouts": [{ "title": "Check Stability Before Production", "type": "danger", "icon": "🧪", "text": "Environment and builder APIs have evolved across Vite majors. Pin Vite/plugins, read migration guides, and avoid undocumented internal server/module graph APIs.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "testing-troubleshooting",
+      "title": "Testing, Troubleshooting & Checklist",
+      "description": "Separate transpilation from type checking and debug graph/cache/environment issues systematically.",
+      "subtopics": [
+        {
+          "id": "typescript-testing",
+          "title": "TypeScript, Testing & Quality Gates",
+          "description": "Vite transpiles TypeScript but does not perform full type checking. Run tsc and lint/tests separately; use a Vite-compatible test runner when sharing transforms.",
+          "codeBlocks": [{
+            "language": "json",
+            "code": "{\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"typecheck\": \"tsc --noEmit\",\n    \"test\": \"vitest run\",\n    \"build\": \"npm run typecheck && vite build\",\n    \"preview\": \"vite preview\"\n  }\n}"
+          }],
+          "callouts": [{ "title": "Build Success Is Not Type Safety", "type": "danger", "icon": "🛑", "text": "A Vite build may succeed with TypeScript errors. CI must run the compiler and framework-specific type generation/checks explicitly.", "color": "red" }]
+        },
+        {
+          "id": "vite-debugging",
+          "title": "Common Failure Diagnosis",
+          "description": "Identify whether failure is resolution, transform, dependency optimization, HMR, environment, build, or host behavior.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Works after restart only → module side effect/HMR invalidation/env reload\nWorks in dev, fails build → dynamic import, SSR/browser boundary, case-sensitive path\nDuplicate React/invalid hooks → multiple package copies; inspect lockfile + dedupe\nBlank deployed subpath → base or host rewrite mismatch\nStale dependency → optimizer/browser cache; inspect before --force\nMissing env → prefix/mode/priority/restart\nSource-map location wrong → transform plugin map"
+          }]
+        },
+        {
+          "id": "vite-checklist",
+          "title": "Production Checklist",
+          "description": "Validate toolchain trust, environment exposure, output paths, browser support, and deployment semantics.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Node/Vite/plugin versions and lockfile are pinned\n□ Type checking, linting, tests, and build run independently\n□ Client env contains no secrets\n□ Aliases match TypeScript/editor resolution\n□ Dynamic imports/assets are statically discoverable\n□ base and SPA/server routing match the host\n□ HTML and hashed-asset cache headers differ correctly\n□ Bundle/chunk output is measured\n□ Browser targets and polyfills match support policy\n□ Source maps follow disclosure policy\n□ Plugins are reviewed as privileged build code\n□ SSR/client boundaries and serialization are tested\n□ Packed libraries are tested from emitted artifacts"
+          }]
+        }
+      ]
+    }
+  ]
+}

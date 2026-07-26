@@ -1,0 +1,288 @@
+{
+  "id": "nextjs-app-router-reference",
+  "title": "Next.js Web Development",
+  "slug": "nextjs",
+  "category": "Full Stack Web",
+  "technology": "Next.js",
+  "version": "Current App Router",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 68,
+  "description": "Beginner-to-advanced Next.js App Router reference covering routing, Server and Client Components, data and cache behavior, mutations, Route Handlers, metadata, errors, security, performance, testing, and deployment.",
+  "tags": ["NEXTJS", "REACT", "APP ROUTER", "SERVER COMPONENTS", "FULL STACK", "SSR"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["next js", "nextjs app router", "react server components", "server actions", "cache components"],
+  "relatedSheets": ["react", "nodejs", "typescript", "docker", "vscode"],
+  "prerequisites": [{ "title": "React Web Development", "slug": "react" }],
+  "sections": [
+    {
+      "id": "app-router-structure",
+      "title": "App Router & Project Structure",
+      "description": "Use file conventions to define route segments, layouts, loading, errors, and APIs.",
+      "subtopics": [
+        {
+          "id": "routes-layouts-pages",
+          "title": "Pages, Layouts & Route Segments",
+          "description": "Folders define URL segments; page exposes a route; layouts wrap descendants and preserve state across client navigation.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "app/\n  layout.tsx                 root HTML/body layout\n  page.tsx                   /\n  dashboard/\n    layout.tsx               shared dashboard shell\n    page.tsx                 /dashboard\n    loading.tsx              streaming fallback\n    error.tsx                client error boundary\n    not-found.tsx            segment not-found UI\n  api/health/route.ts        Route Handler"
+          }],
+          "callouts": [{ "title": "Layouts Do Not Receive Route URL", "type": "note", "icon": "📌", "text": "Shared layouts may be cached and do not re-render on navigation. Use appropriate client navigation hooks in a small Client Component when pathname-dependent UI is required.", "color": "blue" }]
+        },
+        {
+          "id": "dynamic-route-groups-slots",
+          "title": "Dynamic, Catch-All, Groups & Parallel Routes",
+          "description": "Dynamic folders capture parameters; groups organize without URL segments; parallel slots render independently; intercepting routes overlay navigation contexts.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "app/products/[productId]/page.tsx      /products/42\napp/docs/[...slug]/page.tsx              /docs/a/b\napp/shop/[[...filters]]/page.tsx         optional catch-all\napp/(marketing)/about/page.tsx           /about\napp/dashboard/@analytics/page.tsx        parallel slot\napp/@modal/(.)products/[id]/page.tsx     intercepted modal route"
+          }],
+          "callouts": [{ "title": "Complex Routing Needs Direct-Load Tests", "type": "warning", "icon": "⚠️", "text": "Test client navigation, refresh/direct URL, back/forward, missing slot defaults, deep links, and unauthorized states. Interception must degrade correctly without navigation history.", "color": "amber" }]
+        },
+        {
+          "id": "link-navigation",
+          "title": "Linking, Prefetching & Programmatic Navigation",
+          "description": "Use Link for navigation; it supports client transitions and prefetching. Use next/navigation hooks only in Client Components when imperative behavior is required.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "import Link from 'next/link';\n<Link href={`/products/${product.id}`}>View product</Link>\n\n'use client';\nconst router = useRouter();\nrouter.push('/checkout');\nrouter.replace('/login');\nrouter.refresh(); // does not invalidate server caches"
+          }],
+          "callouts": [{ "title": "Never Push Untrusted URLs", "type": "danger", "icon": "🔐", "text": "Validate/allowlist navigation targets. Unsafe schemes supplied to router APIs can execute in page context; prefer constructed internal routes.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "server-client-components",
+      "title": "Server & Client Components",
+      "description": "Keep server capabilities on the server and minimize client bundle boundaries.",
+      "subtopics": [
+        {
+          "id": "server-components",
+          "title": "Server Components by Default",
+          "description": "Pages and layouts are Server Components by default. They may await data, access server resources, and send rendered output/RSC payload without shipping their component code to browsers.",
+          "table": {
+            "title": "Server and Client Component Boundaries",
+            "headers": ["Capability", "Server Component", "Client Component"],
+            "rows": [
+              ["Default in App Router", "Yes", "No; requires a use client boundary"],
+              ["Access server-only data and secrets", "Yes", "No"],
+              ["Use state, effects, or browser APIs", "No", "Yes"],
+              ["Event handlers", "No", "Yes"],
+              ["Ships component JavaScript to browser", "No", "Yes"],
+              ["May render the other kind", "May pass Client Components as children or imports", "May receive rendered Server Component content through composition"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {\n  const { id } = await params;\n  const product = await db.product.findUniqueOrThrow({ where: { id } });\n  return <ProductDetails product={toSerializableModel(product)} />;\n}"
+          }],
+          "callouts": [{ "title": "Server Does Not Mean Secret Automatically", "type": "warning", "icon": "⚠️", "text": "Data passed to Client Components or rendered HTML reaches the browser. Select safe fields and use server-only boundaries for modules containing credentials.", "color": "amber" }]
+        },
+        {
+          "id": "client-boundaries",
+          "title": "use client Boundaries",
+          "description": "Client Components are needed for state, effects, event handlers, browser APIs, and client-only libraries. The directive marks a module-graph boundary.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "'use client';\nimport { useState } from 'react';\n\nexport function AddToCart({ productId }: { productId: string }) {\n  const [quantity, setQuantity] = useState(1);\n  return <button onClick={() => addToCart(productId, quantity)}>Add {quantity}</button>;\n}"
+          }],
+          "callouts": [{ "title": "Push Boundaries Down", "type": "tip", "icon": "💡", "text": "Do not mark an entire layout client-side for one interactive widget. Isolate the widget so static/server-rendered parents and dependencies stay outside the client bundle.", "color": "green" }]
+        },
+        {
+          "id": "composition-serialization",
+          "title": "Server/Client Composition & Serialization",
+          "description": "Server Components may be passed as children/props into Client Components. Props crossing the boundary must be serializable by the React transport.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "// Server Component\nexport default function Page() {\n  return <ClientModal><ServerCart /></ClientModal>;\n}\n\n// Client module\n'use client';\nexport function ClientModal({ children }: { children: React.ReactNode }) {\n  const [open, setOpen] = useState(false);\n  return open ? <dialog open>{children}</dialog> : <button onClick={() => setOpen(true)}>Cart</button>;\n}"
+          }],
+          "callouts": [{ "title": "Do Not Pass Rich Server Objects", "type": "danger", "icon": "🛑", "text": "Database clients, class instances, request objects, functions (except supported server functions), and secrets do not belong in Client Component props. Map to explicit serializable DTOs.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "data-cache-streaming",
+      "title": "Data, Caching & Streaming",
+      "description": "Make freshness, request memoization, persistent caching, and invalidation intentional.",
+      "subtopics": [
+        {
+          "id": "server-data-fetching",
+          "title": "Fetching in Server Components",
+          "description": "Fetch data near the component that needs it; use Promise concurrency to avoid waterfalls and React cache for request-scoped function memoization where suitable.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "export default async function Dashboard() {\n  const userPromise = getUser();\n  const projectsPromise = getProjects();\n  const [user, projects] = await Promise.all([userPromise, projectsPromise]);\n  return <DashboardView user={user} projects={projects} />;\n}"
+          }],
+          "callouts": [{ "title": "Parallelize Independent Work", "type": "tip", "icon": "⚡", "text": "Starting one request only after another awaits creates server waterfalls. Preserve dependency ordering only when the second operation needs the first result.", "color": "green" }]
+        },
+        {
+          "id": "cache-components",
+          "title": "Cache Components & use cache",
+          "description": "When Cache Components is enabled, use cache marks functions/components/routes cacheable; cacheLife and cacheTag define lifetime and invalidation groups.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "import { cacheLife, cacheTag } from 'next/cache';\n\nexport async function getCatalog() {\n  'use cache';\n  cacheLife('hours');\n  cacheTag('catalog');\n  return db.product.findMany();\n}"
+          }],
+          "callouts": [{ "title": "Cache Semantics Are Version-Sensitive", "type": "warning", "icon": "⚠️", "text": "Cache Components is opt-in in current guidance. Pin Next.js, follow the matching version docs, and test authenticated/runtime request data outside shared cache scopes.", "color": "amber" }]
+        },
+        {
+          "id": "revalidation-streaming",
+          "title": "Invalidation, Suspense & Streaming",
+          "description": "Invalidate affected paths/tags after mutations. Suspense boundaries stream independent fallbacks and prevent one slow region from delaying the whole route.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "export default function Page() {\n  return <>\n    <ProductHeader />\n    <Suspense fallback={<ReviewsSkeleton />}><Reviews /></Suspense>\n    <Suspense fallback={<RecommendationsSkeleton />}><Recommendations /></Suspense>\n  </>;\n}\n\n// After mutation: updateTag('catalog') for immediate read-your-writes semantics,\n// or revalidateTag/revalidatePath according to freshness requirements."
+          }],
+          "callouts": [{ "title": "Invalidation Must Match Writes", "type": "danger", "icon": "🧊", "text": "Missing invalidation serves stale data; overly broad invalidation destroys cache value. Define ownership and tags alongside the mutation, not as an afterthought.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "mutations-api",
+      "title": "Server Functions, Forms & Route Handlers",
+      "description": "Validate, authorize, mutate, and invalidate on the server boundary.",
+      "subtopics": [
+        {
+          "id": "server-actions",
+          "title": "Server Actions & Form Mutations",
+          "description": "A use server function executes on the server and can be bound to form actions. Treat every invocation as an externally reachable mutation endpoint.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "'use server';\nexport async function updateProfile(formData: FormData) {\n  const user = await requireUser();\n  const input = ProfileSchema.parse(Object.fromEntries(formData));\n  await db.profile.update({ where: { userId: user.id }, data: input });\n  updateTag(`profile:${user.id}`);\n}\n\n<form action={updateProfile}>...</form>"
+          }],
+          "callouts": [{ "title": "Authenticate and Authorize Inside Every Action", "type": "danger", "icon": "🔐", "text": "UI visibility is not authorization. Validate input, verify resource ownership/role, protect origin/CSRF assumptions, limit payloads, and avoid returning sensitive errors.", "color": "red" }]
+        },
+        {
+          "id": "action-state-optimistic",
+          "title": "useActionState, Pending & Optimistic UI",
+          "description": "Client form hooks surface pending/result state; optimistic updates improve latency perception but must reconcile with the authoritative server outcome.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "'use client';\nconst [state, action, pending] = useActionState(createComment, initialState);\nreturn <form action={action}>\n  <textarea name=\"body\" aria-invalid={!!state.errors?.body} />\n  <button disabled={pending}>Post</button>\n  {state.message && <p role=\"status\">{state.message}</p>}\n</form>;"
+          }],
+          "callouts": [{ "title": "Return Expected Errors as Data", "type": "tip", "icon": "💡", "text": "Validation and conflict errors should become structured action state. Throw unexpected failures for error boundaries/telemetry without exposing stack or internal detail.", "color": "green" }]
+        },
+        {
+          "id": "route-handlers",
+          "title": "Route Handlers",
+          "description": "route.ts exports HTTP method handlers using Request/Response APIs. Use for webhooks, public APIs, non-HTML responses, and backend-for-frontend endpoints.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "export async function POST(request: Request) {\n  const signature = request.headers.get('webhook-signature');\n  const raw = await request.text();\n  verifySignature(raw, signature);\n  const event = WebhookSchema.parse(JSON.parse(raw));\n  await processIdempotently(event);\n  return Response.json({ accepted: true }, { status: 202 });\n}"
+          }],
+          "callouts": [{ "title": "Webhooks Need Raw Bytes and Idempotency", "type": "warning", "icon": "⚠️", "text": "Verify signatures before trusting parsed data, reject replay where supported, store delivery IDs, and respond within provider deadlines.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "metadata-assets-errors",
+      "title": "Metadata, Assets & Error UX",
+      "description": "Use framework primitives for discoverability, media performance, and failure boundaries.",
+      "subtopics": [
+        {
+          "id": "metadata-social",
+          "title": "Metadata, Sitemap & Social Images",
+          "description": "Export static metadata or generateMetadata for route-specific values; use file conventions for icons, robots, sitemap, and generated social images.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "export async function generateMetadata({ params }): Promise<Metadata> {\n  const { id } = await params;\n  const product = await getProduct(id);\n  return {\n    title: product.name,\n    description: product.summary,\n    alternates: { canonical: `/products/${id}` },\n    openGraph: { images: [{ url: product.socialImageUrl }] },\n  };\n}"
+          }],
+          "callouts": [{ "title": "Validate Canonical URLs", "type": "warning", "icon": "⚠️", "text": "Build URLs from trusted base/config and normalized route parameters. Avoid indexing private, duplicate, filtered, or error pages unintentionally.", "color": "amber" }]
+        },
+        {
+          "id": "image-font-script",
+          "title": "Image, Font & Script Optimization",
+          "description": "next/image manages responsive sizing/loading; next/font self-hosts optimized fonts; next/script controls third-party execution strategy.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "<Image\n  src={product.imageUrl}\n  alt={product.imageAlt}\n  width={800}\n  height={600}\n  sizes=\"(max-width: 768px) 100vw, 50vw\"\n/>"
+          }],
+          "callouts": [{ "title": "Remote Images Need Policy", "type": "danger", "icon": "🔐", "text": "Restrict remote patterns, preserve aspect ratios, provide meaningful alt text, and do not mark many images priority/preload; it can hurt the critical path.", "color": "red" }]
+        },
+        {
+          "id": "errors-not-found",
+          "title": "loading, error, global-error & not-found",
+          "description": "Segment files provide streaming fallback, client error recovery, root failure UI, and 404 handling. Expected domain absence can call notFound.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "export default async function ProductPage({ params }) {\n  const product = await findProduct((await params).id);\n  if (!product) notFound();\n  return <Product product={product} />;\n}\n\n// error.tsx must be a Client Component and may call reset() to retry the segment."
+          }],
+          "callouts": [{ "title": "Log Server and Client Failures", "type": "tip", "icon": "💡", "text": "Error UIs need safe messages and correlation IDs. Capture original errors in server/client telemetry without exposing stack traces or secrets.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "security-runtime-deploy",
+      "title": "Security, Runtime & Deployment",
+      "description": "Keep trust boundaries explicit across server, browser, edge, cache, and infrastructure.",
+      "subtopics": [
+        {
+          "id": "auth-proxy-boundaries",
+          "title": "Authentication, Authorization & Proxy",
+          "description": "Use optimistic route gating only for UX. Perform secure authorization near data access and mutations; central request interception should remain lightweight.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Authentication: establish identity from secure session/token\nAuthorization: verify action + resource on every server operation\nProxy/middleware: redirects, headers, coarse checks; avoid slow data access\nServer Component: safe display gating, not sole mutation protection\nAction/Route Handler/data layer: authoritative validation and authorization"
+          }],
+          "callouts": [{ "title": "Cache and Identity Must Not Mix Accidentally", "type": "danger", "icon": "🔐", "text": "Never place user-specific data in a shared cache without identity-scoped keys and correct privacy semantics. Read cookies/headers outside shared cache scopes.", "color": "red" }]
+        },
+        {
+          "id": "runtime-env",
+          "title": "Node, Edge & Environment Variables",
+          "description": "Choose runtime per dependency and platform capability. Server environment stays private unless explicitly exposed with the public prefix/build mechanism.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "// Validate once in a server-only module.\nimport 'server-only';\nexport const env = EnvSchema.parse(process.env);\n\n// NEXT_PUBLIC_* is embedded in browser bundles at build time.\n// Runtime availability depends on deployment adapter and route runtime."
+          }],
+          "callouts": [{ "title": "Edge Is a Different Runtime", "type": "warning", "icon": "⚠️", "text": "Node built-ins, native packages, filesystem, sockets, execution limits, and connection behavior differ. Test the actual target and prefer Node unless edge placement brings measured value.", "color": "amber" }]
+        },
+        {
+          "id": "deploy-observability",
+          "title": "Deployment, Instrumentation & Standalone Output",
+          "description": "Deployment must provide build/runtime configuration, cache storage semantics, image optimization, logging/tracing, graceful shutdown, and durable external state.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "// next.config.ts\nconst nextConfig: NextConfig = {\n  output: 'standalone',\n  poweredByHeader: false,\n  experimental: { /* pin and document any opt-ins */ },\n};\nexport default nextConfig;"
+          }],
+          "callouts": [{ "title": "Local Memory Is Per Instance", "type": "danger", "icon": "🧠", "text": "Do not rely on module globals or local filesystem for shared sessions, jobs, uploads, or durable cache across serverless/container replicas.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "performance-testing-checklist",
+      "title": "Performance, Testing & Checklist",
+      "description": "Measure server, client, cache, network, and deployment behavior together.",
+      "subtopics": [
+        {
+          "id": "next-performance",
+          "title": "Bundle, Rendering & Data Performance",
+          "description": "Reduce client boundaries, avoid sequential data waterfalls, stream slow regions, cache intentionally, and inspect real route/client bundle output.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Server cost: database/API latency, concurrency, cache hit rate, cold start\nNetwork: TTFB, streaming, CDN, image/font/script delivery\nClient: shipped JS, hydration, long tasks, interaction latency\nNavigation: prefetch usefulness, RSC payload, dynamic route latency\nCorrectness: stale data, invalidation fan-out, user cache isolation"
+          }],
+          "callouts": [{ "title": "Server Components Are Not Free", "type": "note", "icon": "📌", "text": "They reduce client JavaScript but still consume server/data resources and produce payload. Profile database queries, serialization, cache, and streamed response timing.", "color": "blue" }]
+        },
+        {
+          "id": "next-testing",
+          "title": "Unit, Component & End-to-End Testing",
+          "description": "Unit-test domain/server functions, component-test interactive Client Components, and use end-to-end tests for routing, RSC, actions, cookies, caching, and deployment behavior.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Unit: validation, authorization policy, cache-key logic, data mapping\nComponent: forms, pending/error states, accessibility\nIntegration: Route Handlers/actions with test database and identity\nE2E: direct URL + client navigation, auth redirects, mutation + revalidation, error/not-found\nProduction smoke: built output behind real proxy/CDN/runtime"
+          }],
+          "callouts": [{ "title": "Mocking RSC Internals Is Low Value", "type": "tip", "icon": "🧪", "text": "Test pure server logic separately and verify framework composition with integration/E2E tests. Avoid brittle assertions on internal payload or cache implementation.", "color": "green" }]
+        },
+        {
+          "id": "next-checklist",
+          "title": "Production Checklist",
+          "description": "Review boundaries, freshness, authorization, resilience, metadata, and deployed behavior.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Server Components are default; client boundaries are minimal\n□ Cross-boundary props are safe and serializable\n□ Independent data requests run concurrently\n□ Cache lifetime/tags and mutation invalidation are documented\n□ User-specific data cannot enter shared caches\n□ Every action/handler validates and authorizes\n□ Loading, error, not-found, retry, and no-JS form behavior work\n□ Dynamic/parallel/intercepted routes work on direct load and Back\n□ Metadata, canonical URLs, images, fonts, and scripts are correct\n□ Node/Edge choice matches dependencies\n□ Durable state is external to instances\n□ Client bundle, server latency, cache hit rate, and Web Vitals are measured\n□ Built deployment is tested behind the real host/proxy/CDN"
+          }]
+        }
+      ]
+    }
+  ]
+}

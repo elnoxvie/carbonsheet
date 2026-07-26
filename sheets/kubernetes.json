@@ -1,0 +1,376 @@
+{
+  "id": "kubernetes-production-reference",
+  "title": "Kubernetes & kubectl",
+  "slug": "kubernetes",
+  "category": "DevOps",
+  "technology": "Kubernetes",
+  "version": "Current Stable Kubernetes",
+  "difficulty": "ADVANCED",
+  "readTimeMinutes": 95,
+  "description": "Beginner-to-advanced Kubernetes reference covering architecture, API objects, Pods, workloads, Services, configuration, storage, health, resources, scheduling, scaling, security, observability, kubectl, Kustomize, Helm, and production operations.",
+  "tags": ["KUBERNETES", "KUBECTL", "CONTAINERS", "ORCHESTRATION", "KUSTOMIZE", "HELM"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["k8s", "kubernates", "kubectl", "cluster orchestration", "kustomize", "helm charts"],
+  "relatedSheets": ["docker", "git", "nodejs", "fastapi", "vscode"],
+  "prerequisites": [{ "title": "Docker Containers & Compose", "slug": "docker" }],
+  "sections": [
+    {
+      "id": "cluster-api-model",
+      "title": "Cluster & API Mental Model",
+      "description": "Kubernetes continuously reconciles declared desired state through API objects and controllers.",
+      "subtopics": [
+        {
+          "id": "control-plane-nodes",
+          "title": "Control Plane, Nodes & Reconciliation",
+          "description": "The API server validates/persists intent; scheduler assigns unscheduled Pods; controllers reconcile objects; kubelets and runtimes realize Pods on nodes.",
+          "diagram": { "type": "mermaid", "content": "flowchart LR\n  U[kubectl / controllers] --> A[API server]\n  A <--> E[etcd]\n  A --> S[Scheduler]\n  A --> C[Controllers]\n  A --> K[Kubelet on node]\n  K --> R[Container runtime]\n  C -. reconcile desired vs actual .-> A" },
+          "callouts": [{ "title": "Do Not Manage Pods Like Servers", "type": "tip", "icon": "💡", "text": "Change the owning Deployment/StatefulSet configuration and let reconciliation replace Pods. Manual Pod fixes are ephemeral and fight controllers.", "color": "green" }]
+        },
+        {
+          "id": "api-object-anatomy",
+          "title": "apiVersion, kind, metadata, spec & status",
+          "description": "spec declares desired state; controllers write observed status. metadata names, namespaces, labels, annotations, owner references, finalizers, and generation enable management.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: api\n  namespace: shop\n  labels: { app.kubernetes.io/name: api }\nspec:\n  replicas: 3\n  selector: { matchLabels: { app.kubernetes.io/name: api } }\n  template:\n    metadata: { labels: { app.kubernetes.io/name: api } }\n    spec:\n      containers: [{ name: api, image: registry.example/api@sha256:... }]"
+          }],
+          "callouts": [{ "title": "Selectors Are Contracts", "type": "danger", "icon": "🏷️", "text": "Workload and Service selectors must match intended Pod labels. Immutable/mistyped selectors can orphan workloads or route traffic to the wrong application.", "color": "red" }]
+        },
+        {
+          "id": "declarative-apply",
+          "title": "Declarative Apply, Field Ownership & Diff",
+          "description": "Store desired configuration in version control, review server-side diff, and use one consistent field manager/workflow per field set.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "kubectl diff --server-side -f manifests/\nkubectl apply --server-side --field-manager=platform-cd -f manifests/\nkubectl get deployment api -n shop -o yaml\nkubectl explain deployment.spec.template.spec.containers.resources\nkubectl api-resources"
+          }],
+          "callouts": [{ "title": "Avoid Imperative Drift", "type": "warning", "icon": "⚠️", "text": "kubectl edit/scale/set can be useful in incidents but must be reconciled back to Git/source of truth or the next deployment will overwrite the change.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "pods-workloads",
+      "title": "Pods & Workload Controllers",
+      "description": "Select a controller based on identity, rollout, scheduling, and completion semantics.",
+      "subtopics": [
+        {
+          "id": "pod-lifecycle-containers",
+          "title": "Pods, Init Containers & Sidecars",
+          "description": "Containers in a Pod share network namespace and volumes, are scheduled together, and share lifecycle fate. Init containers complete in order before app startup; sidecars support the app when coupling is justified.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "spec:\n  initContainers:\n    - name: migrate-check\n      image: app-tools@sha256:...\n      command: [\"./wait-for-schema\"]\n  containers:\n    - name: api\n      image: app@sha256:...\n      ports: [{ name: http, containerPort: 8080 }]\n    - name: proxy\n      image: proxy@sha256:..."
+          }],
+          "callouts": [{ "title": "One Pod Means One Scaling Unit", "type": "warning", "icon": "⚠️", "text": "Do not place unrelated services in one Pod. Every container scales, schedules, restarts, and consumes resources together.", "color": "amber" }]
+        },
+        {
+          "id": "deployments-replicasets",
+          "title": "Deployments & Rolling Updates",
+          "description": "Deployment manages ReplicaSets for stateless interchangeable Pods and supports rolling replacement, history, pause/resume, and rollback.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "spec:\n  replicas: 4\n  strategy:\n    type: RollingUpdate\n    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }\n  minReadySeconds: 10\n  progressDeadlineSeconds: 600\n  template:\n    spec:\n      terminationGracePeriodSeconds: 30"
+          }],
+          "callouts": [{ "title": "Zero Downtime Requires Application Support", "type": "danger", "icon": "🔄", "text": "Readiness, graceful SIGTERM/drain, compatible database changes, sufficient capacity, and external dependency behavior determine availability—not rollout settings alone.", "color": "red" }]
+        },
+        {
+          "id": "stateful-daemon-job",
+          "title": "StatefulSet, DaemonSet, Job & CronJob",
+          "description": "StatefulSet provides stable identity/storage ordering; DaemonSet runs per eligible node; Job completes finite work; CronJob creates Jobs on a schedule.",
+          "table": {
+            "title": "Kubernetes Workload Controller Selection",
+            "headers": ["Controller", "Run Model", "Identity / Storage", "Typical Use"],
+            "rows": [
+              ["Deployment", "Continuously maintains interchangeable replicas", "Ephemeral pod identity; shared or external storage", "Stateless web and API services"],
+              ["StatefulSet", "Ordered, continuously maintained replicas", "Stable ordinal, DNS identity, and per-pod claims", "Databases and clustered stateful systems"],
+              ["DaemonSet", "One pod per eligible node", "Identity follows node placement", "Log, metrics, networking, and security agents"],
+              ["Job", "Runs pods until a finite completion target", "No stable service identity", "Migration, batch, and one-off processing"],
+              ["CronJob", "Creates Jobs on a schedule", "History governed by job retention settings", "Backups and scheduled maintenance"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Deployment → replaceable replicas and rolling web/services\nStatefulSet → stable network/storage identity; app handles replication\nDaemonSet → node agent such as logging/network/security\nJob → finite completion with retry/backoff semantics\nCronJob → scheduled Job creation; define concurrencyPolicy and deadlines"
+          }],
+          "callouts": [{ "title": "Cron Schedules Can Duplicate or Miss", "type": "warning", "icon": "⚠️", "text": "Jobs must be idempotent, concurrency-aware, and observable. Kubernetes scheduling is not an exactly-once transaction system.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "services-networking",
+      "title": "Services, DNS & External Traffic",
+      "description": "Use stable discovery and explicit traffic policy over ephemeral Pod IPs.",
+      "subtopics": [
+        {
+          "id": "services-endpoints",
+          "title": "Service Types & EndpointSlices",
+          "description": "A Service selects ready backends and exposes a stable virtual IP/DNS. ClusterIP is internal; NodePort and LoadBalancer expose through node/provider mechanisms; ExternalName aliases DNS.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "apiVersion: v1\nkind: Service\nmetadata: { name: api, namespace: shop }\nspec:\n  selector: { app.kubernetes.io/name: api }\n  ports:\n    - name: http\n      port: 80\n      targetPort: http\n  type: ClusterIP"
+          }],
+          "callouts": [{ "title": "Service Selects Labels, Not Deployment Names", "type": "danger", "icon": "🏷️", "text": "Verify EndpointSlices after deployment. A Service with no endpoints usually means label mismatch or Pods failing readiness.", "color": "red" }]
+        },
+        {
+          "id": "dns-network-policy",
+          "title": "Cluster DNS & NetworkPolicy",
+          "description": "Services receive DNS names; NetworkPolicy controls allowed ingress/egress when the CNI supports enforcement.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata: { name: api-ingress, namespace: shop }\nspec:\n  podSelector: { matchLabels: { app.kubernetes.io/name: api } }\n  policyTypes: [Ingress]\n  ingress:\n    - from:\n        - podSelector: { matchLabels: { app.kubernetes.io/name: web } }\n      ports: [{ protocol: TCP, port: 8080 }]"
+          }],
+          "callouts": [{ "title": "Default Deny Needs DNS/Egress Planning", "type": "warning", "icon": "⚠️", "text": "Roll out policies with observability. Allow required DNS, identity, telemetry, and external dependencies; test the actual CNI semantics.", "color": "amber" }]
+        },
+        {
+          "id": "ingress-gateway",
+          "title": "Ingress, Gateway API & TLS",
+          "description": "Ingress or Gateway API configures an installed controller/provider to accept external traffic, terminate or pass TLS, and route by host/path.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Ingress: mature HTTP/HTTPS routing API implemented by an ingress controller\nGateway API: role-oriented GatewayClass/Gateway/Route model for richer routing\nService LoadBalancer: direct provider load balancer for one service\nNo controller installed → API objects alone do not create a working data plane"
+          }],
+          "callouts": [{ "title": "Trust Proxy Headers Deliberately", "type": "danger", "icon": "🔐", "text": "Configure known proxy hops, TLS redirect, allowed hosts, request/body/time limits, and certificate automation. Do not trust arbitrary forwarded identity/IP headers.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "config-secrets-storage",
+      "title": "Configuration, Secrets & Storage",
+      "description": "Separate non-secret configuration, confidential material, ephemeral space, and durable data.",
+      "subtopics": [
+        {
+          "id": "configmaps-secrets",
+          "title": "ConfigMap & Secret Consumption",
+          "description": "Mount as files or expose selected keys as environment variables. ConfigMap is non-confidential; Secret is base64-encoded API data and needs encryption/access controls.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "env:\n  - name: LOG_LEVEL\n    valueFrom: { configMapKeyRef: { name: api-config, key: log-level } }\nvolumeMounts:\n  - { name: credentials, mountPath: /var/run/secrets/app, readOnly: true }\nvolumes:\n  - name: credentials\n    secret: { secretName: api-credentials, defaultMode: 0400 }"
+          }],
+          "callouts": [{ "title": "Secret Is Not Automatically Secret", "type": "danger", "icon": "🔐", "text": "Enable encryption at rest, restrict RBAC, avoid broad env/log exposure, integrate an external secret system where needed, and rotate credentials. Base64 is not encryption.", "color": "red" }]
+        },
+        {
+          "id": "volumes-pv-pvc",
+          "title": "Volumes, PV, PVC & StorageClass",
+          "description": "Pod volumes provide shared/mounted storage; PVC requests durable capacity/access mode; PV represents provisioned storage; StorageClass drives dynamic provisioning and reclaim behavior.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata: { name: data }\nspec:\n  accessModes: [ReadWriteOnce]\n  storageClassName: fast\n  resources: { requests: { storage: 20Gi } }"
+          }],
+          "callouts": [{ "title": "Persistent Volume Is Not Backup", "type": "danger", "icon": "💾", "text": "Test snapshots/backups and restore, reclaim policy, zone/node attachment, expansion, corruption, and application-consistent recovery.", "color": "red" }]
+        },
+        {
+          "id": "ephemeral-projected-csi",
+          "title": "emptyDir, Projected & CSI Volumes",
+          "description": "emptyDir follows Pod lifetime; projected combines sources; CSI provides vendor storage and secret/config integrations with driver-specific semantics.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "emptyDir → cache/scratch/shared Pod files; erased with Pod\nemptyDir medium: Memory → tmpfs charged to memory\nprojected → combine Secret, ConfigMap, downward API, service-account token\nCSI ephemeral/persistent → driver-managed; verify lifecycle and security\nhostPath → node filesystem coupling; avoid for portable apps"
+          }],
+          "callouts": [{ "title": "Environment Values Do Not Hot Reload", "type": "note", "icon": "📌", "text": "Mounted ConfigMap/Secret files may update eventually, but env vars remain from process start. Applications must watch/reload files safely or roll Pods on configuration changes.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "health-resources-scheduling",
+      "title": "Health, Resources & Scheduling",
+      "description": "Give the scheduler and kubelet truthful signals about capacity, startup, readiness, and failure.",
+      "subtopics": [
+        {
+          "id": "probes",
+          "title": "Startup, Readiness & Liveness Probes",
+          "description": "Startup delays other probes until initialized; readiness controls traffic; liveness restarts a stuck process. HTTP, TCP, exec, and gRPC mechanisms serve different contracts.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "startupProbe: { httpGet: { path: /health/startup, port: http }, failureThreshold: 30, periodSeconds: 2 }\nreadinessProbe: { httpGet: { path: /health/ready, port: http }, periodSeconds: 5, timeoutSeconds: 2 }\nlivenessProbe: { httpGet: { path: /health/live, port: http }, periodSeconds: 10, timeoutSeconds: 2, failureThreshold: 3 }"
+          }],
+          "callouts": [{ "title": "Do Not Make Liveness Depend on Every Dependency", "type": "danger", "icon": "🫀", "text": "Restarting all Pods because a database is down amplifies failure. Liveness answers whether this process is irrecoverably stuck; readiness may reflect inability to serve.", "color": "red" }]
+        },
+        {
+          "id": "requests-limits-qos",
+          "title": "Requests, Limits & QoS",
+          "description": "Requests drive scheduling and reserved capacity; limits constrain usage. CPU limit throttles; memory limit can cause OOM kill; QoS affects eviction priority.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "resources:\n  requests: { cpu: 250m, memory: 256Mi, ephemeral-storage: 256Mi }\n  limits: { cpu: \"1\", memory: 512Mi, ephemeral-storage: 1Gi }"
+          }],
+          "callouts": [{ "title": "Measure Working Set and Throttling", "type": "warning", "icon": "⚠️", "text": "Arbitrary tiny limits create latency and OOM loops; absent requests cause overcommit/unpredictable scheduling. Size from production percentiles and load tests.", "color": "amber" }]
+        },
+        {
+          "id": "scheduling-placement",
+          "title": "Affinity, Taints, Topology & Disruption",
+          "description": "Use selectors/affinity for required or preferred placement, taints/tolerations for node admission, topology spread for failure domains, and PDB for voluntary disruptions.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "topologySpreadConstraints:\n  - maxSkew: 1\n    topologyKey: topology.kubernetes.io/zone\n    whenUnsatisfiable: DoNotSchedule\n    labelSelector: { matchLabels: { app.kubernetes.io/name: api } }\n\n# PDB: minAvailable: 2 or maxUnavailable: 1 for controller-managed replicas"
+          }],
+          "callouts": [{ "title": "PDB Does Not Protect Against Every Outage", "type": "note", "icon": "📌", "text": "It limits voluntary eviction, not crashes, node loss, bad rollouts, or application failure. Impossible budgets can block upgrades/drains.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "scaling-rollout-lifecycle",
+      "title": "Scaling, Rollouts & Lifecycle",
+      "description": "Scale from useful signals and coordinate startup, traffic, termination, and schema compatibility.",
+      "subtopics": [
+        {
+          "id": "autoscaling",
+          "title": "HPA, VPA & Cluster Autoscaling",
+          "description": "HPA changes replicas from resource/custom/external metrics; VPA recommends or adjusts Pod resources; node autoscaling supplies cluster capacity.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "HPA needs resource requests for utilization metrics\nChoose metrics correlated with work: queue depth, concurrency, latency—not only CPU\nSet min/max, stabilization, and scale behavior\nAvoid conflicting HPA and VPA control of the same resource dimension\nNode provisioning is slower than Pod scaling; retain headroom"
+          }],
+          "callouts": [{ "title": "Autoscaling Cannot Fix a Saturated Dependency", "type": "danger", "icon": "📈", "text": "More Pods can overload a database or queue. Bound concurrency, model downstream capacity, and load-test scaling/scale-down behavior.", "color": "red" }]
+        },
+        {
+          "id": "termination-draining",
+          "title": "Graceful Termination & preStop",
+          "description": "On deletion, endpoints/readiness change and kubelet runs preStop then sends the stop signal within terminationGracePeriodSeconds. Applications must stop intake and drain.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "spec:\n  terminationGracePeriodSeconds: 45\n  containers:\n    - name: api\n      lifecycle:\n        preStop:\n          exec: { command: [\"/bin/sh\", \"-c\", \"sleep 5\"] }"
+          }],
+          "callouts": [{ "title": "preStop Uses the Same Grace Budget", "type": "warning", "icon": "⏳", "text": "A long hook reduces time available for application shutdown. Prefer the app handling SIGTERM/readiness and use a hook only for a clear platform timing need.", "color": "amber" }]
+        },
+        {
+          "id": "deployment-strategies",
+          "title": "Rolling, Blue/Green & Canary",
+          "description": "Deployment natively performs rolling updates. Blue/green switches traffic between full stacks; canary shifts a fraction through separate workloads/routing and analysis.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Rolling → simple, mixed versions coexist temporarily\nBlue/green → fast switch/rollback, double capacity, state compatibility required\nCanary → limited exposure + metrics, needs traffic control and promotion automation\nAll strategies → backward-compatible APIs/events/schema and explicit rollback criteria"
+          }],
+          "callouts": [{ "title": "Database Rollback Is Separate", "type": "danger", "icon": "🗃️", "text": "Use expand/migrate/contract changes and forward-compatible readers/writers. Rolling back application images does not automatically reverse data migrations.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "security-governance",
+      "title": "Security, Tenancy & Policy",
+      "description": "Protect the API, workload identity, runtime, network, images, and admission path.",
+      "subtopics": [
+        {
+          "id": "rbac-serviceaccounts",
+          "title": "RBAC & Service Accounts",
+          "description": "Roles/ClusterRoles define verbs on resources; bindings grant them to users/groups/service accounts. Give each workload a narrow identity and disable token mounting when unused.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "apiVersion: rbac.authorization.k8s.io/v1\nkind: Role\nmetadata: { name: config-reader, namespace: shop }\nrules:\n  - apiGroups: [\"\"]\n    resources: [\"configmaps\"]\n    resourceNames: [\"api-runtime\"]\n    verbs: [\"get\"]"
+          }],
+          "callouts": [{ "title": "Avoid Wildcards and Broad Bindings", "type": "danger", "icon": "🔐", "text": "Do not grant cluster-admin, * resources/verbs, Secret list access, or default service accounts for convenience. Audit effective permissions and escalation paths.", "color": "red" }]
+        },
+        {
+          "id": "pod-security-context",
+          "title": "Pod Security Standards & securityContext",
+          "description": "Enforce restricted workload defaults: non-root, no privilege escalation, dropped capabilities, seccomp, read-only root where possible, and controlled UID/GID/volume ownership.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "securityContext:\n  runAsNonRoot: true\n  runAsUser: 10001\n  seccompProfile: { type: RuntimeDefault }\ncontainers:\n  - name: api\n    securityContext:\n      allowPrivilegeEscalation: false\n      readOnlyRootFilesystem: true\n      capabilities: { drop: [\"ALL\"] }"
+          }],
+          "callouts": [{ "title": "Enforce at Admission", "type": "tip", "icon": "💡", "text": "Namespace Pod Security Admission or policy engines prevent unsafe manifests before scheduling. CI lint alone cannot stop manual or compromised deploy clients.", "color": "green" }]
+        },
+        {
+          "id": "supply-chain-tenancy",
+          "title": "Image Policy, Namespaces, Quotas & Admission",
+          "description": "Use verified immutable images, namespace boundaries, ResourceQuota/LimitRange, network/pod policies, and admission validation/mutation.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Pin image digests and verify signatures/provenance\nRestrict registries and mutable tags\nScan continuously and rebuild patched images\nUse namespaces for organization, not sole hard multi-tenancy\nApply quotas/limits to prevent resource exhaustion\nProtect admission webhooks for availability/failure policy\nAudit API and workload actions"
+          }],
+          "callouts": [{ "title": "Namespace Is Not a Security Boundary Alone", "type": "warning", "icon": "⚠️", "text": "RBAC, network policy, pod security, secrets, node isolation, quotas, and control-plane configuration must work together for tenant isolation.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "kubectl-observability-debug",
+      "title": "kubectl, Observability & Debugging",
+      "description": "Move from desired/observed object state to events, logs, metrics, traffic, process, and node evidence.",
+      "subtopics": [
+        {
+          "id": "kubectl-navigation",
+          "title": "Contexts, Get, Describe, Logs & Exec",
+          "description": "Always confirm context/namespace, query labels, inspect status/conditions/events, then enter a container only when needed.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "kubectl config current-context\nkubectl config get-contexts\nkubectl get pods -n shop -l app.kubernetes.io/name=api -o wide\nkubectl describe pod api-xyz -n shop\nkubectl logs -n shop api-xyz -c api --previous --tail=200\nkubectl exec -n shop -it api-xyz -c api -- sh\nkubectl get events -n shop --sort-by=.lastTimestamp"
+          }],
+          "callouts": [{ "title": "Production Context Guard", "type": "danger", "icon": "🚨", "text": "Use distinct contexts/prompts, least-privilege credentials, explicit namespaces, and server-side dry-run/diff. Never paste destructive commands without resolving exact targets.", "color": "red" }]
+        },
+        {
+          "id": "debug-ephemeral-port-forward",
+          "title": "Ephemeral Debug, Port Forward & Copy",
+          "description": "Ephemeral containers add diagnostics to a Pod without rebuilding minimal images; port-forward creates a temporary local tunnel; cp transfers files via container tooling assumptions.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "kubectl debug -n shop -it pod/api-xyz --image=busybox:1.37 --target=api\nkubectl run -n shop net-debug --rm -it --image=nicolaka/netshoot -- sh\nkubectl port-forward -n shop service/api 8080:80\nkubectl top pods -n shop\nkubectl auth can-i get secrets -n shop --as=system:serviceaccount:shop:api"
+          }],
+          "callouts": [{ "title": "Debug Access Is Privileged", "type": "warning", "icon": "⚠️", "text": "Ephemeral containers and port-forward can expose process/network/data access. Restrict RBAC, audit usage, and do not use port-forward as production connectivity.", "color": "amber" }]
+        },
+        {
+          "id": "incident-triage",
+          "title": "Pod Failure & Incident Triage",
+          "description": "Use status reason and conditions to select the next evidence source rather than restarting blindly.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Pending → scheduling events, requests, taints, affinity, PVC, quota\nImagePullBackOff → image name/digest, registry auth/network/policy\nCrashLoopBackOff → current + --previous logs, exit code, config, probes, OOM\nRunning not Ready → readiness endpoint, Service endpoints, dependencies\nOOMKilled → memory working set/limit/leak; don't only increase blindly\nEvicted → node pressure, ephemeral storage/memory, requests\nTraffic failure → DNS, EndpointSlice, selector, NetworkPolicy, gateway/controller\nRollout stuck → conditions, readiness, capacity, progress deadline"
+          }],
+          "callouts": [{ "title": "Events Expire", "type": "tip", "icon": "💡", "text": "Collect centralized logs, metrics, traces, audit events, object state, and deployment annotations. Build runbooks before incidents and preserve a timeline.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "kustomize-helm-gitops",
+      "title": "Kustomize, Helm & Delivery",
+      "description": "Render, review, validate, and reconcile configuration without hiding the resulting Kubernetes API objects.",
+      "subtopics": [
+        {
+          "id": "kustomize",
+          "title": "Kustomize Bases, Overlays & Generators",
+          "description": "Kustomize composes resources and patches without templating. kubectl supports render/apply with -k; generators add content hashes that trigger rollout references.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "# overlays/production/kustomization.yaml\nresources: [../../base]\nnamespace: shop-production\nimages:\n  - name: registry.example/app\n    newName: registry.example/app\n    digest: sha256:...\npatches:\n  - path: replicas.yaml\nconfigMapGenerator:\n  - name: api-config\n    literals: [LOG_LEVEL=info]"
+          }],
+          "callouts": [{ "title": "Render Before Apply", "type": "tip", "icon": "💡", "text": "Run kubectl kustomize, schema/policy checks, and kubectl diff -k in CI. Keep overlays small; duplication often signals a missing base/component boundary.", "color": "green" }]
+        },
+        {
+          "id": "helm",
+          "title": "Helm Charts, Values & Releases",
+          "description": "Helm packages templated resources as charts and tracks releases. Values configure chart-supported choices; templates must render valid secure manifests.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "helm lint ./chart\nhelm template shop ./chart -f values-production.yaml\nhelm diff upgrade shop ./chart -n shop -f values-production.yaml\nhelm upgrade --install shop ./chart -n shop --create-namespace --atomic --timeout 10m\nhelm history shop -n shop\nhelm rollback shop 3 -n shop"
+          }],
+          "callouts": [{ "title": "Template Output Is the Real API", "type": "danger", "icon": "📄", "text": "Review rendered manifests, pin chart/dependency versions, validate schemas/policies, avoid secrets in values/history, and understand hooks/ownership before install.", "color": "red" }]
+        },
+        {
+          "id": "gitops-delivery",
+          "title": "GitOps, Drift & Promotion",
+          "description": "A delivery controller can reconcile versioned desired state, expose drift and health, and promote immutable artifacts across environments.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Build once → scan/sign → push immutable digest\nUpdate environment desired state through reviewed change\nRender/validate/policy/diff before merge\nController reconciles and reports health/drift\nPromote the same digest; do not rebuild per environment\nAutomate rollback/roll-forward using measured gates\nEmergency changes must be committed back to source of truth"
+          }],
+          "callouts": [{ "title": "Git Encryption Is Not Runtime Secret Management", "type": "warning", "icon": "🔐", "text": "If storing encrypted secrets in Git, protect keys and decrypted delivery paths. Prefer external secret references where operationally appropriate.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "production-checklist",
+      "title": "Production Readiness Checklist",
+      "description": "Review workload correctness, capacity, availability, security, data, and operations as one system.",
+      "subtopics": [
+        {
+          "id": "kubernetes-checklist",
+          "title": "Workload & Cluster Checklist",
+          "description": "A manifest is deployable only when its application and platform contracts are proven.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Images use verified immutable digests\n□ Controller matches identity/completion semantics\n□ Labels/selectors/Service EndpointSlices are correct\n□ Startup/readiness/liveness probes answer distinct questions\n□ Requests/limits/ephemeral storage derive from measurements\n□ SIGTERM, drain, grace, and rollout settings are tested\n□ Replicas spread across failure domains; disruption budget is feasible\n□ Autoscaling uses meaningful metrics and respects dependencies\n□ Config/Secret changes trigger or safely reload\n□ Persistent data has backup, restore, migration, reclaim plans\n□ Service accounts/RBAC/network/pod security are least privilege\n□ Admission, image, quota, and namespace policies are enforced\n□ Logs/metrics/traces/audit/deploy markers and alerts exist\n□ Kustomize/Helm output is rendered, validated, diffed, reviewed\n□ Rollback and forward-compatible schema strategy are rehearsed\n□ Context-aware incident runbooks avoid destructive improvisation"
+          }],
+          "callouts": [{ "title": "Kubernetes Moves Failure; It Does Not Remove It", "type": "note", "icon": "📌", "text": "Reconciliation improves automation, but applications still need idempotency, timeouts, backpressure, graceful shutdown, data recovery, security, and observability.", "color": "blue" }]
+        }
+      ]
+    }
+  ]
+}

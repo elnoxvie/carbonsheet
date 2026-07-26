@@ -1,0 +1,261 @@
+{
+  "id": "android-kotlin-flows",
+  "title": "Android Kotlin Flows",
+  "slug": "android-kotlin-flows",
+  "category": "Android",
+  "technology": "Kotlin Flow",
+  "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 38,
+  "description": "Beginner-to-advanced reference for building, transforming, sharing, collecting, debugging, and testing Kotlin Flow streams in Android applications.",
+  "tags": ["ANDROID", "KOTLIN", "FLOW", "STATEFLOW", "SHAREDFLOW", "REACTIVE"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["kotlin flow", "stateflow", "sharedflow", "android reactive streams", "cold flow", "hot flow"],
+  "relatedSheets": ["android-kotlin-coroutines", "android-kotlin", "android-testing", "android-jetpack-compose"],
+  "prerequisites": [{ "title": "Android Kotlin Coroutines", "slug": "android-kotlin-coroutines" }],
+  "sections": [
+    {
+      "id": "flow-mental-model",
+      "title": "Flow Mental Model",
+      "description": "Understand what a Flow represents before choosing builders or operators.",
+      "subtopics": [
+        {
+          "id": "cold-stream-basics",
+          "title": "Cold Streams & Collection",
+          "description": "A Flow describes asynchronous values. A cold Flow runs its upstream block independently for every collector and does no work until collected.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val numbers: Flow<Int> = flow {\n    println(\"producer starts\")\n    for (n in 1..3) {\n        delay(100)\n        emit(n)\n    }\n}\n\nnumbers.collect { println(\"A: $it\") } // starts producer\nnumbers.collect { println(\"B: $it\") } // starts it again",
+            "annotations": [
+              { "id": "flow-description", "targetToken": "flow {", "text": "Creates a cold Flow description; the body is suspendable.", "position": "top" },
+              { "id": "terminal-collect", "targetToken": "collect", "text": "Terminal operator starts upstream work and suspends until completion.", "position": "bottom" }
+            ]
+          }],
+          "callouts": [
+            { "title": "Flow Is Sequential by Default", "type": "note", "icon": "📌", "text": "Each operator and collector normally executes sequentially in the collecting coroutine. Concurrency appears only when an operator such as buffer, flatMapMerge, shareIn, or a separate coroutine introduces it.", "color": "blue" },
+            { "title": "Nothing Happens Without Collection", "type": "warning", "icon": "⚠️", "text": "Creating a cold Flow does not start requests, database reads, or timers. Ensure the intended owner collects it or converts it to a deliberately scoped hot stream.", "color": "amber" }
+          ],
+          "tags": ["cold", "collect", "sequential"]
+        },
+        {
+          "id": "flow-vs-suspend-state-event",
+          "title": "Choose Suspend, Flow, StateFlow, or SharedFlow",
+          "description": "Use a suspend function for one result, Flow for a changing stream, StateFlow for observable current state, and SharedFlow for broadcast values when state semantics do not fit.",
+          "table": {
+            "title": "Asynchronous API Selection",
+            "headers": ["API Shape", "Represents", "Replay / Current Value", "Typical Use"],
+            "rows": [
+              ["suspend function", "One asynchronous result or completion", "None", "Load or save one item"],
+              ["Flow<T>", "Cold stream computed per collector", "Only if an operator adds it", "Observe database query changes"],
+              ["StateFlow<T>", "Hot observable state", "Exactly one current value", "Expose immutable ViewModel UI state"],
+              ["SharedFlow<T>", "Hot broadcast stream", "Configurable replay from zero upward", "Fan out values to multiple active collectors"],
+              ["Channel<T>", "Point-to-point queued communication", "Buffered until received, not replayed to all", "Coordinate coroutine producers and consumers"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "interface UserRepository {\n    suspend fun refreshUser(): Result<Unit>       // one-shot action\n    fun observeUser(): Flow<User>                 // changing data\n}\n\nprivate val _uiState = MutableStateFlow(UiState())\nval uiState: StateFlow<UiState> = _uiState.asStateFlow()\n\nprivate val _signals = MutableSharedFlow<Signal>(extraBufferCapacity = 1)\nval signals: SharedFlow<Signal> = _signals.asSharedFlow()"
+          }],
+          "callouts": [{ "title": "Events Versus State", "type": "warning", "icon": "⚠️", "text": "Do not represent durable UI facts as one-time events. If losing a value during configuration change would produce an incorrect screen, model it as state and acknowledge it through state transitions.", "color": "amber" }],
+          "tags": ["api-design", "state", "events"]
+        }
+      ]
+    },
+    {
+      "id": "building-flows",
+      "title": "Building Flows",
+      "description": "Create streams from suspend code, callbacks, collections, and existing state.",
+      "subtopics": [
+        {
+          "id": "flow-builders",
+          "title": "flow, flowOf, asFlow & channelFlow",
+          "description": "Select the smallest builder that matches the producer. Use flow for sequential emissions and channelFlow when child coroutines must emit concurrently.",
+          "tabs": [
+            { "label": "Common Builders", "language": "kotlin", "code": "val fixed = flowOf(1, 2, 3)\nval fromRange = (1..3).asFlow()\nval polled = flow {\n    while (currentCoroutineContext().isActive) {\n        emit(api.fetchStatus())\n        delay(5.seconds)\n    }\n}" },
+            { "label": "Concurrent Producer", "language": "kotlin", "code": "fun mergedSensors(): Flow<Reading> = channelFlow {\n    launch { accelerometer.collect { send(it) } }\n    launch { gyroscope.collect { send(it) } }\n    // Children are cancelled when collection ends.\n}" }
+          ],
+          "callouts": [{ "title": "Emission Context Invariant", "type": "danger", "icon": "🛑", "text": "Do not launch another coroutine or use withContext to call emit inside flow. Use flowOn to move upstream work, or channelFlow/send for concurrent producers.", "color": "red" }]
+        },
+        {
+          "id": "callback-flow",
+          "title": "Convert Callback APIs with callbackFlow",
+          "description": "Bridge multi-shot listener APIs into a cold Flow and always unregister the callback when collection stops.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun ConnectivityManager.statuses(): Flow<Boolean> = callbackFlow {\n    val callback = object : NetworkCallback() {\n        override fun onAvailable(network: Network) { trySend(true) }\n        override fun onLost(network: Network) { trySend(false) }\n    }\n    registerDefaultNetworkCallback(callback)\n    awaitClose { unregisterNetworkCallback(callback) }\n}.distinctUntilChanged()",
+            "annotations": [
+              { "id": "try-send", "targetToken": "trySend", "text": "Non-suspending send suitable for callback threads; inspect failure if loss matters.", "position": "right" },
+              { "id": "await-close", "targetToken": "awaitClose", "text": "Keeps the channel open and performs mandatory cleanup on cancellation.", "position": "bottom" }
+            ]
+          }],
+          "callouts": [{ "title": "Cleanup Is Not Optional", "type": "danger", "icon": "🧹", "text": "Missing awaitClose can leak listeners. Registration may also throw; handle permission and platform failures according to the API contract.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "transforming-streams",
+      "title": "Transforming & Combining Streams",
+      "description": "Build readable pipelines and make cancellation semantics explicit.",
+      "subtopics": [
+        {
+          "id": "core-operators",
+          "title": "map, filter, transform & onEach",
+          "description": "Intermediate operators return a new cold Flow; they do not start collection.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "repository.observeUsers()\n    .map { users -> users.filter(User::isActive) }\n    .map { users -> users.sortedBy(User::displayName) }\n    .onEach { users -> logger.debug(\"active=${users.size}\") }\n    .distinctUntilChanged()",
+            "evaluations": [{ "input": "[Ada(active), Lin(inactive), Bo(active)]", "output": "[Ada, Bo] sorted by displayName" }]
+          }],
+          "callouts": [{ "title": "Keep onEach Non-Blocking", "type": "tip", "icon": "💡", "text": "onEach is useful for logging and small side effects, but it remains part of the sequential pipeline. Long work delays downstream collection.", "color": "green" }]
+        },
+        {
+          "id": "latest-and-flatmap",
+          "title": "mapLatest & flatMap Families",
+          "description": "Choose based on whether new input cancels, queues, or runs alongside previous work.",
+          "tabs": [
+            { "label": "Latest Search", "language": "kotlin", "code": "query\n    .debounce(300)\n    .map(String::trim)\n    .distinctUntilChanged()\n    .flatMapLatest { term ->\n        if (term.isEmpty()) flowOf(emptyList())\n        else repository.search(term)\n    }" },
+            { "label": "Operator Semantics", "language": "text", "code": "flatMapConcat: finish each inner Flow in order\nflatMapMerge: collect inner Flows concurrently (bounded concurrency)\nflatMapLatest: cancel the previous inner Flow when new input arrives\nmapLatest/collectLatest: cancel only the previous transform/collector body" }
+          ],
+          "callouts": [{ "title": "Cancellation Must Be Safe", "type": "warning", "icon": "⚠️", "text": "Latest operators cancel superseded work. Do not use them for operations that must commit exactly once unless the operation is transaction-safe or runs in an appropriate longer-lived scope.", "color": "amber" }]
+        },
+        {
+          "id": "combine-zip-merge",
+          "title": "combine, zip & merge",
+          "description": "combine emits whenever either source changes after both have emitted; zip pairs by position; merge forwards values as they arrive.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val uiState: Flow<SearchUiState> = combine(\n    repository.results,\n    preferences.filters,\n    connectivity.status\n) { results, filters, online ->\n    SearchUiState(results.apply(filters), online)\n}",
+            "annotations": [{ "id": "combine-latest", "targetToken": "combine", "text": "Recomputes from the latest value of every input after all inputs emit once.", "position": "top" }]
+          }],
+          "callouts": [{ "title": "Initial Emissions Matter", "type": "note", "icon": "📌", "text": "combine cannot emit until every input has emitted. StateFlow inputs avoid an unexpected blank period because each has an initial value.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "context-buffer-errors",
+      "title": "Context, Buffering & Failure",
+      "description": "Control where work runs, how slow collectors affect producers, and where exceptions are handled.",
+      "subtopics": [
+        {
+          "id": "flowon-buffer-conflate",
+          "title": "flowOn, buffer & conflate",
+          "description": "flowOn changes the context of upstream operators. buffer lets producer and collector overlap. conflate retains only the newest value for a slow collector.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun thumbnails(): Flow<Bitmap> = imageIds()\n    .map { id -> decodeThumbnail(id) }\n    .flowOn(dispatchers.default) // map and imageIds upstream\n    .buffer(capacity = 8)        // bounded producer/consumer overlap\n\nthumbnails().collectLatest(::render)"
+          }],
+          "callouts": [
+            { "title": "Preserve Main Safety", "type": "tip", "icon": "💡", "text": "Prefer making repositories and data sources main-safe internally. flowOn affects only upstream; it does not move the downstream collector.", "color": "green" },
+            { "title": "Loss Policy Is Product Behavior", "type": "warning", "icon": "⚠️", "text": "conflate, collectLatest, and drop overflow policies intentionally skip work or values. Use them for replaceable state or rendering, never silently for payments, audit events, or ordered writes.", "color": "amber" }
+          ]
+        },
+        {
+          "id": "flow-errors-retry-completion",
+          "title": "catch, retryWhen & onCompletion",
+          "description": "catch sees upstream exceptions but not failures thrown later in the collector. CancellationException must remain cancellation.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "repository.observeFeed()\n    .retryWhen { cause, attempt ->\n        val retryable = cause is IOException && attempt < 3\n        if (retryable) delay((attempt + 1) * 500L)\n        retryable\n    }\n    .catch { cause ->\n        if (cause is CancellationException) throw cause\n        emit(cachedFeed())\n    }\n    .onCompletion { cause -> logger.debug(\"complete: $cause\") }"
+          }],
+          "callouts": [{ "title": "Catch Near the Recoverable Boundary", "type": "tip", "icon": "💡", "text": "Place catch after the operations whose failures can be converted into a domain value. Avoid swallowing programmer errors with a broad Throwable fallback.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "stateflow-sharedflow",
+      "title": "StateFlow, SharedFlow & Sharing",
+      "description": "Model observable state and share expensive upstream work with deliberate lifetime rules.",
+      "subtopics": [
+        {
+          "id": "stateflow-state-holder",
+          "title": "StateFlow as an Immutable State API",
+          "description": "StateFlow is hot, always has a current value, replays that value to new collectors, and conflates updates using equality.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "data class ProfileUiState(\n    val loading: Boolean = false,\n    val profile: Profile? = null,\n    val errorMessage: String? = null\n)\n\nprivate val _uiState = MutableStateFlow(ProfileUiState())\nval uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()\n\nfun beginLoad() = _uiState.update { it.copy(loading = true) }"
+          }],
+          "callouts": [
+            { "title": "Atomic Updates", "type": "tip", "icon": "💡", "text": "Use update or compareAndSet when the next value depends on the current value; direct read-modify-write can lose concurrent changes.", "color": "green" },
+            { "title": "Immutable Values", "type": "warning", "icon": "⚠️", "text": "Mutating a list or object already stored in StateFlow may not emit because equality has not changed. Publish a new immutable value.", "color": "amber" }
+          ]
+        },
+        {
+          "id": "statein-sharein",
+          "title": "stateIn, shareIn & SharingStarted",
+          "description": "Convert a cold Flow to a shared hot stream in a scope that lives exactly as long as the shared resource should live.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val uiState: StateFlow<FeedUiState> = repository.observeFeed()\n    .map<List<Article>, FeedUiState> { FeedUiState.Ready(it) }\n    .stateIn(\n        scope = viewModelScope,\n        started = SharingStarted.WhileSubscribed(5_000),\n        initialValue = FeedUiState.Loading\n    )\n\nval sharedUpdates: SharedFlow<Update> = expensiveUpdates.shareIn(\n    scope = applicationScope,\n    started = SharingStarted.WhileSubscribed(),\n    replay = 1\n)"
+          }],
+          "callouts": [{ "title": "Scope Defines Lifetime", "type": "danger", "icon": "⏳", "text": "A scope that is too short repeatedly restarts work; one that is too long retains resources. WhileSubscribed with a small timeout avoids churn during brief configuration changes while stopping unused upstream work.", "color": "red" }]
+        },
+        {
+          "id": "sharedflow-buffers",
+          "title": "SharedFlow Replay & Overflow",
+          "description": "SharedFlow broadcasts values. Configure replay, extra buffer capacity, and overflow based on whether late or slow subscribers may miss values.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val _refreshes = MutableSharedFlow<Unit>(\n    replay = 0,\n    extraBufferCapacity = 1,\n    onBufferOverflow = BufferOverflow.DROP_OLDEST\n)\n\nfun requestRefresh() { _refreshes.tryEmit(Unit) }"
+          }],
+          "callouts": [{ "title": "No Subscribers", "type": "note", "icon": "📌", "text": "With replay = 0, values emitted while nobody is subscribed are not retained. If delivery must survive absence, persist state or use a durable queue rather than treating SharedFlow as one.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "android-collection",
+      "title": "Lifecycle-Aware Android Collection",
+      "description": "Tie collectors to screen visibility and keep ownership explicit.",
+      "subtopics": [
+        {
+          "id": "views-repeat-on-lifecycle",
+          "title": "Views: repeatOnLifecycle",
+          "description": "repeatOnLifecycle launches the block when the Lifecycle reaches the target state and cancels it below that state.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "viewLifecycleOwner.lifecycleScope.launch {\n    viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {\n        launch { viewModel.uiState.collect(::render) }\n        launch { viewModel.messages.collect(::showMessage) }\n    }\n}"
+          }],
+          "callouts": [
+            { "title": "Use viewLifecycleOwner in Fragments", "type": "danger", "icon": "🛑", "text": "A Fragment can outlive its destroyed View. Bind UI collectors to viewLifecycleOwner to avoid touching stale bindings.", "color": "red" },
+            { "title": "Parallel Collection Needs Children", "type": "note", "icon": "📌", "text": "collect never returns for an ongoing stream. Launch each independently collected Flow in its own child coroutine inside repeatOnLifecycle.", "color": "blue" }
+          ]
+        },
+        {
+          "id": "compose-collect-state",
+          "title": "Compose: collectAsStateWithLifecycle",
+          "description": "Convert a Flow or StateFlow into Compose State using Android lifecycle awareness.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@Composable\nfun FeedRoute(viewModel: FeedViewModel = viewModel()) {\n    val uiState by viewModel.uiState.collectAsStateWithLifecycle()\n    FeedScreen(uiState = uiState, onRetry = viewModel::retry)\n}"
+          }],
+          "callouts": [{ "title": "Keep Reusable UI Platform-Neutral", "type": "tip", "icon": "💡", "text": "Collect at the screen boundary and pass plain values and callbacks to reusable composables. This improves previews, testing, and reuse.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "flow-testing-debugging",
+      "title": "Testing, Debugging & Production Checklist",
+      "description": "Test deterministic behavior and diagnose lifetime, cancellation, and duplicate-work bugs.",
+      "subtopics": [
+        {
+          "id": "flow-tests",
+          "title": "Test Finite & Infinite Flows",
+          "description": "Use runTest, finite terminal operators, or a background collector. Test state values rather than implementation timing whenever possible.",
+          "tabs": [
+            { "label": "Finite Flow", "language": "kotlin", "code": "@Test\nfun emitsCachedThenFresh() = runTest {\n    val values = repository.observe().take(2).toList()\n    assertEquals(listOf(cached, fresh), values)\n}" },
+            { "label": "StateFlow", "language": "kotlin", "code": "@Test\nfun refreshUpdatesState() = runTest {\n    val vm = FeedViewModel(fakeRepository, backgroundScope)\n    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {\n        vm.uiState.collect() // activates WhileSubscribed upstream\n    }\n    vm.refresh()\n    advanceUntilIdle()\n    assertEquals(FeedUiState.Ready(items), vm.uiState.value)\n}" }
+          ],
+          "callouts": [{ "title": "Dedicated Testing Sheet", "type": "note", "icon": "🔗", "text": "This is the Flow-specific quick reference. See Android Testing for dispatcher replacement, scheduler control, fakes, Turbine-style assertions, and instrumented tests.", "color": "blue" }]
+        },
+        {
+          "id": "flow-production-checklist",
+          "title": "Production Review Checklist",
+          "description": "Check semantics, ownership, cancellation, thread usage, and loss behavior before shipping.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Cold versus hot behavior is intentional\n□ Hot Flow scope matches the resource lifetime\n□ Mutable state is private; exposed type is immutable\n□ UI collection is lifecycle-aware\n□ Blocking work is main-safe and injected for tests\n□ Latest/conflation/drop behavior cannot lose required work\n□ Callback listeners unregister in awaitClose\n□ CancellationException is not swallowed\n□ retry is bounded and limited to retryable failures\n□ combine inputs have sensible initial emissions\n□ State values are immutable and equality behaves correctly\n□ Infinite streams have deterministic tests"
+          }]
+        }
+      ]
+    }
+  ]
+}

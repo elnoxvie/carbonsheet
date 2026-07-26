@@ -1,0 +1,85 @@
+{
+  "id": "typescript-class",
+  "title": "TypeScript Class & Type System",
+  "slug": "typescript",
+  "category": "Frontend",
+  "technology": "TypeScript",
+  "version": "v5.4",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 12,
+  "description": "Essential syntax reference for TypeScript classes, generic constraints, type-only modifiers, control flow analysis, and type evaluation.",
+  "tags": ["TYPESCRIPT", "CLASS", "GENERICS", "TYPES", "INTERFACES"],
+  "updatedAt": "Oct 2026",
+  "sections": [
+    {
+      "id": "class-syntax",
+      "title": "Class Declarations",
+      "description": "Field modifiers and constructor parameter properties.",
+      "subtopics": [
+        {
+          "id": "parameter-properties",
+          "title": "Parameter Properties & Modifiers",
+          "description": "Automatic instance field initialization via constructor parameters.",
+          "table": {
+            "title": "TypeScript Class Member Modifiers",
+            "headers": ["Modifier", "Access / Effect", "Runtime Enforcement", "Typical Use"],
+            "rows": [
+              ["public", "Accessible everywhere; default", "Normal JavaScript property", "Public class API"],
+              ["protected", "Class and subclasses", "Type-checker only", "Extension points for derived classes"],
+              ["private", "Declaring class only", "Type-checker only", "Compile-time encapsulation"],
+              ["#private", "Declaring class only", "Yes; JavaScript private field", "Hard runtime encapsulation"],
+              ["readonly", "Cannot be reassigned after initialization", "Type-checker only", "Stable reference or value"],
+              ["static", "Member belongs to the class constructor", "Yes", "Factories, constants, shared utilities"]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "typescript",
+              "code": "class User extends Account implements Updatable {\n  id: string;\n  readonly createdAt = new Date();\n\n  constructor(public email: string) {\n    super();\n  }\n}",
+              "annotations": [
+                {
+                  "id": "ann-extends",
+                  "targetToken": "extends Account",
+                  "text": "Subclasses base Account class",
+                  "position": "top"
+                },
+                {
+                  "id": "ann-constructor",
+                  "targetToken": "public email: string",
+                  "text": "Parameter property automatically sets instance field",
+                  "position": "bottom"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control-flow-analysis",
+      "title": "Control Flow & Narrowing",
+      "description": "Type guard functions and predicate assertions.",
+      "subtopics": [
+        {
+          "id": "type-predicates",
+          "title": "Type Predicates & Narrowing",
+          "description": "Custom type assertion functions with obj is Type return signatures.",
+          "codeBlocks": [
+            {
+              "language": "typescript",
+              "code": "function isErrorResponse(obj: Response): obj is APIErrorResponse {\n  return obj instanceof APIErrorResponse;\n}\n\nif (isErrorResponse(res)) {\n  console.error(res.message);\n}",
+              "annotations": [
+                {
+                  "id": "ann-predicate",
+                  "targetToken": "obj is APIErrorResponse",
+                  "text": "Type predicate assertion for scope narrowing",
+                  "position": "right"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,255 @@
+{
+  "id": "android-kotlin-coroutines",
+  "title": "Android Kotlin Coroutines",
+  "slug": "android-kotlin-coroutines",
+  "category": "Android",
+  "technology": "Kotlin Coroutines",
+  "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 40,
+  "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, lifecycle scopes, and production coroutine design on Android.",
+  "tags": ["ANDROID", "KOTLIN", "COROUTINES", "CONCURRENCY", "ASYNC", "STRUCTURED CONCURRENCY"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["kotlin coroutine", "suspend function", "viewmodelscope", "lifecyclescope", "structured concurrency", "dispatcher"],
+  "relatedSheets": ["android-kotlin-flows", "android-kotlin", "android-testing", "android-jetpack-compose"],
+  "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],
+  "sections": [
+    {
+      "id": "coroutine-foundations",
+      "title": "Coroutine Foundations",
+      "description": "Separate suspension, concurrency, parallelism, and threads.",
+      "subtopics": [
+        {
+          "id": "suspend-resume",
+          "title": "Suspending Is Not Blocking",
+          "description": "A suspend function may pause without occupying its thread. The continuation later resumes on a dispatcher; suspend does not automatically mean background execution.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "suspend fun loadProfile(id: UserId): Profile {\n    val cached = cache.read(id)       // must itself be main-safe\n    if (cached != null) return cached\n    return api.fetchProfile(id)       // suspends without blocking caller thread\n}",
+            "annotations": [{ "id": "suspend-modifier", "targetToken": "suspend fun", "text": "Allows suspension; it does not choose a thread or start a coroutine.", "position": "top" }]
+          }],
+          "callouts": [
+            { "title": "Main-Safe APIs", "type": "tip", "icon": "💡", "text": "Every suspend function should be safe to call from the main thread. Move blocking or CPU-heavy implementation details inside the function with an injected dispatcher.", "color": "green" },
+            { "title": "Coroutine ≠ Thread", "type": "note", "icon": "📌", "text": "Many coroutines can share a small thread pool. A coroutine can resume on a different thread unless its dispatcher confines it.", "color": "blue" }
+          ]
+        },
+        {
+          "id": "builders-launch-async",
+          "title": "launch, async & withContext",
+          "description": "launch returns Job for work without a result; async returns Deferred for concurrent results; withContext switches context and returns a result without creating unstructured work.",
+          "tabs": [
+            { "label": "Launch", "language": "kotlin", "code": "val job: Job = scope.launch { repository.refresh() }\njob.join() // wait; failure follows parent/handler rules" },
+            { "label": "Async", "language": "kotlin", "code": "coroutineScope {\n    val profile = async { api.profile() }\n    val friends = async { api.friends() }\n    ScreenData(profile.await(), friends.await())\n}" },
+            { "label": "withContext", "language": "kotlin", "code": "suspend fun parse(bytes: ByteArray): Model =\n    withContext(defaultDispatcher) { parser.parse(bytes) }" }
+          ],
+          "callouts": [{ "title": "Do Not Use async for Sequential Work", "type": "warning", "icon": "⚠️", "text": "Calling await immediately after each async removes concurrency and adds complexity. Use direct suspend calls unless operations are independent and should overlap.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "structured-concurrency",
+      "title": "Structured Concurrency & Ownership",
+      "description": "Every coroutine should have a clear parent, lifetime, cancellation path, and failure policy.",
+      "subtopics": [
+        {
+          "id": "job-tree",
+          "title": "Job Trees & Parent-Child Rules",
+          "description": "A parent waits for its children. Parent cancellation cancels children; an ordinary child failure cancels its parent and siblings.",
+          "diagram": { "type": "mermaid", "content": "flowchart TD\n  P[Parent scope] --> A[Child A]\n  P --> B[Child B]\n  B --> C[Grandchild]\n  X[Cancel parent] -.-> P\n  P -. cancellation .-> A\n  P -. cancellation .-> B\n  B -. cancellation .-> C" },
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "suspend fun loadScreen(): ScreenData = coroutineScope {\n    val account = async { accountRepository.load() }\n    val offers = async { offerRepository.load() }\n    ScreenData(account.await(), offers.await())\n}"
+          }],
+          "callouts": [{ "title": "Avoid GlobalScope", "type": "danger", "icon": "🛑", "text": "GlobalScope detaches work from caller lifetime and error handling. Inject an application-level scope only for work that intentionally outlives the screen, or use WorkManager for durable deferrable work.", "color": "red" }]
+        },
+        {
+          "id": "coroutine-supervision",
+          "title": "coroutineScope vs supervisorScope",
+          "description": "coroutineScope fails the whole operation when any child fails. supervisorScope isolates child failures, but each failure still needs explicit handling.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "suspend fun loadOptionalPanels(): Panels = supervisorScope {\n    val weather = async { runCatching { api.weather() }.getOrNull() }\n    val news = async { runCatching { api.news() }.getOrNull() }\n    Panels(weather.await(), news.await())\n}"
+          }],
+          "callouts": [{ "title": "Supervision Is a Product Decision", "type": "warning", "icon": "⚠️", "text": "Use supervision only when partial success is meaningful. If results must be consistent as a unit, regular coroutineScope is the safer invariant.", "color": "amber" }]
+        },
+        {
+          "id": "external-scope",
+          "title": "Work That Outlives a Screen",
+          "description": "Inject a longer-lived scope when completion matters after navigation, and join it when the caller must wait for the outcome.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class BookmarkRepository(\n    private val dataSource: BookmarkDataSource,\n    private val applicationScope: CoroutineScope,\n    private val ioDispatcher: CoroutineDispatcher\n) {\n    suspend fun bookmark(id: ArticleId) {\n        applicationScope.launch(ioDispatcher) { dataSource.bookmark(id) }.join()\n    }\n}"
+          }],
+          "callouts": [{ "title": "Use WorkManager for Durable Work", "type": "note", "icon": "📌", "text": "An application process can die. Use WorkManager when work must eventually run under constraints or survive process recreation; an application coroutine scope cannot provide durability.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "dispatchers-context",
+      "title": "Dispatchers & Coroutine Context",
+      "description": "Choose execution resources based on work type and inject them for deterministic tests.",
+      "subtopics": [
+        {
+          "id": "dispatcher-selection",
+          "title": "Main, IO, Default & Limited Parallelism",
+          "description": "Main is for UI; IO for blocking I/O; Default for CPU-heavy work. limitedParallelism bounds concurrency for a resource without creating an unmanaged executor.",
+          "table": {
+            "title": "Dispatcher Selection Guide",
+            "headers": ["Dispatcher", "Best For", "Avoid", "Android Example"],
+            "rows": [
+              ["Dispatchers.Main", "UI state and main-thread-only APIs", "Blocking I/O or expensive computation", "Update observable screen state"],
+              ["Dispatchers.Main.immediate", "Run immediately when already on Main", "Using it as a general performance shortcut", "Avoid an extra dispatch in tightly controlled UI code"],
+              ["Dispatchers.IO", "Blocking file, socket, and legacy database calls", "CPU-heavy loops", "Call a blocking SDK"],
+              ["Dispatchers.Default", "CPU-intensive transforms and parsing", "Blocking network or file APIs", "Decode or sort a large dataset"],
+              ["dispatcher.limitedParallelism(n)", "Bound access to a scarce resource", "Assuming it creates a dedicated thread", "Limit concurrent uploads or database work"],
+              ["Injected test dispatcher", "Deterministic virtual-time tests", "Hard-coding production dispatchers in domain code", "StandardTestDispatcher in runTest"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class Importer(\n    private val io: CoroutineDispatcher,\n    default: CoroutineDispatcher\n) {\n    private val parsers = default.limitedParallelism(2)\n\n    suspend fun import(uri: Uri) = withContext(io) {\n        contentResolver.openInputStream(uri)!!.use { input ->\n            withContext(parsers) { parse(input.readBytes()) }\n        }\n    }\n}"
+          }],
+          "callouts": [{ "title": "IO Is Not Faster CPU", "type": "warning", "icon": "⚠️", "text": "Dispatchers.IO permits more blocking tasks; it is not the correct pool for expensive computation. Excess CPU work on IO can still starve the device.", "color": "amber" }]
+        },
+        {
+          "id": "inject-dispatchers",
+          "title": "Inject Dispatchers & Scopes",
+          "description": "Constructor-injected execution dependencies make ownership visible and let tests share one virtual-time scheduler.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "data class AppDispatchers(\n    val main: CoroutineDispatcher = Dispatchers.Main,\n    val io: CoroutineDispatcher = Dispatchers.IO,\n    val default: CoroutineDispatcher = Dispatchers.Default\n)\n\nclass UserRepository(\n    private val dispatchers: AppDispatchers\n) {\n    suspend fun read() = withContext(dispatchers.io) { dao.read() }\n}"
+          }],
+          "callouts": [{ "title": "Do Not Hide Ownership", "type": "tip", "icon": "💡", "text": "Prefer receiving a scope from the component that owns the lifetime. Creating CoroutineScope inside arbitrary classes makes cancellation and failure policies difficult to audit.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "cancellation-timeouts",
+      "title": "Cancellation, Cleanup & Timeouts",
+      "description": "Cancellation is cooperative and should remain visible through every layer.",
+      "subtopics": [
+        {
+          "id": "cooperative-cancellation",
+          "title": "Make CPU & Blocking Work Cancellable",
+          "description": "Suspending kotlinx.coroutines APIs check cancellation. Tight CPU loops and blocking calls must check or provide their own cancellation mechanism.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "suspend fun hashFiles(files: List<File>): List<Hash> =\n    withContext(defaultDispatcher) {\n        files.map { file ->\n            ensureActive()\n            hash(file)\n        }\n    }"
+          }],
+          "callouts": [{ "title": "Never Swallow CancellationException", "type": "danger", "icon": "🛑", "text": "A broad catch can convert cancellation into success and keep obsolete work running. Rethrow CancellationException, or catch only the domain failures you can handle.", "color": "red" }]
+        },
+        {
+          "id": "cleanup-noncancellable",
+          "title": "finally, use & NonCancellable",
+          "description": "Use finally/use for cleanup. Enter NonCancellable only for a short suspending cleanup that truly must finish.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "try {\n    connection.open()\n    transfer()\n} finally {\n    withContext(NonCancellable) {\n        connection.closeSuspending()\n    }\n}"
+          }],
+          "callouts": [{ "title": "Keep NonCancellable Tiny", "type": "warning", "icon": "⚠️", "text": "Large NonCancellable blocks make owners unable to stop work promptly. Do not wrap the main operation merely to force completion.", "color": "amber" }]
+        },
+        {
+          "id": "timeouts",
+          "title": "withTimeout & withTimeoutOrNull",
+          "description": "Timeouts cancel the enclosed coroutine. Decide whether timeout is exceptional or an expected absence.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val location: Location? = withTimeoutOrNull(2.seconds) {\n    locationProvider.currentLocation()\n}\n\nval result = location?.let(Result::success)\n    ?: Result.failure(LocationTimeout())"
+          }],
+          "callouts": [{ "title": "Timeout Does Not Stop Uncooperative APIs", "type": "note", "icon": "📌", "text": "Cancellation stops the coroutine only when the underlying operation cooperates. Wrap callback APIs so cancellation unregisters callbacks or invokes the platform cancellation signal.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "exceptions",
+      "title": "Exceptions & Failure Policy",
+      "description": "Know where exceptions propagate, where they are observed, and where recovery belongs.",
+      "subtopics": [
+        {
+          "id": "exception-propagation",
+          "title": "launch vs async Exceptions",
+          "description": "Root launch reports uncaught failures; async stores failure until await, but a failing child still cancels its regular parent immediately.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "viewModelScope.launch {\n    try {\n        val user = async { repository.user() }\n        val plan = async { repository.plan() }\n        _state.value = UiState.Ready(user.await(), plan.await())\n    } catch (error: IOException) {\n        _state.value = UiState.Offline\n    }\n}"
+          }],
+          "callouts": [{ "title": "Handle Expected Failures Near the Use Case", "type": "tip", "icon": "💡", "text": "Convert network, validation, and storage failures into domain outcomes where meaningful. Keep global handlers for logging unexpected root failures, not routine recovery.", "color": "green" }]
+        },
+        {
+          "id": "coroutine-exception-handler",
+          "title": "CoroutineExceptionHandler",
+          "description": "A handler observes uncaught exceptions of root coroutines. It does not catch exceptions so execution can resume and does not handle awaited Deferred failures.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val handler = CoroutineExceptionHandler { context, error ->\n    crashReporter.record(error, context[CoroutineName]?.name)\n}\nval appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default + handler)"
+          }],
+          "callouts": [{ "title": "Not a try/catch Replacement", "type": "warning", "icon": "⚠️", "text": "Use structured try/catch around operations that have a fallback. CoroutineExceptionHandler is a last-chance observer for uncaught root failures.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "android-scopes",
+      "title": "Android Lifecycle Scopes",
+      "description": "Start work in the component that owns its useful lifetime.",
+      "subtopics": [
+        {
+          "id": "viewmodel-scope",
+          "title": "viewModelScope",
+          "description": "Use viewModelScope for screen business logic that should survive configuration changes and stop when the ViewModel is cleared.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class CheckoutViewModel(\n    private val checkout: CheckoutUseCase\n) : ViewModel() {\n    fun submit() {\n        viewModelScope.launch {\n            _state.value = CheckoutState.Submitting\n            _state.value = checkout().fold(\n                onSuccess = { CheckoutState.Complete(it) },\n                onFailure = { CheckoutState.Failed(it.userMessage()) }\n            )\n        }\n    }\n}"
+          }],
+          "callouts": [{ "title": "Views Delegate Business Work", "type": "tip", "icon": "💡", "text": "Activities and composables should normally send user actions to the ViewModel. This survives configuration changes and keeps business logic unit-testable.", "color": "green" }]
+        },
+        {
+          "id": "lifecycle-scope",
+          "title": "lifecycleScope & repeatOnLifecycle",
+          "description": "Use lifecycleScope for UI-related work. Use repeatOnLifecycle for ongoing work that must stop while the UI is not visible.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "viewLifecycleOwner.lifecycleScope.launch {\n    viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {\n        viewModel.uiState.collect(::render)\n    }\n}"
+          }],
+          "callouts": [{ "title": "Flow Details Live Elsewhere", "type": "note", "icon": "🔗", "text": "See Android Kotlin Flows for StateFlow, SharedFlow, sharing, operators, and lifecycle-aware collection patterns.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "synchronization-performance",
+      "title": "Synchronization, Interop & Performance",
+      "description": "Protect shared state without blocking threads and diagnose concurrency problems.",
+      "subtopics": [
+        {
+          "id": "mutex-atomic-confinement",
+          "title": "Mutex, Atomic Updates & Confinement",
+          "description": "Prefer immutable state and ownership. Use Mutex for suspendable critical sections, atomics for simple lock-free values, or a single owner/dispatcher for confinement.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val mutex = Mutex()\nprivate var token: Token? = null\n\nsuspend fun token(): Token = mutex.withLock {\n    token?.takeUnless(Token::isExpired)\n        ?: api.refreshToken().also { token = it }\n}"
+          }],
+          "callouts": [{ "title": "No Suspending I/O Under Broad Locks", "type": "warning", "icon": "⚠️", "text": "A Mutex suspends rather than blocks, but a long critical section still serializes callers. Keep invariants narrow and avoid cyclic lock acquisition.", "color": "amber" }]
+        },
+        {
+          "id": "callback-interop",
+          "title": "Bridge One-Shot Callbacks",
+          "description": "Use suspendCancellableCoroutine and unregister or cancel the platform operation when the coroutine is cancelled.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "suspend fun awaitLocation(): Location = suspendCancellableCoroutine { cont ->\n    val callback = object : LocationCallback() {\n        override fun onLocationResult(result: LocationResult) {\n            cont.resume(result.lastLocation ?: return)\n        }\n    }\n    client.requestLocationUpdates(request, callback, Looper.getMainLooper())\n    cont.invokeOnCancellation { client.removeLocationUpdates(callback) }\n}"
+          }],
+          "callouts": [{ "title": "Resume Exactly Once", "type": "danger", "icon": "🛑", "text": "Callback APIs can fire repeatedly or race with cancellation. Guard one-shot completion and unregister promptly; use callbackFlow for multi-shot streams.", "color": "red" }]
+        },
+        {
+          "id": "debugging-checklist",
+          "title": "Debugging & Production Checklist",
+          "description": "Name important coroutines and audit every lifetime, dispatcher, and failure boundary.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Every launched coroutine has an intentional owner\n□ Suspend APIs are main-safe\n□ Dispatchers and long-lived scopes are injected\n□ Independent work uses async only when concurrency helps\n□ CancellationException is never swallowed\n□ CPU loops check cancellation\n□ Child failure versus supervision matches product semantics\n□ Blocking calls run on IO; CPU work runs on Default\n□ Shared mutable state has one owner or synchronization\n□ Callback bridges unregister on cancellation and resume once\n□ Durable work uses WorkManager\n□ Tests use one TestCoroutineScheduler"
+          }],
+          "callouts": [{ "title": "Name Long-Lived Work", "type": "tip", "icon": "💡", "text": "CoroutineName plus structured logging makes job dumps and crash reports far easier to understand. Measure before adding concurrency; more coroutines can increase contention and battery use.", "color": "green" }]
+        }
+      ]
+    }
+  ]
+}

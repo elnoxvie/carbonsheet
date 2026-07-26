@@ -1,0 +1,282 @@
+{
+  "id": "docker-production-reference",
+  "title": "Docker Containers & Compose",
+  "slug": "docker",
+  "category": "DevOps",
+  "technology": "Docker",
+  "version": "Current Docker Engine / Compose",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 62,
+  "description": "Beginner-to-advanced Docker reference covering images, containers, Dockerfiles, BuildKit, cache, lifecycle, storage, networking, Compose, registries, multi-platform builds, security, diagnostics, and production practices.",
+  "tags": ["DOCKER", "CONTAINERS", "DOCKERFILE", "COMPOSE", "BUILDKIT", "DEVOPS"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["docker cli", "docker compose", "dockerfile", "container", "docker build", "buildkit"],
+  "relatedSheets": ["kubernetes", "nodejs", "nextjs", "python", "fastapi", "git"],
+  "sections": [
+    {
+      "id": "container-model",
+      "title": "Images, Containers & Lifecycle",
+      "description": "Distinguish immutable image content from runtime process and writable state.",
+      "subtopics": [
+        {
+          "id": "images-containers",
+          "title": "Image, Container & Registry Mental Model",
+          "description": "An image is a content-addressed layer/config template; a container is an isolated process using that image plus runtime configuration and a writable layer; a registry distributes images.",
+          "diagram": { "type": "mermaid", "content": "flowchart LR\n  D[Dockerfile + context] --> B[BuildKit]\n  B --> I[Immutable image layers]\n  I --> R[Registry]\n  I --> C1[Container process + writable layer]\n  I --> C2[Container process + writable layer]\n  V[Volume] --> C1" },
+          "callouts": [{ "title": "Containers Are Disposable", "type": "danger", "icon": "🛑", "text": "A container's writable layer disappears with removal. Persist application data in volumes or external services and design processes to restart safely.", "color": "red" }]
+        },
+        {
+          "id": "run-create-start",
+          "title": "run, create, start, stop & remove",
+          "description": "run creates and starts; create separates configuration from start; stop sends the configured stop signal then kills after timeout; rm deletes stopped containers.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker run --name web --detach --publish 8080:8080 --env-file .env app:1.4\ndocker ps --all\ndocker stop --time 30 web\ndocker start web\ndocker rm web\n\n# Temporary interactive tool\ndocker run --rm -it --mount type=bind,src=\"$PWD\",dst=/work -w /work alpine:3.22 sh"
+          }],
+          "callouts": [{ "title": "PID 1 Must Handle Signals", "type": "warning", "icon": "⚠️", "text": "Use exec-form ENTRYPOINT/CMD so the application receives SIGTERM. Avoid shell wrappers that fail to exec or reap children; use --init when a tiny init is appropriate.", "color": "amber" }]
+        },
+        {
+          "id": "inspect-exec-logs-stats",
+          "title": "inspect, exec, logs & stats",
+          "description": "Inspect declared/runtime state, execute short diagnostics in a running container, stream logs, and observe resource usage.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker inspect web\ndocker logs --follow --tail 100 --timestamps web\ndocker exec -it web sh\ndocker top web\ndocker stats --no-stream web\ndocker port web\ndocker diff web"
+          }],
+          "callouts": [{ "title": "Do Not Repair Containers Manually", "type": "danger", "icon": "🧯", "text": "exec changes are unrepeatable and disappear after replacement. Diagnose, then fix the image/configuration and redeploy; never treat a running container like a hand-maintained VM.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "dockerfile-buildkit",
+      "title": "Dockerfiles & BuildKit",
+      "description": "Build reproducible minimal images with intentional cache and secret boundaries.",
+      "subtopics": [
+        {
+          "id": "dockerfile-core",
+          "title": "FROM, WORKDIR, COPY, RUN, USER & CMD",
+          "description": "Each instruction contributes config or a filesystem layer. Use a pinned, maintained base; stable workdir; narrow COPY; non-root runtime; and one foreground process.",
+          "codeBlocks": [{
+            "language": "dockerfile",
+            "code": "# syntax=docker/dockerfile:1\nFROM node:24-alpine AS runtime\nWORKDIR /app\nENV NODE_ENV=production\nCOPY --chown=node:node package.json package-lock.json ./\nRUN npm ci --omit=dev && npm cache clean --force\nCOPY --chown=node:node dist ./dist\nUSER node\nEXPOSE 8080\nCMD [\"node\", \"dist/server.js\"]"
+          }],
+          "callouts": [{ "title": "EXPOSE Is Documentation", "type": "note", "icon": "📌", "text": "It does not publish a host port. Use docker run -p or Compose ports; bind the application to 0.0.0.0 inside the container when it must accept external traffic.", "color": "blue" }]
+        },
+        {
+          "id": "layers-cache",
+          "title": "Layer Cache & .dockerignore",
+          "description": "Build cache reuses an instruction when its inputs match; once invalidated, following steps rebuild. Copy dependency manifests before frequently changing source.",
+          "tabs": [
+            { "label": "Cache-Friendly", "language": "dockerfile", "code": "COPY package.json package-lock.json ./\nRUN --mount=type=cache,target=/root/.npm npm ci\nCOPY . .\nRUN npm run build" },
+            { "label": ".dockerignore", "language": "text", "code": ".git\nnode_modules\ndist\n.env*\n*.log\ncoverage\nDockerfile*\ncompose*.yaml" }
+          ],
+          "callouts": [{ "title": "Context Is Data Sent to the Builder", "type": "danger", "icon": "🔐", "text": "Exclude secrets, VCS history, dependencies, and irrelevant artifacts. COPY . . can leak files into layers even if later deleted.", "color": "red" }]
+        },
+        {
+          "id": "multi-stage-secrets",
+          "title": "Multi-Stage Builds, Secrets & Cache Mounts",
+          "description": "Build in a tool-rich stage and copy only runtime artifacts. BuildKit mounts provide temporary cache, secret, SSH, bind, or tmpfs data without committing it to layers.",
+          "codeBlocks": [{
+            "language": "dockerfile",
+            "code": "# syntax=docker/dockerfile:1\nFROM node:24 AS build\nWORKDIR /src\nCOPY package*.json ./\nRUN --mount=type=cache,target=/root/.npm npm ci\nCOPY . .\nRUN --mount=type=secret,id=npmrc,target=/root/.npmrc npm run build\n\nFROM node:24-alpine\nWORKDIR /app\nCOPY --from=build --chown=node:node /src/dist ./dist\nUSER node\nCMD [\"node\", \"dist/server.js\"]"
+          }],
+          "callouts": [{ "title": "ARG and ENV Are Not Secret Storage", "type": "danger", "icon": "🔑", "text": "They can appear in metadata, history, cache, logs, or final config. Use secret mounts during build and runtime secret injection outside the image.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "storage-network",
+      "title": "Storage & Networking",
+      "description": "Choose explicit persistence, sharing, and connectivity contracts.",
+      "subtopics": [
+        {
+          "id": "volumes-bind-tmpfs",
+          "title": "Volumes, Bind Mounts & tmpfs",
+          "description": "Named volumes are Docker-managed persistent data; bind mounts expose host paths; tmpfs keeps temporary data in memory.",
+          "table": {
+            "title": "Container Storage Selection",
+            "headers": ["Mount Type", "Data Location", "Persists", "Best For", "Main Risk"],
+            "rows": [
+              ["Named volume", "Docker-managed host storage", "After container removal", "Databases and application data", "Must be backed up and lifecycle-managed separately"],
+              ["Bind mount", "Explicit host path", "As long as host files exist", "Source code, local config, host integration", "Host coupling and accidental file exposure"],
+              ["tmpfs", "Host memory", "No", "Secrets or high-churn temporary data", "Consumes memory and vanishes on stop"],
+              ["Container writable layer", "Container storage driver", "Only until container removal", "Disposable runtime changes", "Poor choice for important or high-write data"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker volume create postgres-data\ndocker run --mount type=volume,src=postgres-data,dst=/var/lib/postgresql/data postgres:17\ndocker run --mount type=bind,src=\"$PWD/src\",dst=/app/src,readonly app-dev\ndocker run --mount type=tmpfs,dst=/run/secrets,tmpfs-mode=0700 app"
+          }],
+          "callouts": [{ "title": "Mounts Override Image Paths", "type": "warning", "icon": "⚠️", "text": "Mounting over a non-empty container directory hides image files. Define ownership/UID, backup/restore, migration, and removal policy for named volumes.", "color": "amber" }]
+        },
+        {
+          "id": "networks-dns-ports",
+          "title": "Networks, DNS & Port Publishing",
+          "description": "User-defined bridge networks provide service-name DNS and isolation. Container ports are internal; published ports bind host interfaces.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker network create app-net\ndocker run -d --name db --network app-net postgres:17\ndocker run -d --name api --network app-net -p 127.0.0.1:8080:8080 app\n# API connects to db:5432, not localhost:5432."
+          }],
+          "callouts": [{ "title": "localhost Means This Container", "type": "danger", "icon": "🌐", "text": "Use the other container's DNS/service name. Bind published development ports to 127.0.0.1 unless LAN exposure is intended.", "color": "red" }]
+        },
+        {
+          "id": "resource-limits-health",
+          "title": "Resource Limits, Health & Restart",
+          "description": "Set memory/CPU/process limits, application-aware health checks, stop grace, and restart policy according to workload behavior.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker run -d --name api \\\n  --memory 512m --cpus 1.0 --pids-limit 200 \\\n  --health-cmd='wget -qO- http://127.0.0.1:8080/health || exit 1' \\\n  --health-interval=30s --health-timeout=3s --health-retries=3 \\\n  --restart unless-stopped app:1.4"
+          }],
+          "callouts": [{ "title": "Restart Is Not Recovery", "type": "warning", "icon": "⚠️", "text": "A crash loop can amplify dependency load and hide corruption. Emit diagnostics, use backoff/orchestration, make startup idempotent, and distinguish alive from ready.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "compose",
+      "title": "Docker Compose",
+      "description": "Define a trusted multi-container application with reproducible service, network, volume, and dependency configuration.",
+      "subtopics": [
+        {
+          "id": "compose-services",
+          "title": "Services, Networks, Volumes & Environment",
+          "description": "Compose services describe container configuration. Service names are network DNS names; named volumes persist; environment interpolation and container environment are distinct.",
+          "codeBlocks": [{
+            "language": "yaml",
+            "code": "services:\n  api:\n    build: { context: ., target: runtime }\n    ports: [\"127.0.0.1:8080:8080\"]\n    environment:\n      DATABASE_URL: postgres://app:${DB_PASSWORD}@db/app\n    depends_on:\n      db: { condition: service_healthy }\n  db:\n    image: postgres:17\n    environment: { POSTGRES_USER: app, POSTGRES_PASSWORD: ${DB_PASSWORD}, POSTGRES_DB: app }\n    volumes: [\"db-data:/var/lib/postgresql/data\"]\n    healthcheck: { test: [\"CMD-SHELL\", \"pg_isready -U app\"], interval: 5s, timeout: 3s, retries: 10 }\nvolumes: { db-data: {} }"
+          }],
+          "callouts": [{ "title": "depends_on Is Not Application Resilience", "type": "warning", "icon": "⚠️", "text": "Startup ordering/health can reduce races, but services must retry transient dependency loss after startup and shut down safely.", "color": "amber" }]
+        },
+        {
+          "id": "compose-cli-profiles",
+          "title": "Compose CLI, Profiles & Overrides",
+          "description": "Render effective configuration before applying; use profiles for optional tools and layered files carefully for environments.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker compose config\ndocker compose up --detach --build --wait\ndocker compose ps\ndocker compose logs -f api\ndocker compose exec api sh\ndocker compose run --rm api npm test\ndocker compose --profile debug up\ndocker compose down\ndocker compose down --volumes  # deletes declared volumes"
+          }],
+          "callouts": [{ "title": "Compose Files Are Trusted Code", "type": "danger", "icon": "🔐", "text": "They can mount host files, request privileges, and expose secrets during interpolation/config rendering. Review remote Compose sources before running them.", "color": "red" }]
+        },
+        {
+          "id": "compose-dev-prod",
+          "title": "Development vs Production Compose",
+          "description": "Development may bind source and expose ports; production should use immutable tagged/digest-pinned images, controlled secrets, resource/policy settings, and external observability.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Development: build source, bind mounts, watch, debug ports, local dependencies\nProduction: pull verified image, no source bind, non-root/read-only, secrets, limits, health, logs\nUse docker compose config with every file/env combination in CI.\nDo not assume local Compose provides cluster scheduling, HA, rolling updates, or durable secret management."
+          }],
+          "callouts": [{ "title": "Orchestration Boundary", "type": "note", "icon": "🔗", "text": "See Kubernetes for reconciliation, replicas, rollout, Services, cluster scheduling, policy, and persistent-volume orchestration.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "registry-platform-supply-chain",
+      "title": "Registries, Platforms & Supply Chain",
+      "description": "Publish immutable, verifiable artifacts for the target architecture.",
+      "subtopics": [
+        {
+          "id": "tags-digests-registry",
+          "title": "Tags, Digests, Login & Push",
+          "description": "Tags are mutable names; digests identify exact content. Authenticate with scoped tokens and promote tested digests rather than rebuilding per environment.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker login registry.example.com\ndocker tag app:local registry.example.com/team/app:1.4.2\ndocker push registry.example.com/team/app:1.4.2\ndocker image inspect registry.example.com/team/app:1.4.2\ndocker pull registry.example.com/team/app@sha256:..."
+          }],
+          "callouts": [{ "title": "latest Is Not a Version", "type": "danger", "icon": "🏷️", "text": "Deploy an immutable digest or unique release tag. Mutable tags make rollback, audit, cache, and incident diagnosis ambiguous.", "color": "red" }]
+        },
+        {
+          "id": "buildx-multiplatform",
+          "title": "buildx & Multi-Platform Images",
+          "description": "Build a manifest list for target architectures using native builders, cross-compilation, or emulation; test runtime-native dependencies on each platform.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker buildx create --use --name multi\ndocker buildx build \\\n  --platform linux/amd64,linux/arm64 \\\n  --tag registry.example.com/team/app:1.4.2 \\\n  --provenance=true --sbom=true --push ."
+          }],
+          "callouts": [{ "title": "Emulation Can Hide Problems", "type": "warning", "icon": "⚠️", "text": "QEMU builds may be slow and do not replace tests on target architecture. Pin platform-specific base images and verify native addons/binaries.", "color": "amber" }]
+        },
+        {
+          "id": "sbom-sign-scan",
+          "title": "SBOM, Provenance, Signing & Scanning",
+          "description": "Generate attestations during build, scan packages/config, sign or verify artifacts using your supply-chain system, and define vulnerability policy with ownership.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Build from pinned reviewed bases\nGenerate SBOM + provenance in CI\nScan OS and application dependencies\nSign/attest the pushed digest\nVerify before deployment\nRebuild when base/security fixes arrive\nRecord exceptions with expiry and exploitability context"
+          }],
+          "callouts": [{ "title": "Scanning Is a Snapshot", "type": "note", "icon": "📌", "text": "New vulnerabilities appear after publication. Continuously rescan deployed digests and maintain a rebuild/patch cadence.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "security-hardening",
+      "title": "Container Security & Hardening",
+      "description": "Minimize privileges, writable surface, secrets, attack tools, and daemon trust.",
+      "subtopics": [
+        {
+          "id": "least-privilege",
+          "title": "Non-Root, Capabilities & Read-Only Filesystem",
+          "description": "Set a numeric non-root user, drop capabilities, avoid privileged mode/host namespaces/socket mounts, and make root filesystem read-only with explicit writable mounts.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker run --read-only \\\n  --user 10001:10001 \\\n  --cap-drop ALL \\\n  --security-opt no-new-privileges \\\n  --tmpfs /tmp:rw,noexec,nosuid,size=64m \\\n  app:1.4.2"
+          }],
+          "callouts": [{ "title": "Docker Socket Equals Host Control", "type": "danger", "icon": "🛑", "text": "Mounting /var/run/docker.sock generally grants control equivalent to root on the host. Use purpose-built restricted APIs/builders instead.", "color": "red" }]
+        },
+        {
+          "id": "minimal-images-secrets",
+          "title": "Minimal Images & Runtime Secrets",
+          "description": "Ship only runtime files and libraries, omit shells/package managers when feasible, and mount/inject secrets at runtime with rotation and access controls.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Do not COPY .env, credentials, SSH keys, cloud config, or VCS history\nDo not pass secrets via image ARG/ENV or command-line where metadata exposes them\nPrefer runtime secret files/agents over broad environment where supported\nNever log effective config containing secrets\nSeparate build credentials from runtime credentials"
+          }],
+          "callouts": [{ "title": "Smaller Is Not Automatically Safer", "type": "note", "icon": "📌", "text": "Minimal images reduce surface but still need provenance, updates, compatible libraries, and usable diagnostics. Choose maintained bases and test operational needs.", "color": "blue" }]
+        },
+        {
+          "id": "daemon-host-security",
+          "title": "Daemon, Desktop & Host Boundary",
+          "description": "Anyone controlling the Docker daemon can usually control the host. Protect its API, groups, contexts, credentials, and build agents.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Never expose unauthenticated Docker TCP API\nTreat membership in docker group as privileged\nUse TLS/SSH contexts for remote engines\nSeparate untrusted builds and apply quotas\nReview bind mounts, device access, host network/PID, privileged, capabilities\nKeep Engine/Desktop/host kernel patched"
+          }],
+          "callouts": [{ "title": "Container Isolation Is Not a VM Guarantee", "type": "warning", "icon": "⚠️", "text": "Containers share the host kernel. Use stronger sandbox/VM isolation for hostile multi-tenancy and enforce kernel, runtime, and orchestration security controls.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "diagnostics-cleanup-checklist",
+      "title": "Diagnostics, Cleanup & Checklist",
+      "description": "Debug layer-by-layer and remove only resolved, explicitly targeted resources.",
+      "subtopics": [
+        {
+          "id": "build-runtime-debug",
+          "title": "Build & Runtime Troubleshooting",
+          "description": "Inspect effective build stages, history, image config, mounts, networks, DNS, logs, health, and process signals.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker build --progress=plain --target build .\ndocker history --no-trunc app:1.4.2\ndocker inspect app:1.4.2\ndocker inspect web --format '{{json .State.Health}}'\ndocker network inspect app-net\ndocker volume inspect db-data\ndocker events --since 10m"
+          }],
+          "callouts": [{ "title": "Debug Without Changing the Artifact", "type": "tip", "icon": "💡", "text": "Use an ephemeral debug image/container joined to the same network/volumes when the production image intentionally lacks a shell.", "color": "green" }]
+        },
+        {
+          "id": "disk-prune",
+          "title": "Disk Usage & Safe Cleanup",
+          "description": "Measure images, layers, containers, volumes, and build cache before pruning; unused volumes may contain the only copy of data.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "docker system df --verbose\ndocker ps -a --filter status=exited\ndocker image ls --digests\ndocker volume ls\ndocker builder prune --filter until=168h\ndocker image prune\n# Review targets before any system/volume prune."
+          }],
+          "callouts": [{ "title": "Volume Deletion Is Data Deletion", "type": "danger", "icon": "🗑️", "text": "Confirm ownership, backup, and restore before docker volume rm, compose down -v, or volume prune. Prune commands are not routine harmless cleanup.", "color": "red" }]
+        },
+        {
+          "id": "docker-checklist",
+          "title": "Production Checklist",
+          "description": "Review reproducibility, runtime ownership, persistence, exposure, supply chain, privilege, and operations.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ Base and deployed images are pinned/traceable by digest\n□ Multi-stage image contains only runtime artifacts\n□ .dockerignore excludes secrets and irrelevant context\n□ Build secrets use mounts, never ARG/ENV/layers\n□ Process runs non-root and handles SIGTERM as PID 1\n□ Writable data uses explicit volumes/external stores\n□ Ports bind only intended interfaces\n□ CPU, memory, PIDs, health, and stop grace are defined\n□ Root filesystem/capabilities/privileges are minimized\n□ Logs go to stdout/stderr without secrets\n□ Image is scanned, attested, patched, and multi-platform tested\n□ Compose effective config is reviewed and dependencies retry\n□ Backup/restore and safe rollback are proven\n□ Debug and cleanup procedures avoid mutating/deleting data"
+          }]
+        }
+      ]
+    }
+  ]
+}
