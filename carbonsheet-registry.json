@@ -3,30 +3,39 @@
   "description": "The official curated reference sheet collection maintained by the CarbonSheet team.",
   "author": "CarbonSheet",
   "version": "1",
-  "homepage": "https://github.com/elnoxvie/stitch_devsheet_hub",
+  "homepage": "https://github.com/elnoxvie/carbonsheet",
   "sheets": [
-    {
-      "slug": "android-jetpack-compose-modifiers",
-      "title": "Android Jetpack Compose Modifiers",
-      "description": "Beginner-to-advanced reference for modifier order, constraints, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
-      "technology": "Jetpack Compose Modifier",
-      "category": "Android",
-      "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-jetpack-compose-modifiers.json"
-    },
     {
       "slug": "android-jetpack-compose",
       "title": "Android Jetpack Compose",
-      "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, lazy UI, theming, navigation, accessibility, interoperability, and performance.",
+      "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, edge-to-edge UI, adaptive structure, Navigation 3, predictive back, accessibility, interoperability, and performance.",
       "technology": "Jetpack Compose",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
       "file": "sheets/android-jetpack-compose.json"
     },
     {
+      "slug": "android-jetpack-compose-modifiers",
+      "title": "Android Jetpack Compose Modifiers",
+      "description": "Beginner-to-advanced reference for modifier order, constraints, edge-to-edge insets, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
+      "technology": "Jetpack Compose Modifier",
+      "category": "Android",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/android-jetpack-compose-modifiers.json"
+    },
+    {
+      "slug": "android-kotlin",
+      "title": "Android Kotlin",
+      "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, target-SDK compatibility, edge-to-edge and adaptive UI, intents, permissions, storage, offline-first sync, and scalable app architecture.",
+      "technology": "Android / Kotlin",
+      "category": "Android",
+      "difficulty": "BEGINNER",
+      "file": "sheets/kotlin.json"
+    },
+    {
       "slug": "android-kotlin-coroutines",
       "title": "Android Kotlin Coroutines",
-      "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, lifecycle scopes, and production coroutine design on Android.",
+      "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, bounded concurrency, callback interop, lifecycle scopes, and production coroutine design on Android.",
       "technology": "Kotlin Coroutines",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
@@ -35,7 +44,7 @@
     {
       "slug": "android-kotlin-flows",
       "title": "Android Kotlin Flows",
-      "description": "Beginner-to-advanced reference for building, transforming, sharing, collecting, debugging, and testing Kotlin Flow streams in Android applications.",
+      "description": "Beginner-to-advanced reference for building, transforming, sharing, lifecycle-aware collection, Room and Paging integration, debugging, and testing Kotlin Flow streams in Android applications.",
       "technology": "Kotlin Flow",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
@@ -44,7 +53,7 @@
     {
       "slug": "android-naming-conventions",
       "title": "Android Naming Conventions",
-      "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, resources, Compose APIs, state, events, streams, tests, and implementation variants.",
+      "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, Gradle modules and variants, resources, Compose APIs, state, events, streams, tests, and implementation strategies.",
       "technology": "Kotlin / Android / Compose",
       "category": "Android",
       "difficulty": "BEGINNER",
@@ -53,11 +62,29 @@
     {
       "slug": "android-testing",
       "title": "Android Testing",
-      "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, test doubles, coroutines and Flow, Compose UI, navigation, storage, reliability, and CI.",
+      "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, coroutines and Flow, Compose UI, screenshots, accessibility, navigation, storage, Macrobenchmark, Baseline Profiles, reliability, and CI.",
       "technology": "JUnit / AndroidX Test / Compose Test",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
       "file": "sheets/android-testing.json"
+    },
+    {
+      "slug": "aws",
+      "title": "Amazon Web Services (AWS)",
+      "description": "AWS reference covering accounts, regions, IAM, networking, compute, storage, databases, serverless, messaging, observability, security, reliability, cost, infrastructure as code, and incident readiness.",
+      "technology": "AWS",
+      "category": "Cloud & DevOps",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/aws.json"
+    },
+    {
+      "slug": "bash",
+      "title": "Bash Shell Scripting",
+      "description": "Bash reference covering quoting, parameters, arrays, tests, pipelines, functions, traps, files, processes, portability, security, debugging, and production-grade scripting.",
+      "technology": "Bash",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "sheets/bash.json"
     },
     {
       "slug": "bun",
@@ -69,6 +96,15 @@
       "file": "sheets/bun.json"
     },
     {
+      "slug": "data-structures-algorithms",
+      "title": "Data Structures & Algorithms",
+      "description": "Practical data structures and algorithms reference covering complexity, arrays, strings, linked lists, stacks, queues, hash tables, trees, heaps, tries, graphs, sorting, searching, recursion, dynamic programming, greedy methods, backtracking, union-find, and algorithm selection.",
+      "technology": "Language-Agnostic Algorithms",
+      "category": "Computer Science",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/data-structures-algorithms.json"
+    },
+    {
       "slug": "docker",
       "title": "Docker Containers & Compose",
       "description": "Beginner-to-advanced Docker reference covering images, containers, Dockerfiles, BuildKit, cache, lifecycle, storage, networking, Compose, registries, multi-platform builds, security, diagnostics, and production practices.",
@@ -76,6 +112,15 @@
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
       "file": "sheets/docker.json"
+    },
+    {
+      "slug": "elasticsearch",
+      "title": "Elasticsearch Search & Analytics",
+      "description": "Production Elasticsearch reference covering documents, mappings, analyzers, indexing, Query DSL, relevance, aggregations, vector and hybrid search, shards, replicas, data streams, lifecycle, ingest pipelines, security, capacity, snapshots, upgrades, and troubleshooting.",
+      "technology": "Elasticsearch",
+      "category": "Databases",
+      "difficulty": "ADVANCED",
+      "file": "sheets/elasticsearch.json"
     },
     {
       "slug": "fastapi",
@@ -88,12 +133,66 @@
     },
     {
       "slug": "git",
-      "title": "Git Modern Command Reference & Internal Architecture",
-      "description": "High-density Git cheat sheet covering interactive staging, branch rebase workflows, reflog recovery, and visual branch architecture.",
+      "title": "Git Commands & Internal Architecture",
+      "description": "Beginner-to-advanced Git reference covering the object database, refs, index, commits, branches, merging, rebasing, remotes, refspecs, undo, reflog recovery, worktrees, hooks, signing, security, and collaborative workflows.",
       "technology": "Git",
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
       "file": "sheets/git.json"
+    },
+    {
+      "slug": "go",
+      "title": "Go Programming",
+      "description": "Beginner-to-advanced Go reference covering values, slices, maps, structs, interfaces, generics, errors, context, goroutines, channels, synchronization, modules, testing, profiling, security, and production services.",
+      "technology": "Go",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "sheets/go.json"
+    },
+    {
+      "slug": "google-cloud",
+      "title": "Google Cloud Platform",
+      "description": "Production Google Cloud reference covering organizations, folders, projects, IAM, service accounts, networking, compute, Kubernetes, serverless, storage, databases, messaging, observability, security, reliability, cost, infrastructure as code, and incident readiness.",
+      "technology": "Google Cloud",
+      "category": "Cloud & DevOps",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/google-cloud.json"
+    },
+    {
+      "slug": "graphql",
+      "title": "GraphQL APIs",
+      "description": "Production GraphQL reference covering schemas, types, nullability, operations, variables, fragments, directives, resolvers, execution, DataLoader, pagination, mutations, subscriptions, caching, authorization, query limits, federation, testing, observability, and evolution.",
+      "technology": "GraphQL",
+      "category": "Backend",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/graphql.json"
+    },
+    {
+      "slug": "grpc-protobuf",
+      "title": "gRPC & Protocol Buffers",
+      "description": "Production gRPC and Protocol Buffers reference covering messages, field presence, enums, oneofs, services, unary and streaming RPCs, deadlines, cancellation, metadata, status, retries, schema evolution, security, load balancing, health, reflection, testing, observability, and operations.",
+      "technology": "gRPC / Protocol Buffers",
+      "category": "Backend",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/grpc-protobuf.json"
+    },
+    {
+      "slug": "html-css",
+      "title": "HTML, CSS & Web Accessibility",
+      "description": "Modern HTML and CSS reference covering document structure, semantics, links, forms, media, tables, the cascade, selectors, layout, responsive design, container queries, typography, animation, accessibility, performance, and production quality.",
+      "technology": "HTML / CSS / Accessibility",
+      "category": "Frontend",
+      "difficulty": "BEGINNER",
+      "file": "sheets/html-css.json"
+    },
+    {
+      "slug": "http",
+      "title": "HTTP Protocol",
+      "description": "HTTP reference covering messages, methods, status codes, headers, content negotiation, caching, conditional requests, authentication, cookies, CORS, security, streaming, proxies, HTTP/2, HTTP/3, and diagnostics.",
+      "technology": "HTTP",
+      "category": "Web Development",
+      "difficulty": "BEGINNER",
+      "file": "sheets/http.json"
     },
     {
       "slug": "java",
@@ -114,18 +213,18 @@
       "file": "sheets/javascript.json"
     },
     {
-      "slug": "android-kotlin",
-      "title": "Android Kotlin",
-      "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, resources, intents, permissions, storage, and scalable app architecture.",
-      "technology": "Android / Kotlin",
-      "category": "Android",
-      "difficulty": "BEGINNER",
-      "file": "sheets/kotlin.json"
+      "slug": "kafka",
+      "title": "Apache Kafka Event Streaming",
+      "description": "Production Apache Kafka reference covering brokers, KRaft, topics, partitions, replication, producers, consumers, offsets, delivery semantics, transactions, schemas, Kafka Streams, Connect, security, capacity, observability, failure recovery, and operations.",
+      "technology": "Apache Kafka",
+      "category": "Data & Messaging",
+      "difficulty": "ADVANCED",
+      "file": "sheets/kafka.json"
     },
     {
       "slug": "kotlin-collection-processing",
       "title": "Android Kotlin Collection Processing",
-      "description": "Beginner-to-advanced Kotlin collection reference for Android, covering mutability, transformations, filtering, grouping, aggregation, sequences, allocation, complexity, concurrency boundaries, and production patterns.",
+      "description": "Beginner-to-advanced Kotlin collection reference for Android, covering mutability, transformations, filtering, grouping, aggregation, sequences, primitive arrays, persistent collections, allocation, complexity, concurrency boundaries, and production patterns.",
       "technology": "Kotlin Standard Library",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
@@ -139,6 +238,24 @@
       "category": "DevOps",
       "difficulty": "ADVANCED",
       "file": "sheets/kubernetes.json"
+    },
+    {
+      "slug": "linux",
+      "title": "Linux Administration",
+      "description": "Production Linux reference covering filesystems, permissions, users, processes, systemd, signals, networking, DNS, storage, logs, observability, packages, security, troubleshooting, and operational safety.",
+      "technology": "Linux",
+      "category": "Operating Systems",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/linux.json"
+    },
+    {
+      "slug": "make-task-runners",
+      "title": "Makefiles & Task Runners",
+      "description": "Practical Make and task-runner reference covering dependency graphs, targets, prerequisites, recipes, variables, functions, pattern rules, automatic dependencies, phony and order-only targets, parallelism, recursive builds, shell behavior, portability, caching, CI, security, and task-runner selection.",
+      "technology": "GNU Make / Task Runners",
+      "category": "Developer Tools",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/make-task-runners.json"
     },
     {
       "slug": "nextjs",
@@ -159,13 +276,40 @@
       "file": "sheets/nodejs.json"
     },
     {
-      "slug": "python-design-patterns",
-      "title": "Design Patterns with Python Examples",
-      "description": "Complete reference to all 23 Gang of Four design patterns using typed, Pythonic examples, selection guidance, trade-offs, implementation hints, and modern language alternatives.",
-      "technology": "Python",
-      "category": "Software Design",
+      "slug": "opentelemetry",
+      "title": "OpenTelemetry Observability",
+      "description": "Production OpenTelemetry reference covering resources, instrumentation scopes, traces, metrics, logs, context propagation, semantic conventions, SDKs, OTLP, Collector pipelines, sampling, cardinality, security, testing, and operations.",
+      "technology": "OpenTelemetry",
+      "category": "Observability",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/opentelemetry.json"
+    },
+    {
+      "slug": "package-publishing",
+      "title": "Package Publishing: npm, PyPI, Maven & crates.io",
+      "description": "Cross-ecosystem package publishing reference covering versioning, compatibility, artifact contents, metadata, licenses, changelogs, credentials, trusted publishing, provenance, npm, PyPI, Maven Central, crates.io, CI release workflows, yanking/deprecation, incident response, and maintainer continuity.",
+      "technology": "npm / PyPI / Maven Central / crates.io",
+      "category": "Developer Tools",
       "difficulty": "ADVANCED",
-      "file": "sheets/python-design-patterns.json"
+      "file": "sheets/package-publishing.json"
+    },
+    {
+      "slug": "playwright",
+      "title": "Playwright End-to-End Testing",
+      "description": "Playwright reference covering configuration, locators, assertions, fixtures, isolation, authentication, network control, downloads, frames, parallelism, retries, traces, CI, accessibility, and reliable test design.",
+      "technology": "Playwright",
+      "category": "Testing",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/playwright.json"
+    },
+    {
+      "slug": "postgres",
+      "title": "PostgreSQL",
+      "description": "PostgreSQL reference covering schema design, types, constraints, queries, indexes, transactions, MVCC, locking, JSONB, full-text search, partitioning, security, backup, replication, tuning, and diagnostics.",
+      "technology": "PostgreSQL",
+      "category": "Databases",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/postgres.json"
     },
     {
       "slug": "python",
@@ -177,6 +321,24 @@
       "file": "sheets/python.json"
     },
     {
+      "slug": "python-design-patterns",
+      "title": "Design Patterns with Python Examples",
+      "description": "Complete reference to all 23 Gang of Four design patterns using typed, Pythonic examples, selection guidance, trade-offs, implementation hints, and modern language alternatives.",
+      "technology": "Python",
+      "category": "Software Design",
+      "difficulty": "ADVANCED",
+      "file": "sheets/python-design-patterns.json"
+    },
+    {
+      "slug": "rabbitmq",
+      "title": "RabbitMQ Messaging",
+      "description": "Production RabbitMQ reference covering AMQP connections, channels, exchanges, bindings, queues, quorum queues, streams, publishers, confirms, consumers, acknowledgements, retries, dead lettering, flow control, security, clustering, observability, upgrades, and recovery.",
+      "technology": "RabbitMQ / AMQP 0-9-1",
+      "category": "Data & Messaging",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/rabbitmq.json"
+    },
+    {
       "slug": "react",
       "title": "React Web Development",
       "description": "Beginner-to-advanced React reference covering component design, JSX, state, events, forms, Hooks, effects, context, reducers, Suspense, errors, performance, accessibility, and testing.",
@@ -186,6 +348,33 @@
       "file": "sheets/react.json"
     },
     {
+      "slug": "redis",
+      "title": "Redis Data Store",
+      "description": "Redis reference covering data types, expiration, caching, transactions, Lua/functions, streams, Pub/Sub, persistence, replication, clustering, security, observability, and failure-safe production use.",
+      "technology": "Redis",
+      "category": "Databases",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/redis.json"
+    },
+    {
+      "slug": "regex",
+      "title": "Regular Expressions",
+      "description": "Flavor-aware regular-expression reference covering literals, character classes, anchors, quantifiers, groups, alternation, captures, lookarounds, backreferences, Unicode, replacement, engine differences, performance, ReDoS prevention, debugging, and testing.",
+      "technology": "Regular Expressions",
+      "category": "Developer Tools",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/regex.json"
+    },
+    {
+      "slug": "rest-api-design",
+      "title": "REST API Design",
+      "description": "Production REST API design reference covering resources, URIs, methods, status codes, representations, errors, pagination, filtering, caching, conditional requests, idempotency, asynchronous operations, authentication, authorization, versioning, documentation, testing, observability, and evolution.",
+      "technology": "REST / HTTP APIs",
+      "category": "Software Design",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/rest-api-design.json"
+    },
+    {
       "slug": "rust",
       "title": "Rust Programming",
       "description": "Beginner-to-advanced Rust reference covering ownership, borrowing, enums, traits, generics, collections, iterators, errors, concurrency, async, unsafe boundaries, testing, Cargo, and production engineering.",
@@ -193,6 +382,24 @@
       "category": "Languages",
       "difficulty": "BEGINNER",
       "file": "sheets/rust.json"
+    },
+    {
+      "slug": "spring-boot",
+      "title": "Spring Boot Web Applications",
+      "description": "Production Spring Boot reference covering starters, dependency injection, configuration, profiles, validation, MVC, WebFlux boundaries, errors, data access, transactions, security, resilience, testing, Actuator, observability, AOT, containers, and deployment.",
+      "technology": "Spring Boot / Spring Framework",
+      "category": "Backend",
+      "difficulty": "INTERMEDIATE",
+      "file": "sheets/spring-boot.json"
+    },
+    {
+      "slug": "sql",
+      "title": "SQL Language",
+      "description": "Vendor-aware SQL reference covering relational modeling, SELECT, joins, grouping, windows, subqueries, set operations, writes, constraints, transactions, indexes, plans, security, migrations, and production query design.",
+      "technology": "SQL",
+      "category": "Databases",
+      "difficulty": "BEGINNER",
+      "file": "sheets/sql.json"
     },
     {
       "slug": "swift",
@@ -213,6 +420,15 @@
       "file": "sheets/swiftui.json"
     },
     {
+      "slug": "system-design",
+      "title": "System Design Fundamentals",
+      "description": "Practical system design reference covering requirements, capacity estimation, APIs, decomposition, data modeling, caching, load balancing, partitioning, replication, consistency, transactions, messaging, resilience, security, observability, deployment, and design review.",
+      "technology": "Distributed Systems Architecture",
+      "category": "Software Design",
+      "difficulty": "ADVANCED",
+      "file": "sheets/system-design.json"
+    },
+    {
       "slug": "tailwind",
       "title": "Tailwind CSS",
       "description": "Utility-first Tailwind CSS reference covering setup, layout, responsive variants, state, theme variables, arbitrary values, component composition, accessibility, performance, and production practices.",
@@ -223,8 +439,8 @@
     },
     {
       "slug": "typescript",
-      "title": "TypeScript Class & Type System",
-      "description": "Essential syntax reference for TypeScript classes, generic constraints, type-only modifiers, control flow analysis, and type evaluation.",
+      "title": "TypeScript Programming",
+      "description": "Beginner-to-advanced TypeScript reference covering strict configuration, inference, narrowing, generics, object modeling, classes, modules, async code, runtime validation, advanced types, declaration files, and scalable builds.",
       "technology": "TypeScript",
       "category": "Frontend",
       "difficulty": "INTERMEDIATE",
@@ -247,6 +463,15 @@
       "category": "Developer Tools",
       "difficulty": "BEGINNER",
       "file": "sheets/vscode.json"
+    },
+    {
+      "slug": "web-security",
+      "title": "Web Security, OAuth & OpenID Connect",
+      "description": "Production web security reference covering threat modeling, origins, TLS, cookies, sessions, XSS, CSRF, CSP, CORS, OAuth 2.0, PKCE, OpenID Connect, token validation, authorization, API protection, secrets, dependencies, logging, and incident response.",
+      "technology": "Web Security / OAuth 2.0 / OpenID Connect",
+      "category": "Security",
+      "difficulty": "ADVANCED",
+      "file": "sheets/web-security.json"
     },
     {
       "slug": "zod",

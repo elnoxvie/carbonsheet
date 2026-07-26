@@ -11,6 +11,8 @@
   "tags": ["PYTHON", "DESIGN PATTERNS", "GANG OF FOUR", "GOF", "ARCHITECTURE", "OOP"],
   "updatedAt": "Jul 2026",
   "aliases": ["gof patterns", "23 design patterns", "python patterns", "creational structural behavioral", "object oriented design"],
+  "relatedSheets": ["python", "java", "typescript"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/python-design-patterns.json",
   "sections": [
     {
       "id": "pattern-foundations",

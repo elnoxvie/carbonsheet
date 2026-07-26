@@ -12,6 +12,7 @@
   "updatedAt": "Jul 2026",
   "aliases": ["vs code", "visual studio code", "vscode shortcuts", "code editor", "launch json", "tasks json"],
   "relatedSheets": ["git", "typescript", "nodejs", "python", "docker", "kubernetes"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/vscode.json",
   "sections": [
     {
       "id": "interface-navigation",

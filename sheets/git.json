@@ -1,172 +1,213 @@
 {
-  "id": "git-cheatsheet",
-  "title": "Git Modern Command Reference & Internal Architecture",
+  "id": "git-production-reference",
+  "title": "Git Commands & Internal Architecture",
   "slug": "git",
   "category": "DevOps",
   "technology": "Git",
-  "version": "v2.45",
+  "version": "Git 2.55",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 12,
-  "description": "High-density Git cheat sheet covering interactive staging, branch rebase workflows, reflog recovery, and visual branch architecture.",
-  "tags": ["GIT", "DEVOPS", "REBASE", "REFLOG", "BRANCHING"],
-  "aliases": ["vcs", "version control", "rebase", "reflog", "git add", "git commit"],
-  "relatedSheets": ["docker"],
-  "githubEditUrl": "https://github.com/org/repo/edit/main/src/content/sheets/git.json",
-  "updatedAt": "Oct 2026",
+  "readTimeMinutes": 62,
+  "description": "Beginner-to-advanced Git reference covering the object database, refs, index, commits, branches, merging, rebasing, remotes, refspecs, undo, reflog recovery, worktrees, hooks, signing, security, and collaborative workflows.",
+  "tags": ["GIT", "VERSION CONTROL", "BRANCHING", "REBASE", "REFLOG", "DEVOPS"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["vcs", "version control", "source control", "rebase", "reflog", "git commands"],
+  "relatedSheets": ["bash", "docker", "vscode", "make-task-runners", "package-publishing"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/git.json",
   "sections": [
     {
-      "id": "core-staging",
-      "title": "Core Commands & Staging",
-      "description": "Staging files, interactive hunk commits, and status checking.",
+      "id": "mental-model-objects",
+      "title": "Mental Model & Object Database",
+      "description": "Git stores immutable content-addressed objects and moves lightweight references through a directed acyclic commit graph.",
       "subtopics": [
         {
-          "id": "staging-commits",
-          "title": "Interactive Staging & Commits",
-          "description": "Selectively stage hunks and format conventional commits.",
+          "id": "snapshots-three-trees",
+          "title": "Snapshots and the Three Trees",
+          "description": "Most commands move content among HEAD, the index, and the working tree. A commit records a complete project snapshot, reusing unchanged objects.",
           "table": {
-            "title": "Staging Command Reference",
-            "headers": ["Command", "Scope", "Working Tree Effect", "Use Case"],
+            "title": "Git State Areas",
+            "headers": ["Area", "What It Represents", "Inspect"],
             "rows": [
-              ["git add <path>", "Selected file or path", "None", "Stage a complete intentional change"],
-              ["git add -p", "Selected hunks", "None", "Split mixed edits into focused commits"],
-              ["git restore --staged <path>", "Selected staged path", "Keeps working-tree edits", "Remove a file from the next commit"],
-              ["git diff", "Unstaged changes", "None", "Review what remains outside the index"],
-              ["git diff --staged", "Staged changes", "None", "Review the exact next commit"]
+              ["HEAD", "Snapshot named by the current commit", "git show HEAD"],
+              ["Index", "Proposed contents of the next commit", "git diff --staged"],
+              ["Working tree", "Files currently available to edit", "git diff"],
+              ["Untracked files", "Working-tree paths absent from the index", "git status --short"]
             ]
           },
-          "tabs": [
-            {
-              "label": "Quick Reference",
-              "language": "BASH",
-              "code": "# Interactive hunk staging\ngit add -p\n\n# Stage all tracked modifications\ngit add -u\n\n# Commit with inline message\ngit commit -m \"feat: add user authentication flow\"",
-              "playground": {
-                "type": "external_link",
-                "url": "https://git-school.github.io/visualizing-git/",
-                "buttonLabel": "Open Visualizing Git Sandbox"
-              },
-              "annotations": [
-                {
-                  "id": "ann-add-p",
-                  "targetToken": "git add -p",
-                  "text": "Interactively prompts to stage individual code hunks instead of entire files",
-                  "position": "right"
-                }
-              ]
-            }
-          ],
-          "callouts": [
-            {
-              "title": "Conventional Commits",
-              "type": "tip",
-              "icon": "💡",
-              "text": "Use prefixes like feat:, fix:, docs:, refactor:, or test: for automated changelogs.",
-              "color": "green"
-            }
-          ],
-          "tags": ["staging", "commit", "add"]
+          "diagram": {"type":"mermaid","content":"flowchart LR\n  WT[\"Working tree\"] -- \"git add\" --> IDX[\"Index / staging area\"]\n  IDX -- \"git commit\" --> HEAD[\"HEAD commit\"]\n  HEAD -- \"git restore --source\" --> WT\n  HEAD -- \"git restore --staged\" --> IDX"},
+          "tags": ["index", "staging", "head"]
+        },
+        {
+          "id": "blobs-trees-commits-tags",
+          "title": "Blobs, Trees, Commits & Tags",
+          "description": "A blob stores file content, a tree maps names to blobs or subtrees, a commit points to a root tree and parent commits, and an annotated tag points to another object with metadata.",
+          "codeBlocks": [{"language":"bash","code":"git cat-file -t HEAD\ngit cat-file -p HEAD\ngit ls-tree -r HEAD\ngit rev-parse HEAD^{tree}\ngit count-objects -vH"}],
+          "callouts": [{"title":"Object IDs Cover Content","type":"note","icon":"📌","text":"Changing an object changes its hash. Commit identity includes the tree, parents, author/committer data, and message—not just the file diff shown by Git.","color":"blue"}],
+          "tags": ["objects", "blob", "tree", "commit"]
+        },
+        {
+          "id": "refs-head-revisions",
+          "title": "Refs, HEAD & Revision Syntax",
+          "description": "Branches and tags are names stored under refs. HEAD normally symbolically names the checked-out branch; detached HEAD points directly to a commit.",
+          "codeBlocks": [{"language":"bash","code":"git symbolic-ref --short HEAD\ngit show-ref --heads --tags\ngit rev-parse main~2       # first-parent ancestor\ngit rev-parse merge^2      # merge commit's second parent\ngit log main..feature      # reachable from feature, not main\ngit log main...feature     # symmetric difference"}],
+          "callouts": [{"title":"Detached HEAD Is Not Data Loss","type":"tip","icon":"💡","text":"Commits made while detached are valid objects. Create a branch with git switch -c <name> before the commits become difficult to find through reflogs.","color":"green"}],
+          "tags": ["refs", "head", "revision syntax"]
         }
       ]
     },
     {
-      "id": "branching-rebase",
-      "title": "Branching & Interactive Rebase",
-      "description": "Branch management, rebasing onto main, and interactive squashing.",
+      "id": "working-index-commits",
+      "title": "Working Tree, Index & Commits",
+      "description": "Build focused commits by inspecting both unstaged and staged changes before recording history.",
       "subtopics": [
         {
-          "id": "interactive-rebase",
-          "title": "Branch Workflows & Interactive Rebase",
-          "description": "Maintain a clean linear git history with interactive rebasing.",
-          "diagram": {
-            "type": "mermaid",
-            "content": "graph TD\n  MainBranch[\"Main Branch: C1 -> C2 -> C3\"]\n  FeatureBranch[\"Feature Branch: C2 -> F1 -> F2\"]\n  RebaseResult[\"Rebased Linear: C1 -> C2 -> C3 -> F1' -> F2'\"]\n  MainBranch --> RebaseResult\n  FeatureBranch --> RebaseResult"
-          },
-          "tabs": [
-            {
-              "label": "Quick Reference",
-              "language": "BASH",
-              "code": "# Create and switch to feature branch\ngit checkout -b feature/login\n\n# Rebase feature branch onto updated main\ngit fetch origin\ngit rebase origin/main\n\n# Interactive rebase last 4 commits\ngit rebase -i HEAD~4",
-              "playground": {
-                "type": "external_link",
-                "url": "https://learngitbranching.js.org/",
-                "buttonLabel": "Practice on Learn Git Branching"
-              },
-              "annotations": [
-                {
-                  "id": "ann-rebase-i",
-                  "targetToken": "git rebase -i HEAD~4",
-                  "text": "Launches interactive editor to pick, reword, squash, or drop commits",
-                  "position": "bottom"
-                }
-              ]
-            }
-          ],
-          "callouts": [
-            {
-              "title": "Golden Rule of Rebasing",
-              "type": "danger",
-              "icon": "⚡",
-              "text": "Never rebase a public branch that other team members are actively pulling from.",
-              "color": "amber"
-            },
-            {
-              "title": "Autostash On Rebase",
-              "type": "note",
-              "icon": "📌",
-              "text": "Use git rebase --autostash to automatically stash uncommitted changes before rebasing.",
-              "color": "blue"
-            }
-          ],
-          "tags": ["branching", "rebase", "merge"]
+          "id": "status-diff-staging",
+          "title": "Inspect and Stage Intent",
+          "description": "Use path and patch staging to make the index match one coherent change, even when the working tree contains unrelated edits.",
+          "table": {"headers":["Command","Shows or Changes","Working Tree Effect"],"rows":[["git status --short","Compact state summary","None"],["git diff","Unstaged tracked changes","None"],["git diff --staged","Next commit versus HEAD","None"],["git add -p","Interactively stages hunks","None"],["git restore --staged <path>","Removes path changes from index","Keeps edits"]]},
+          "codeBlocks": [{"language":"bash","code":"git status --short --branch\ngit diff --check\ngit add -p\ngit diff --staged --stat\ngit diff --staged"}],
+          "callouts": [{"title":"Review the Index, Not Just the Working Tree","type":"tip","icon":"✅","text":"The staged diff is the exact proposed commit. Check it for secrets, generated artifacts, debug output, accidental formatting, and incomplete tests.","color":"green"}],
+          "tags": ["status", "diff", "staging"]
+        },
+        {
+          "id": "commit-amend-fixup",
+          "title": "Commit, Amend, Fixup & Autosquash",
+          "description": "Amend replaces the current commit. Fixup commits preserve reviewable work-in-progress and can be autosquashed before sharing.",
+          "codeBlocks": [{"language":"bash","code":"git commit -m \"fix: preserve cancellation signal\"\ngit commit --amend --no-edit\ngit commit --fixup=<target-commit>\ngit rebase -i --autosquash <base>"}],
+          "callouts": [{"title":"Amend Rewrites Identity","type":"warning","icon":"⚠️","text":"Amending creates a new commit even when the message is unchanged. Avoid rewriting commits already consumed by other collaborators unless the team coordinates it.","color":"amber"}],
+          "tags": ["commit", "amend", "fixup"]
+        },
+        {
+          "id": "ignore-attributes-renames",
+          "title": ".gitignore, Attributes & File Movement",
+          "description": ".gitignore affects untracked discovery, while .gitattributes controls path-specific behavior such as line endings, diff drivers, linguist hints, and merge handling.",
+          "codeBlocks": [{"language":"bash","code":"git check-ignore -v path/to/file\ngit rm --cached path/to/tracked-secret.env\ngit check-attr -a -- path/to/file\ngit mv old-name new-name"}],
+          "callouts": [{"title":"Git Detects Renames","type":"note","icon":"📌","text":"A rename is inferred later from content similarity; it is not a special stored object. git mv is a convenient working-tree move plus index update.","color":"blue"}],
+          "tags": ["gitignore", "gitattributes", "rename"]
+        }
+      ]
+    },
+    {
+      "id": "branches-integration",
+      "title": "Branches, Merge & Rebase",
+      "description": "Branches are movable commit refs. Merge preserves topology; rebase copies commits onto a new base.",
+      "subtopics": [
+        {
+          "id": "branch-switch-delete",
+          "title": "Create, Switch, Rename & Delete Branches",
+          "description": "Prefer switch for branch movement and restore for file restoration so intent is explicit.",
+          "codeBlocks": [{"language":"bash","code":"git switch -c feature/login\ngit switch main\ngit branch --show-current\ngit branch -m feature/auth\ngit branch -d feature/auth\ngit branch --merged main"}],
+          "callouts": [{"title":"Force Delete Does Not Immediately Erase Commits","type":"note","icon":"📌","text":"git branch -D removes the ref. Unreferenced commits may remain recoverable through reflogs until expiration and garbage collection, but recovery is not a substitute for checking the branch first.","color":"blue"}],
+          "tags": ["branch", "switch", "delete"]
+        },
+        {
+          "id": "merge-conflicts-rerere",
+          "title": "Merge and Conflict Resolution",
+          "description": "A fast-forward only moves a ref. A true merge combines histories and may create a two-parent commit.",
+          "codeBlocks": [{"language":"bash","code":"git merge --ff-only origin/main\ngit merge --no-ff feature/payments\ngit status\ngit diff --name-only --diff-filter=U\n# edit and test resolved files\ngit add <resolved-paths>\ngit merge --continue\n# or abandon\ngit merge --abort"}],
+          "callouts": [{"title":"Resolve Meaning, Not Markers","type":"warning","icon":"⚠️","text":"A syntactically clean conflict resolution can still violate behavior. Understand both sides, run focused tests, inspect the final staged diff, and use rerere only when repeated resolutions are trustworthy.","color":"amber"}],
+          "tags": ["merge", "conflict", "rerere"]
+        },
+        {
+          "id": "rebase-interactive",
+          "title": "Rebase and Interactive History Editing",
+          "description": "Rebase replays selected commits onto another base, producing new commit identities. Interactive rebase can reorder, edit, squash, fixup, reword, or drop them.",
+          "diagram": {"type":"mermaid","content":"gitGraph\n  commit id: \"A\"\n  commit id: \"B\"\n  branch feature\n  checkout main\n  commit id: \"C\"\n  checkout feature\n  commit id: \"F1\"\n  commit id: \"F2\""},
+          "codeBlocks": [{"language":"bash","code":"git fetch origin\ngit rebase origin/main\n# resolve, stage, then continue\ngit add <resolved-paths>\ngit rebase --continue\n# or return to the pre-rebase state\ngit rebase --abort\n\ngit rebase -i --rebase-merges <base>"}],
+          "callouts": [{"title":"Rebase Private History by Default","type":"danger","icon":"⚡","text":"Rebasing shared commits forces collaborators to reconcile rewritten identities. Coordinate explicitly and use --force-with-lease, never an unconditional force push, when an approved remote rewrite is necessary.","color":"red"}],
+          "tags": ["rebase", "interactive rebase", "history"]
+        }
+      ]
+    },
+    {
+      "id": "remotes-collaboration",
+      "title": "Remotes & Collaboration",
+      "description": "Remote-tracking refs are local observations of remote state; fetch updates them, while push asks a remote to update its refs.",
+      "subtopics": [
+        {
+          "id": "fetch-pull-upstream",
+          "title": "Fetch, Pull & Upstream Tracking",
+          "description": "Fetch is reviewable and non-integrating. Pull performs fetch followed by a configured merge or rebase.",
+          "codeBlocks": [{"language":"bash","code":"git remote -v\ngit fetch --prune origin\ngit log --oneline --graph --decorate HEAD..origin/main\ngit branch --set-upstream-to=origin/main main\ngit pull --ff-only"}],
+          "callouts": [{"title":"Choose Pull Behavior Explicitly","type":"tip","icon":"💡","text":"Set pull.ff or pull.rebase according to the repository workflow. fetch followed by an explicit merge or rebase is easiest to inspect when the histories diverge.","color":"green"}],
+          "tags": ["fetch", "pull", "upstream"]
+        },
+        {
+          "id": "push-refspecs-force-lease",
+          "title": "Push, Refspecs & Safe Rewrites",
+          "description": "A refspec maps a local source ref to a remote destination ref. A normal push refuses non-fast-forward updates.",
+          "codeBlocks": [{"language":"bash","code":"git push -u origin feature/login\ngit push origin local-name:remote-name\ngit push --delete origin obsolete-branch\ngit push --force-with-lease origin feature/login"}],
+          "callouts": [{"title":"Lease Protects Observed Remote Work","type":"warning","icon":"🛡️","text":"--force-with-lease rejects the rewrite if the remote ref no longer matches your expected value. Fetch and inspect first; a lease reduces risk but does not make rewriting shared history harmless.","color":"amber"}],
+          "tags": ["push", "refspec", "force with lease"]
+        },
+        {
+          "id": "fork-review-workflow",
+          "title": "Forks, Reviews & Integration Policy",
+          "description": "Keep commits focused, synchronize with the target branch, and make the pull request describe behavior, risks, tests, migration, and rollback—not merely filenames.",
+          "codeBlocks": [{"language":"bash","code":"git remote add upstream <canonical-url>\ngit fetch upstream\ngit rebase upstream/main\ngit range-diff upstream/main...HEAD@{1} upstream/main...HEAD"}],
+          "callouts": [{"title":"Use range-diff After Rewriting a Series","type":"tip","icon":"💡","text":"range-diff compares two versions of a commit series and helps reviewers confirm that a rebase or fixup did not introduce unintended semantic changes.","color":"green"}],
+          "tags": ["fork", "review", "range-diff"]
         }
       ]
     },
     {
       "id": "undo-recovery",
-      "title": "Undo & Reflog Recovery",
-      "description": "Recovering lost commits, soft/hard resets, and reflog time travel.",
+      "title": "Undo, Restore & Recovery",
+      "description": "Choose an undo command based on whether history is shared and which of HEAD, index, or working tree must change.",
       "subtopics": [
         {
-          "id": "reflog-time-travel",
-          "title": "Git Reflog & Emergency Recovery",
-          "description": "Recovering deleted branches or bad resets using HEAD history.",
-          "tabs": [
-            {
-              "label": "Quick Reference",
-              "language": "BASH",
-              "code": "# Inspect HEAD movement reflog\ngit reflog\n\n# Restore lost commit HEAD@{2}\ngit checkout -b recovered-branch HEAD@{2}\n\n# Hard reset to specific reflog entry\ngit reset --hard HEAD@{1}",
-              "annotations": [
-                {
-                  "id": "ann-reflog",
-                  "targetToken": "git reflog",
-                  "text": "Logs every single HEAD movement locally, even for deleted branches or resets",
-                  "position": "bottom"
-                }
-              ],
-              "evaluations": [
-                {
-                  "input": "git reflog",
-                  "output": "314f44c HEAD@{0}: commit: feat: initial DevSheets MVP"
-                }
-              ]
-            }
-          ],
-          "callouts": [
-            {
-              "title": "Reflog Expiration",
-              "type": "tip",
-              "icon": "💡",
-              "text": "Git keeps reflog entries for 90 days before garbage collection runs.",
-              "color": "green"
-            },
-            {
-              "title": "Hard Reset Danger",
-              "type": "danger",
-              "icon": "⚡",
-              "text": "git reset --hard permanently discards uncommitted working directory changes.",
-              "color": "amber"
-            }
-          ],
-          "tags": ["reflog", "undo", "recovery"]
+          "id": "restore-reset-revert",
+          "title": "restore vs reset vs revert",
+          "table": {"headers":["Command","Primary Target","Rewrites Commit History","Typical Use"],"rows":[["git restore","Working tree and/or index","No","Discard or unstage selected paths"],["git reset","Current branch, optionally index/tree","Yes locally","Move branch and reshape unpublished state"],["git revert","New inverse commit","No","Undo a shared commit safely"]]},
+          "codeBlocks": [{"language":"bash","code":"git restore --staged path/to/file\ngit restore --source=HEAD -- path/to/file\ngit reset --soft HEAD~1\ngit revert <published-commit>"}],
+          "callouts": [{"title":"Inspect Before Destructive Restore or Reset","type":"danger","icon":"🛑","text":"Before --hard or restoring a working-tree path, inspect status and diffs and preserve valuable work in a commit, branch, patch, or stash. Uncommitted content may have no Git recovery path.","color":"red"}],
+          "tags": ["restore", "reset", "revert"]
+        },
+        {
+          "id": "reflog-recovery",
+          "title": "Reflog and Lost-Commit Recovery",
+          "description": "Reflogs record local ref updates and often reveal commits after resets, rebases, amendments, or branch deletion.",
+          "codeBlocks": [{"language":"bash","code":"git reflog --date=iso\ngit show HEAD@{2}\ngit branch recovery/pre-reset HEAD@{2}\ngit fsck --lost-found --no-reflogs"}],
+          "callouts": [{"title":"Preserve First, Then Repair","type":"tip","icon":"🛟","text":"Create a recovery branch at the candidate commit before resetting or rebasing anything else. Verify its tree and history, then decide how to integrate it.","color":"green"},{"title":"Reflog Retention Is Configurable","type":"note","icon":"📌","text":"Defaults commonly expire reachable entries after 90 days and unreachable entries after 30 days, but gc.reflogExpire settings and garbage collection affect recovery. Reflogs are local and are not a backup.","color":"blue"}],
+          "tags": ["reflog", "recovery", "fsck"]
+        },
+        {
+          "id": "stash-clean-bisect",
+          "title": "Stash, Clean and Bisect",
+          "description": "Stash is temporary commit-like storage, clean removes untracked files, and bisect searches history for the first bad commit.",
+          "codeBlocks": [{"language":"bash","code":"git stash push -u -m \"wip before upgrade\"\ngit stash list\ngit stash branch recovery/stash stash@{0}\n\ngit clean -ndx  # preview ignored and untracked removal\n\ngit bisect start\ngit bisect bad\ngit bisect good <known-good>\ngit bisect run ./test-regression.sh\ngit bisect reset"}],
+          "callouts": [{"title":"Preview clean Every Time","type":"danger","icon":"⚡","text":"git clean can permanently delete untracked and ignored files. Use -n with the exact same scope first and do not treat a stash as durable backup.","color":"red"}],
+          "tags": ["stash", "clean", "bisect"]
+        }
+      ]
+    },
+    {
+      "id": "advanced-security-maintenance",
+      "title": "Worktrees, Automation & Security",
+      "description": "Use repository-level features deliberately and treat configuration, hooks, and fetched content as part of the security boundary.",
+      "subtopics": [
+        {
+          "id": "worktrees-submodules",
+          "title": "Worktrees and Submodules",
+          "description": "Worktrees provide multiple checkouts sharing one object database. Submodules record a specific commit from another repository and require an explicit lifecycle policy.",
+          "codeBlocks": [{"language":"bash","code":"git worktree add ../project-hotfix -b hotfix origin/main\ngit worktree list\ngit worktree remove ../project-hotfix\n\ngit submodule update --init --recursive\ngit submodule status --recursive"}],
+          "callouts": [{"title":"Do Not Copy .git Internals Between Worktrees","type":"warning","icon":"⚠️","text":"Linked worktrees have administrative metadata and branch exclusivity rules. Use git worktree commands to add, move, repair, prune, and remove them.","color":"amber"}],
+          "tags": ["worktree", "submodule", "checkout"]
+        },
+        {
+          "id": "hooks-signing-config",
+          "title": "Hooks, Signing & Layered Configuration",
+          "description": "Configuration is layered across system, global, local, worktree, and command scopes. Hooks automate local policy; signed commits and tags provide verifiable authorship evidence.",
+          "codeBlocks": [{"language":"bash","code":"git config --show-origin --show-scope --list\ngit config --local core.hooksPath .githooks\ngit commit -S -m \"release: 2.0.0\"\ngit log --show-signature -1\ngit tag -s v2.0.0 -m \"Release 2.0.0\""}],
+          "callouts": [{"title":"Local Hooks Are Not Enforcement","type":"note","icon":"📌","text":"Hooks can be bypassed and are not cloned by default. Enforce required tests, signature policy, and protected-branch rules on trusted server or CI infrastructure.","color":"blue"}],
+          "tags": ["hooks", "signing", "config"]
+        },
+        {
+          "id": "security-maintenance-checklist",
+          "title": "Security, Maintenance & Production Checklist",
+          "description": "Repository operations can execute configured tools or expose secrets through history. Review trust boundaries before running project commands or rewriting data.",
+          "codeBlocks": [{"language":"bash","code":"git fsck --full\ngit maintenance run\ngit verify-commit HEAD\ngit verify-tag <tag>\ngit log --all -- path/to/suspected-secret"}],
+          "callouts": [{"title":"Deleting a File Does Not Remove Its History","type":"danger","icon":"🔒","text":"Revoke exposed credentials immediately. Removing secrets from all reachable history requires a coordinated history rewrite, force updates, clone cleanup, and communication with every consumer.","color":"red"},{"title":"Production Checklist","type":"tip","icon":"✅","text":"Review status and staged diffs, fetch before integrating, protect shared refs, use force-with-lease only by agreement, sign releases, scan secrets, back up critical repositories, and test recovery procedures.","color":"green"}],
+          "tags": ["security", "maintenance", "checklist"]
         }
       ]
     }

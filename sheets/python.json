@@ -11,7 +11,8 @@
   "tags": ["PYTHON", "PROGRAMMING", "TYPING", "ASYNCIO", "PACKAGING", "TESTING"],
   "updatedAt": "Jul 2026",
   "aliases": ["python3", "python syntax", "python tutorial", "python typing", "python async", "pyproject"],
-  "relatedSheets": ["fastapi", "python-design-patterns", "docker", "vscode"],
+  "relatedSheets": ["fastapi", "python-design-patterns", "docker", "vscode", "regex", "package-publishing", "data-structures-algorithms"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/python.json",
   "sections": [
     {
       "id": "syntax-values-control",

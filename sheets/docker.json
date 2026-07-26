@@ -11,7 +11,8 @@
   "tags": ["DOCKER", "CONTAINERS", "DOCKERFILE", "COMPOSE", "BUILDKIT", "DEVOPS"],
   "updatedAt": "Jul 2026",
   "aliases": ["docker cli", "docker compose", "dockerfile", "container", "docker build", "buildkit"],
-  "relatedSheets": ["kubernetes", "nodejs", "nextjs", "python", "fastapi", "git"],
+  "relatedSheets": ["linux", "kubernetes", "nodejs", "nextjs", "python", "fastapi", "git", "opentelemetry"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/docker.json",
   "sections": [
     {
       "id": "container-model",

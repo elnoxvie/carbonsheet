@@ -6,13 +6,14 @@
   "technology": "Jetpack Compose",
   "version": "Modern Jetpack Compose",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 50,
-  "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, lazy UI, theming, navigation, accessibility, interoperability, and performance.",
+  "readTimeMinutes": 58,
+  "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, edge-to-edge UI, adaptive structure, Navigation 3, predictive back, accessibility, interoperability, and performance.",
   "tags": ["ANDROID", "JETPACK COMPOSE", "COMPOSABLE", "STATE", "UI", "RECOMPOSITION"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["compose ui", "android declarative ui", "composable", "recomposition", "compose state", "compose side effects"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["compose ui", "android declarative ui", "composable", "recomposition", "compose state", "compose side effects", "navigation 3", "predictive back", "edge to edge", "adaptive layout"],
   "relatedSheets": ["android-jetpack-compose-modifiers", "android-kotlin", "android-kotlin-flows", "android-testing", "android-naming-conventions"],
   "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-jetpack-compose.json",
   "sections": [
     {
       "id": "compose-mental-model",
@@ -190,12 +191,32 @@
         {
           "id": "adaptive-layout",
           "title": "Window Size & Adaptive Structure",
-          "description": "Respond to actual window space and posture. A phone can be wide in landscape; a desktop window can be narrow.",
+          "description": "Respond to actual window space and posture with canonical adaptive layouts. A phone can be wide in landscape; a desktop window can be narrow.",
+          "table": {
+            "title": "Adaptive Structure Selection",
+            "headers": ["Available Space", "Navigation", "Content Pattern", "Also Verify"],
+            "rows": [
+              ["Compact", "Bottom bar or compact navigation", "Single pane", "Portrait, landscape, large text"],
+              ["Medium", "Navigation rail", "List-detail when content benefits", "Split screen and fold posture"],
+              ["Expanded", "Rail or drawer", "List-detail, supporting pane, or feed", "Desktop windowing and keyboard/mouse"]
+            ]
+          },
           "codeBlocks": [{
             "language": "text",
-            "code": "Compact width → one pane, bottom navigation\nMedium width → navigation rail, optional supporting pane\nExpanded width → list-detail or multi-pane\nAlso test: landscape, split screen, fold posture, keyboard/mouse, large fonts"
+            "code": "Choose layout from current window metrics and content needs\nUse adaptive Material components/canonical list-detail, feed, or supporting-pane patterns\nPreserve selected item, scroll, draft, and navigation state while pane structure changes\nDo not stretch a phone layout across a large window"
           }],
           "callouts": [{ "title": "Avoid Device-Type Branches", "type": "warning", "icon": "⚠️", "text": "Do not infer layout solely from phone/tablet names or physical screen. Base layout decisions on current window and content requirements.", "color": "amber" }]
+        },
+        {
+          "id": "edge-to-edge-insets",
+          "title": "Edge-to-Edge, System Bars & IME Insets",
+          "description": "Modern Android draws edge-to-edge. Let backgrounds extend behind system UI while keeping interactive content clear of bars, cutouts, gestures, and the keyboard.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "override fun onCreate(savedInstanceState: Bundle?) {\n    super.onCreate(savedInstanceState)\n    enableEdgeToEdge()\n    setContent { App() }\n}\n\nScaffold(\n    contentWindowInsets = WindowInsets.safeDrawing\n) { innerPadding ->\n    Screen(Modifier.padding(innerPadding))\n}"
+          }],
+          "callouts": [{ "title": "Consume Insets Once", "type": "warning", "icon": "⚠️", "text": "Scaffold and Material components may already provide inset padding. Trace ownership before adding safeDrawingPadding or imePadding so nested content does not double-pad.", "color": "amber" }],
+          "tags": ["edge-to-edge", "window-insets", "ime", "android-15"]
         }
       ]
     },
@@ -206,13 +227,17 @@
       "subtopics": [
         {
           "id": "navigation",
-          "title": "Navigation Boundaries",
-          "description": "Pass stable identifiers between destinations, load canonical data in the destination owner, and keep navigation operations at the screen boundary.",
+          "title": "Navigation 3, Typed Keys & Boundaries",
+          "description": "For new Compose-first apps, model the back stack as state with Navigation 3 and typed keys. Pass stable identifiers, restore navigation state, and keep navigation operations at the screen boundary.",
           "codeBlocks": [{
-            "language": "kotlin",
-            "code": "@Composable\nfun ArticleRoute(articleId: ArticleId, onBack: () -> Unit) {\n    val viewModel: ArticleViewModel = viewModel(key = articleId.value)\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\n    ArticleScreen(state = state, onBack = onBack)\n}"
+            "language": "text",
+            "code": "Typed NavKey identifies each destination\nBack stack is explicit saveable state\nEntry provider maps keys to destination content\nDestination owner loads canonical data from the key/ID\nBack, deep links, results, and multiple stacks are state transitions\nNavigation 2 remains supported for existing apps; migrate deliberately"
           }],
-          "callouts": [{ "title": "Pass IDs, Not Object Graphs", "type": "tip", "icon": "💡", "text": "Navigation arguments should be small and reconstructable. Passing whole models duplicates state, risks size limits, and becomes stale after process recreation.", "color": "green" }]
+          "callouts": [
+            { "title": "Pass IDs, Not Object Graphs", "type": "tip", "icon": "💡", "text": "Navigation keys should be small, typed, and reconstructable. Passing whole models duplicates state, risks size limits, and becomes stale after process recreation.", "color": "green" },
+            { "title": "Predictive Back Is Part of Navigation", "type": "warning", "icon": "↩️", "text": "Use supported back APIs and test completed and cancelled gestures, back-to-home, cross-activity transitions, overlays, and custom animations. Do not intercept KEYCODE_BACK or rely on legacy onBackPressed callbacks.", "color": "amber" }
+          ],
+          "tags": ["navigation-3", "typed-navigation", "predictive-back", "deep-links"]
         },
         {
           "id": "accessibility-semantics",
@@ -220,7 +245,7 @@
           "description": "Expose meaningful roles, labels, states, actions, traversal, and touch targets. Prefer built-in Material components that include baseline semantics.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "IconButton(onClick = onFavorite) {\n    Icon(\n        imageVector = if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,\n        contentDescription = if (favorite) \"Remove from favorites\" else \"Add to favorites\"\n    )\n}\n\n// Decorative image: contentDescription = null"
+            "code": "val favoriteLabel = stringResource(\n    if (favorite) R.string.remove_favorite else R.string.add_favorite\n)\nIconButton(onClick = onFavorite) {\n    Icon(\n        imageVector = if (favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,\n        contentDescription = favoriteLabel\n    )\n}\n\n// Decorative image: contentDescription = null"
           }],
           "callouts": [{ "title": "Do Not Duplicate Speech", "type": "warning", "icon": "♿", "text": "If nearby text already labels a grouped element, redundant content descriptions create noisy announcements. Merge or clear semantics deliberately and test with accessibility services.", "color": "amber" }]
         },
@@ -230,7 +255,7 @@
           "description": "Use ComposeView to host Compose in Views and AndroidView to host a necessary View in Compose. Keep ownership and cleanup aligned with the host lifecycle.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "AndroidView(\n    factory = { context -> MapView(context).apply { onCreate(null) } },\n    update = { map -> map.show(markers) },\n    onRelease = { map -> map.onDestroy() }\n)"
+            "code": "AndroidView(\n    factory = { context -> LegacyChartView(context) },\n    update = { chart -> chart.submit(points) },\n    onRelease = { chart -> chart.release() }\n)"
           }],
           "callouts": [{ "title": "Treat Interop as a Boundary", "type": "note", "icon": "📌", "text": "Avoid rebuilding Views in update and avoid leaking them into ViewModels. Translate state/events at the boundary and honor the embedded component's lifecycle.", "color": "blue" }]
         }
@@ -251,7 +276,7 @@
           }],
           "callouts": [
             { "title": "Annotations Are Contracts", "type": "danger", "icon": "🛑", "text": "Do not add @Stable or @Immutable to silence reports unless the type obeys the contract. Lying can prevent required recomposition and produce stale UI.", "color": "red" },
-            { "title": "Collections and Stability", "type": "note", "icon": "📌", "text": "Ordinary List/Set/Map parameters may be considered unstable because mutation cannot be proven absent. Consider immutable collections or stable wrapper UI models where measurement shows value.", "color": "blue" }
+            { "title": "Collections, Stability & Strong Skipping", "type": "note", "icon": "📌", "text": "Ordinary List/Set/Map parameters are inferred as unstable. With strong skipping, enabled by default from Kotlin 2.0.20, restartable composables can still skip when the same unstable instance is passed. Prefer immutable snapshots; use persistent immutable collections or stable wrappers only when measurement shows value.", "color": "blue" }
           ]
         },
         {
@@ -270,7 +295,7 @@
           "description": "Audit state ownership, effects, identity, accessibility, adaptation, and measured performance.",
           "codeBlocks": [{
             "language": "text",
-            "code": "□ UI is a deterministic function of state\n□ Reusable composables receive values and callbacks\n□ Screen ViewModels remain at route boundaries\n□ Every effect has correct keys and cleanup\n□ Lazy items use stable domain keys\n□ Small UI state restores after recreation\n□ Canonical data lives outside Compose\n□ Loading, empty, error, offline, and retry are designed\n□ Semantics, touch targets, contrast, and font scaling work\n□ Compact/expanded windows and input modes work\n□ Expensive work is remembered or moved out of composition\n□ Stability annotations are truthful and optimization is measured"
+            "code": "□ UI is a deterministic function of state\n□ Reusable composables receive values and callbacks\n□ Screen ViewModels remain at route boundaries\n□ Every effect has correct keys and cleanup\n□ Lazy items use stable domain keys\n□ Small UI and navigation state restore after recreation\n□ Canonical data lives outside Compose\n□ Loading, empty, error, offline, and retry are designed\n□ Edge-to-edge insets and IME movement are correct\n□ Predictive back completes and cancels correctly\n□ Semantics, touch targets, contrast, and font scaling work\n□ Canonical layouts adapt across compact and expanded windows\n□ Expensive work is remembered or moved out of composition\n□ Stability annotations are truthful and optimization is measured"
           }]
         }
       ]

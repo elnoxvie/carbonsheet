@@ -11,7 +11,8 @@
   "tags": ["NODEJS", "JAVASCRIPT", "BACKEND", "STREAMS", "HTTP", "ASYNC"],
   "updatedAt": "Jul 2026",
   "aliases": ["node", "node js", "node runtime", "server javascript", "node streams", "npm"],
-  "relatedSheets": ["typescript", "vite", "nextjs", "docker", "vscode"],
+  "relatedSheets": ["typescript", "vite", "nextjs", "graphql", "web-security", "opentelemetry", "docker", "vscode"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/nodejs.json",
   "sections": [
     {
       "id": "runtime-modules-packages",

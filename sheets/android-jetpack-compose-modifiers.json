@@ -6,13 +6,14 @@
   "technology": "Jetpack Compose Modifier",
   "version": "Modern Jetpack Compose",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 42,
-  "description": "Beginner-to-advanced reference for modifier order, constraints, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
+  "readTimeMinutes": 46,
+  "description": "Beginner-to-advanced reference for modifier order, constraints, edge-to-edge insets, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
   "tags": ["ANDROID", "JETPACK COMPOSE", "MODIFIER", "LAYOUT", "SEMANTICS", "GESTURES"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["compose modifier", "modifier order", "compose padding", "compose custom modifier", "modifier node", "compose constraints"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["compose modifier", "modifier order", "compose padding", "compose custom modifier", "modifier node", "compose constraints", "window insets", "edge to edge"],
   "relatedSheets": ["android-jetpack-compose", "android-testing", "android-naming-conventions"],
   "prerequisites": [{ "title": "Android Jetpack Compose", "slug": "android-jetpack-compose" }],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-jetpack-compose-modifiers.json",
   "sections": [
     {
       "id": "modifier-model",
@@ -95,6 +96,17 @@
             "code": "Image(\n    painter = painter,\n    contentDescription = null,\n    modifier = Modifier\n        .fillMaxWidth()\n        .aspectRatio(16f / 9f)\n)"
           }],
           "callouts": [{ "title": "Intrinsic Measurement Costs", "type": "warning", "icon": "⚠️", "text": "Intrinsic queries add a pre-measure pass and some custom layouts do not support meaningful intrinsics. Prefer explicit constraints or a custom single-pass layout when performance matters.", "color": "amber" }]
+        },
+        {
+          "id": "window-insets",
+          "title": "Window Insets & Edge-to-Edge Padding",
+          "description": "Inset modifiers apply system-bar, cutout, gesture, or IME space during layout so content follows current platform insets without reading stale values during composition.",
+          "tabs": [
+            { "label": "Safe Content", "language": "kotlin", "code": "Modifier.safeDrawingPadding()\n\nModifier.windowInsetsPadding(WindowInsets.safeGestures)" },
+            { "label": "IME", "language": "kotlin", "code": "Modifier.imePadding()\n\nSpacer(Modifier.windowInsetsBottomHeight(WindowInsets.ime))" }
+          ],
+          "callouts": [{ "title": "Assign One Insets Owner", "type": "warning", "icon": "⚠️", "text": "Scaffold and Material components may already pass or consume insets. Applying the same inset again creates excess spacing; use consumeWindowInsets when handing applied padding to nested content.", "color": "amber" }],
+          "tags": ["window-insets", "edge-to-edge", "ime", "system-bars"]
         }
       ]
     },
@@ -183,7 +195,7 @@
           "description": "Expose what the element is, its current state, and available actions; avoid restating visible child content unnecessarily.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "Modifier.semantics {\n    role = Role.ProgressBar\n    stateDescription = \"${progressPercent}% complete\"\n    progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f)\n}"
+            "code": "Modifier.semantics {\n    stateDescription = \"${progressPercent}% complete\"\n    progressBarRangeInfo = ProgressBarRangeInfo(progress, 0f..1f)\n}"
           }],
           "callouts": [{ "title": "Use Built-In Semantics First", "type": "tip", "icon": "♿", "text": "Material components and interaction modifiers already expose roles/actions. Add custom semantics to fill gaps, not to duplicate or conflict with built-in meaning.", "color": "green" }]
         },
@@ -257,7 +269,7 @@
           "description": "Use a ModifierNodeElement plus a focused node interface such as DrawModifierNode, LayoutModifierNode, or PointerInputModifierNode when existing factories cannot express reusable behavior efficiently.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "data class OutlineElement(val color: Color) : ModifierNodeElement<OutlineNode>() {\n    override fun create() = OutlineNode(color)\n    override fun update(node: OutlineNode) { node.color = color }\n}\n\nclass OutlineNode(var color: Color) : Modifier.Node(), DrawModifierNode {\n    override fun ContentDrawScope.draw() {\n        drawContent()\n        drawRect(color, style = Stroke(1.dp.toPx()))\n    }\n}\n\nfun Modifier.outline(color: Color) = this then OutlineElement(color)"
+            "code": "data class OutlineElement(val color: Color) : ModifierNodeElement<OutlineNode>() {\n    override fun create() = OutlineNode(color)\n    override fun update(node: OutlineNode) { node.updateColor(color) }\n}\n\nclass OutlineNode(private var color: Color) : Modifier.Node(), DrawModifierNode {\n    fun updateColor(value: Color) {\n        if (color != value) {\n            color = value\n            invalidateDraw()\n        }\n    }\n\n    override fun ContentDrawScope.draw() {\n        drawContent()\n        drawRect(color, style = Stroke(1.dp.toPx()))\n    }\n}\n\nfun Modifier.outline(color: Color) = this then OutlineElement(color)"
           }],
           "callouts": [{ "title": "Update Every Mutable Parameter", "type": "warning", "icon": "⚠️", "text": "The element update method must transfer changed parameters into the reused node and invalidate the relevant phase when required. Missing updates create stale behavior.", "color": "amber" }]
         },

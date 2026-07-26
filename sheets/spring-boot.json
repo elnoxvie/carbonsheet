@@ -1,0 +1,408 @@
+{
+  "id": "spring-boot-production-reference",
+  "title": "Spring Boot Web Applications",
+  "slug": "spring-boot",
+  "category": "Backend",
+  "technology": "Spring Boot / Spring Framework",
+  "version": "Spring Boot 4.1",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 62,
+  "description": "Production Spring Boot reference covering starters, dependency injection, configuration, profiles, validation, MVC, WebFlux boundaries, errors, data access, transactions, security, resilience, testing, Actuator, observability, AOT, containers, and deployment.",
+  "tags": [
+    "SPRING BOOT",
+    "JAVA",
+    "SPRING MVC",
+    "SPRING DATA",
+    "SPRING SECURITY",
+    "ACTUATOR"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "springboot",
+    "spring framework",
+    "spring mvc",
+    "spring data jpa",
+    "spring security"
+  ],
+  "relatedSheets": [
+    "java",
+    "postgres",
+    "redis",
+    "docker",
+    "kubernetes",
+    "web-security",
+    "opentelemetry",
+    "kafka",
+    "rabbitmq",
+    "grpc-protobuf",
+    "rest-api-design"
+  ],
+  "prerequisites": [
+    {
+      "title": "Java Programming",
+      "slug": "java"
+    }
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/spring-boot.json",
+  "sections": [
+    {
+      "id": "foundation-configuration",
+      "title": "Application Foundation & Configuration",
+      "subtopics": [
+        {
+          "id": "starters-auto-configuration",
+          "title": "Starters, Auto-Configuration & Application Startup",
+          "description": "Starters align dependency sets; auto-configuration contributes beans when classes, properties, and missing-bean conditions match. Keep the application class near the root package.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@SpringBootApplication\npublic class OrdersApplication {\n    public static void main(String[] args) {\n        SpringApplication.run(OrdersApplication.class, args);\n    }\n}"
+            },
+            {
+              "language": "bash",
+              "code": "./mvnw spring-boot:run\n./gradlew bootRun\njava -jar build/libs/orders.jar"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Read the Condition Evaluation Report",
+              "type": "tip",
+              "icon": "💡",
+              "text": "When an expected bean is missing or surprising configuration appears, inspect auto-configuration conditions before adding manual configuration or component scanning.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "starter",
+            "auto configuration",
+            "startup"
+          ]
+        },
+        {
+          "id": "dependency-injection-beans",
+          "title": "Beans, Dependency Injection & Configuration Classes",
+          "description": "Prefer constructor injection, immutable dependencies, explicit module configuration, and narrow bean APIs. Avoid service locators and hidden field injection.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@Service\nfinal class OrderService {\n    private final OrderRepository orders;\n    private final PaymentClient payments;\n\n    OrderService(OrderRepository orders, PaymentClient payments) {\n        this.orders = orders;\n        this.payments = payments;\n    }\n}\n\n@Configuration\nclass ClientConfiguration {\n    @Bean PaymentClient paymentClient(HttpClient.Builder builder) { return new HttpPaymentClient(builder.build()); }\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Avoid Circular Dependencies",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "A cycle usually signals mixed responsibilities or incorrect module direction. Redesign ownership or introduce an event/domain boundary rather than enabling circular references.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "bean",
+            "dependency injection",
+            "configuration"
+          ]
+        },
+        {
+          "id": "properties-profiles-secrets",
+          "title": "Configuration Properties, Profiles & Secrets",
+          "description": "Bind related settings into validated typed properties, use profiles for coherent environment modes, and inject secrets through a managed secret source rather than source control.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@ConfigurationProperties(\"payments\")\n@Validated\npublic record PaymentProperties(\n    @NotBlank URI baseUrl,\n    @DurationMin(seconds = 1) Duration timeout\n) {}"
+            },
+            {
+              "language": "yaml",
+              "code": "payments:\n  base-url: ${PAYMENTS_BASE_URL}\n  timeout: 3s\nmanagement:\n  endpoints.web.exposure.include: health,info,prometheus"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Profile Explosion Hides Behavior",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Prefer one shared configuration model with external values. Do not encode every customer, region, and feature combination as overlapping profiles.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "configuration properties",
+            "profile",
+            "secret"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "web-data",
+      "title": "Web APIs, Validation & Data",
+      "subtopics": [
+        {
+          "id": "mvc-controllers-validation",
+          "title": "Spring MVC Controllers & Validation",
+          "description": "Use request DTOs at the HTTP boundary, Bean Validation for structural constraints, service methods for use cases, and response DTOs that expose only public fields.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "record CreateOrderRequest(@NotEmpty List<@Valid LineItemRequest> items) {}\n\n@RestController\n@RequestMapping(\"/orders\")\nfinal class OrderController {\n    @PostMapping\n    ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest request, Principal principal) {\n        var order = service.create(principal.getName(), request);\n        return ResponseEntity.created(URI.create(\"/orders/\" + order.id())).body(OrderResponse.from(order));\n    }\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Validation Does Not Authorize",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "A valid ID or DTO does not prove the caller owns the resource or may perform the action. Enforce current policy in the service/domain boundary.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "spring mvc",
+            "controller",
+            "validation"
+          ]
+        },
+        {
+          "id": "errors-problem-details",
+          "title": "Exceptions, Problem Details & Request Boundaries",
+          "description": "Translate expected domain failures into stable HTTP Problem Details and correlation IDs; treat unexpected exceptions as server faults without exposing internals.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@RestControllerAdvice\nfinal class ApiErrors {\n    @ExceptionHandler(OrderNotFound.class)\n    ProblemDetail notFound(OrderNotFound error) {\n        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, \"Order not found\");\n        problem.setProperty(\"code\", \"ORDER_NOT_FOUND\");\n        return problem;\n    }\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Catch Everything in Controllers",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Centralize transport mapping while preserving domain context and causal chains internally. Redact SQL, stack traces, paths, tokens, and personal data from responses.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "problem detail",
+            "exception",
+            "error handling"
+          ]
+        },
+        {
+          "id": "data-transactions-pooling",
+          "title": "Spring Data, Transactions & Connection Pools",
+          "description": "Define repository methods from aggregate access patterns, keep transactions short around authoritative state changes, and size pools from database capacity rather than request concurrency.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@Service\nfinal class CheckoutService {\n    @Transactional\n    public Order confirm(UUID orderId, UUID actorId) {\n        var order = orders.findForUpdate(orderId).orElseThrow(OrderNotFound::new);\n        authorization.checkCanConfirm(actorId, order);\n        order.confirm();\n        outbox.append(OrderConfirmed.from(order));\n        return order;\n    }\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Proxy-Based Transactions Need Visible Boundaries",
+              "type": "danger",
+              "icon": "⚠️",
+              "text": "Self-invocation, private methods, async work, checked-exception policy, and calls made before proxy interception can surprise transactional behavior. Test rollback and propagation explicitly.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "spring data",
+            "transaction",
+            "connection pool"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "security-resilience",
+      "title": "Security, Reactive Boundaries & Resilience",
+      "subtopics": [
+        {
+          "id": "spring-security-authz",
+          "title": "Spring Security, Sessions & Authorization",
+          "description": "Build an explicit SecurityFilterChain, choose session or bearer-token architecture deliberately, protect CSRF where browser credentials are ambient, and enforce method/domain authorization.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@Bean\nSecurityFilterChain security(HttpSecurity http) throws Exception {\n    return http\n        .authorizeHttpRequests(auth -> auth\n            .requestMatchers(\"/actuator/health/**\").permitAll()\n            .requestMatchers(HttpMethod.POST, \"/orders/**\").hasAuthority(\"SCOPE_orders.write\")\n            .anyRequest().authenticated())\n        .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))\n        .build();\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "URL Rules Are Only One Layer",
+              "type": "danger",
+              "icon": "🔒",
+              "text": "Also authorize object ownership, tenant, state transition, and field visibility. Validate JWT issuer/audience/algorithm and keep administrative Actuator endpoints isolated.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "spring security",
+            "oauth2",
+            "authorization"
+          ]
+        },
+        {
+          "id": "mvc-webflux-threads",
+          "title": "MVC vs WebFlux & Blocking Boundaries",
+          "description": "Spring MVC uses a thread-per-request model with blocking libraries; WebFlux uses non-blocking event loops and reactive streams. Choose one from the dependency stack and workload, not fashion.",
+          "table": {
+            "headers": [
+              "Model",
+              "Best Fit",
+              "Primary Risk"
+            ],
+            "rows": [
+              [
+                "Spring MVC",
+                "Blocking JDBC/JPA and conventional services",
+                "Too many blocked threads or unbounded work"
+              ],
+              [
+                "WebFlux",
+                "End-to-end non-blocking I/O and streaming",
+                "Blocking calls on event-loop threads"
+              ],
+              [
+                "Virtual threads with MVC",
+                "High blocking-I/O concurrency where supported",
+                "Pinning, downstream limits, hidden concurrency"
+              ]
+            ]
+          },
+          "callouts": [
+            {
+              "title": "Reactive Does Not Make Blocking Dependencies Non-Blocking",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "JPA, many SDKs, filesystem calls, and legacy clients still block. Isolate them deliberately or use a compatible stack; never block an event loop casually.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "webflux",
+            "mvc",
+            "virtual thread"
+          ]
+        },
+        {
+          "id": "timeouts-retries-caching-messaging",
+          "title": "Timeouts, Retries, Caching & Messaging",
+          "description": "Set deadlines at every remote boundary, retry only transient idempotent operations with jitter and budgets, bound bulkheads, and make message consumers idempotent.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "HTTP client: connect timeout + response deadline + cancellation\nRetry: classified transient errors, capped attempts, exponential backoff + jitter\nCache: authoritative source, TTL, invalidation, stampede control\nMessaging: transaction/outbox, idempotency key, poison handling, DLQ policy"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Stack Independent Retries",
+              "type": "danger",
+              "icon": "⚡",
+              "text": "Client, load balancer, service, database, and queue retries multiply load during failure. Assign retry ownership and propagate deadlines and attempt context.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "timeout",
+            "retry",
+            "cache",
+            "messaging"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testing-observability-deployment",
+      "title": "Testing, Actuator & Deployment",
+      "subtopics": [
+        {
+          "id": "test-slices-integration",
+          "title": "Unit, Slice & Integration Testing",
+          "description": "Use plain unit tests for domain logic, focused Spring test slices for one framework layer, and full integration tests with real infrastructure contracts where behavior matters.",
+          "codeBlocks": [
+            {
+              "language": "java",
+              "code": "@WebMvcTest(OrderController.class)\nclass OrderControllerTest {\n    @Autowired MockMvc mvc;\n    @MockBean OrderService service;\n\n    @Test void rejectsInvalidOrder() throws Exception {\n        mvc.perform(post(\"/orders\").contentType(APPLICATION_JSON).content(\"{\\\"items\\\":[]}\"))\n           .andExpect(status().isBadRequest());\n    }\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Load the Whole Context by Default",
+              "type": "tip",
+              "icon": "🧪",
+              "text": "Full context tests are valuable for wiring and end-to-end behavior but slower and less diagnostic. Match test scope to the contract under test and use production-like databases for SQL semantics.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "test slice",
+            "mockmvc",
+            "integration test"
+          ]
+        },
+        {
+          "id": "actuator-observability",
+          "title": "Actuator, Health, Metrics & Tracing",
+          "description": "Actuator exposes operational endpoints; distinguish liveness from readiness, secure exposure, publish application metrics, and integrate logs/traces through Micrometer and OpenTelemetry-compatible pipelines.",
+          "codeBlocks": [
+            {
+              "language": "yaml",
+              "code": "management:\n  endpoint.health.probes.enabled: true\n  endpoints.web.exposure.include: health,info,prometheus\n  tracing.sampling.probability: 0.1\n  observations.key-values:\n    service: orders"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Health Checks Must Be Cheap and Purposeful",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Liveness should not fail because a dependency is temporarily unavailable. Readiness may reflect inability to serve, but aggressive dependency checks can amplify outages.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "actuator",
+            "micrometer",
+            "health",
+            "tracing"
+          ]
+        },
+        {
+          "id": "aot-container-checklist",
+          "title": "AOT, Containers & Production Checklist",
+          "description": "Build reproducibly, choose JVM or native deployment from measured needs, use layered images/buildpacks, run as non-root, configure memory ergonomics, and drain gracefully.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "./mvnw verify\n./mvnw spring-boot:build-image\ndocker run --read-only --cap-drop=ALL -p 8080:8080 orders:verified"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Native Images Change Runtime Assumptions",
+              "type": "note",
+              "icon": "📌",
+              "text": "AOT/native builds need reflection, resources, proxies, serialization, agents, startup, memory, and observability verified from the emitted artifact. Benchmark representative steady-state and cold-start workloads.",
+              "color": "blue"
+            },
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Pin Java/Boot dependencies, validate typed config, use constructor injection, authorize every action, bound pools/timeouts/retries, test transactions and migrations, secure Actuator, export telemetry, scan images, run least-privileged, and rehearse shutdown and rollback.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "aot",
+            "container",
+            "deployment"
+          ]
+        }
+      ]
+    }
+  ]
+}

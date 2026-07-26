@@ -4,7 +4,7 @@
   "slug": "nextjs",
   "category": "Full Stack Web",
   "technology": "Next.js",
-  "version": "Current App Router",
+  "version": "Next.js 16.2 App Router",
   "difficulty": "INTERMEDIATE",
   "readTimeMinutes": 68,
   "description": "Beginner-to-advanced Next.js App Router reference covering routing, Server and Client Components, data and cache behavior, mutations, Route Handlers, metadata, errors, security, performance, testing, and deployment.",
@@ -12,6 +12,7 @@
   "updatedAt": "Jul 2026",
   "aliases": ["next js", "nextjs app router", "react server components", "server actions", "cache components"],
   "relatedSheets": ["react", "nodejs", "typescript", "docker", "vscode"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/nextjs.json",
   "prerequisites": [{ "title": "React Web Development", "slug": "react" }],
   "sections": [
     {
@@ -272,6 +273,17 @@
             "code": "Unit: validation, authorization policy, cache-key logic, data mapping\nComponent: forms, pending/error states, accessibility\nIntegration: Route Handlers/actions with test database and identity\nE2E: direct URL + client navigation, auth redirects, mutation + revalidation, error/not-found\nProduction smoke: built output behind real proxy/CDN/runtime"
           }],
           "callouts": [{ "title": "Mocking RSC Internals Is Low Value", "type": "tip", "icon": "🧪", "text": "Test pure server logic separately and verify framework composition with integration/E2E tests. Avoid brittle assertions on internal payload or cache implementation.", "color": "green" }]
+        },
+        {
+          "id": "turbopack-adapter-navigation",
+          "title": "Turbopack, Adapter API & Navigation",
+          "description": "Next.js 16.2 continues the Turbopack-first toolchain and exposes a stable Adapter API for deployment platforms. Verify partial prefetching, route transitions, and host integration against production behavior.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Toolchain: compare dev/build output, source maps, aliases, loaders/plugins\nNavigation: test prefetched and non-prefetched links, dynamic params, Back/Forward\nAdapter: validate emitted assets, routing, headers, cache semantics, runtime bindings\nDeployment: smoke-test the built application behind the actual proxy/CDN"
+          }],
+          "callouts": [{"title":"Platform Adapters Are Privileged Build Code","type":"warning","icon":"⚠️","text":"Pin and review the adapter, test its generated deployment artifact, and confirm that framework cache, routing, headers, images, and runtime capabilities map correctly to the target host.","color":"amber"}],
+          "tags": ["turbopack", "adapter api", "navigation"]
         },
         {
           "id": "next-checklist",

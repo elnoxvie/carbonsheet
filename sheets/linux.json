@@ -1,0 +1,396 @@
+{
+  "id": "linux-administration-reference",
+  "title": "Linux Administration",
+  "slug": "linux",
+  "category": "Operating Systems",
+  "technology": "Linux",
+  "version": "Linux 6.x / Modern User Space",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 52,
+  "description": "Production Linux reference covering filesystems, permissions, users, processes, systemd, signals, networking, DNS, storage, logs, observability, packages, security, troubleshooting, and operational safety.",
+  "tags": [
+    "LINUX",
+    "SYSTEMD",
+    "NETWORKING",
+    "FILESYSTEM",
+    "SECURITY",
+    "OPERATIONS"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "linux admin",
+    "sysadmin",
+    "systemd",
+    "linux commands",
+    "linux networking"
+  ],
+  "relatedSheets": [
+    "bash",
+    "docker",
+    "kubernetes",
+    "git",
+    "aws",
+    "opentelemetry",
+    "google-cloud"
+  ],
+  "prerequisites": [
+    {
+      "title": "Bash Shell Scripting",
+      "slug": "bash"
+    }
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/linux.json",
+  "sections": [
+    {
+      "id": "filesystem-identity",
+      "title": "Filesystem, Users & Permissions",
+      "subtopics": [
+        {
+          "id": "filesystem-layout-paths",
+          "title": "Filesystem Layout & Paths",
+          "description": "Understand mounted filesystems rather than assuming one disk. /etc holds host configuration, /var changing state, /run volatile runtime state, /proc process/kernel views, and /sys device/kernel interfaces.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "findmnt\ndf -hT\ndu -xhd1 /var | sort -h\nstat -- /path/to/file\nreadlink -f -- /path/to/link"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Deleted Files Can Still Consume Space",
+              "type": "tip",
+              "icon": "💡",
+              "text": "A process holding an unlinked file keeps its blocks allocated. Compare df and du and inspect open deleted files before restarting or truncating anything.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "filesystem",
+            "mount",
+            "path"
+          ]
+        },
+        {
+          "id": "permissions-acls",
+          "title": "Permissions, Ownership, ACLs & umask",
+          "description": "Mode bits apply to owner, group, and others; directory execute means traversal. ACLs add principals, while umask removes default permission bits.",
+          "table": {
+            "headers": [
+              "Permission",
+              "Regular File",
+              "Directory"
+            ],
+            "rows": [
+              [
+                "read",
+                "Read content",
+                "List names"
+              ],
+              [
+                "write",
+                "Modify content",
+                "Create/delete/rename entries"
+              ],
+              [
+                "execute",
+                "Execute file",
+                "Traverse and access entries"
+              ]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "namei -l /srv/app/config\ninstall -o app -g app -m 0640 source /etc/app/config\ngetfacl /srv/app\nsetfacl -m u:operator:r-x /srv/app\numask 027"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "chmod 777 Is Not Diagnosis",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "Identify which principal needs which operation on every path component. Broad write access can turn configuration or executable paths into privilege-escalation points.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "chmod",
+            "acl",
+            "umask"
+          ]
+        },
+        {
+          "id": "users-groups-sudo",
+          "title": "Users, Groups, sudo & Capabilities",
+          "description": "Use service accounts with minimal shells and groups, audited sudo rules for administration, and narrow Linux capabilities instead of full root where supported.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "id app\ngetent passwd app\ngetent group app\nsudo -l\ngetcap /usr/bin/example\ncapsh --print"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Edit sudoers with Validation",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Use visudo or an equivalent validated deployment path. Grant exact commands cautiously because shells, editors, interpreters, wildcards, and writable arguments can escape intended restrictions.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "user",
+            "group",
+            "sudo",
+            "capabilities"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "processes-services",
+      "title": "Processes, Signals & systemd",
+      "subtopics": [
+        {
+          "id": "processes-resources",
+          "title": "Processes, Threads & Resource State",
+          "description": "Inspect parentage, state, CPU, memory, file descriptors, scheduling, and cgroup placement before acting on a process.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "ps -eo pid,ppid,user,stat,%cpu,%mem,etime,cmd --forest\ntop\ncat /proc/<pid>/status\nls -l /proc/<pid>/fd\nlsof -p <pid>\nsystemd-cgls"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Load Average Is Not CPU Percentage",
+              "type": "note",
+              "icon": "📌",
+              "text": "Load includes runnable tasks and typically uninterruptible waits. Compare it with CPU, I/O pressure, run queue, and workload latency.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "process",
+            "procfs",
+            "cgroup"
+          ]
+        },
+        {
+          "id": "signals-jobs",
+          "title": "Signals, Jobs & Graceful Termination",
+          "description": "SIGTERM requests shutdown, SIGKILL cannot be handled, and job control manages processes attached to an interactive shell. Verify the exact PID or unit before signaling.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "kill -TERM <pid>\nkill -0 <pid>\njobs -l\nfg %1\nnohup command >app.log 2>&1 &\nwait <pid>"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Start with SIGKILL",
+              "type": "danger",
+              "icon": "⚡",
+              "text": "SIGKILL prevents cleanup, flushes, lock release, and graceful traffic drain. Use it only after confirming shutdown is stuck and understanding data-integrity consequences.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "signal",
+            "kill",
+            "job control"
+          ]
+        },
+        {
+          "id": "systemd-units-journal",
+          "title": "systemd Units, Dependencies & Journals",
+          "description": "Units declare service lifecycle, dependencies, isolation, restart policy, credentials, and resource limits. Enable controls boot behavior; start controls current state.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "systemctl status app.service\nsystemctl cat app.service\nsystemctl show app.service -p MainPID -p Restart -p MemoryCurrent\njournalctl -u app.service --since -1h\nsystemd-analyze security app.service"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Avoid Infinite Restart Storms",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Combine deliberate Restart behavior with start-rate limits, useful exit codes, dependency readiness, and alerts. A restarting service is not necessarily healthy.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "systemd",
+            "service",
+            "journalctl"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "network-storage",
+      "title": "Networking, DNS & Storage",
+      "subtopics": [
+        {
+          "id": "interfaces-routes-sockets",
+          "title": "Interfaces, Routes & Sockets",
+          "description": "Diagnose from link and address through route, neighbor, listening socket, firewall, transport, and application layers.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "ip -brief link\nip -brief address\nip route get 1.1.1.1\nip neighbor\nss -lntup\nss -ntp state established"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "A Listening Socket Is Not End-to-End Reachability",
+              "type": "note",
+              "icon": "📌",
+              "text": "Also verify bind address, namespace, firewall, security group, load balancer, route, TLS, application health, and return path.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "iproute2",
+            "socket",
+            "route"
+          ]
+        },
+        {
+          "id": "dns-http-diagnostics",
+          "title": "DNS, TLS & Connectivity Diagnostics",
+          "description": "Separate name resolution, connection establishment, TLS negotiation, and application response when troubleshooting.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "resolvectl status\ndig +trace example.com\ngetent ahosts example.com\ncurl -v --connect-timeout 5 https://example.com/health\nopenssl s_client -connect example.com:443 -servername example.com </dev/null"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "dig and Applications May Resolve Differently",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Applications may use NSS, local caches, search domains, split DNS, containers, or proxies. Reproduce resolution from the same namespace and identity as the failing service.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "dns",
+            "tls",
+            "curl"
+          ]
+        },
+        {
+          "id": "block-filesystems-mounts",
+          "title": "Block Devices, Filesystems & Mounts",
+          "description": "Map block devices through partitions, encryption, volume management, filesystems, and mount options. Monitor capacity, inodes, latency, and error logs.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "lsblk -f\nfindmnt -o TARGET,SOURCE,FSTYPE,OPTIONS\nblkid\ndf -hT\ndf -i\niostat -xz 1"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Filesystem Repair Requires a Runbook",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "Do not run repair tools blindly on mounted or actively used filesystems. Identify filesystem type, storage layer, backups, redundancy, and vendor guidance first.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "block device",
+            "mount",
+            "filesystem"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operations-security",
+      "title": "Observability, Security & Troubleshooting",
+      "subtopics": [
+        {
+          "id": "logs-metrics-pressure",
+          "title": "Logs, Metrics & Pressure",
+          "description": "Correlate service logs with CPU, memory, I/O, network, cgroup limits, kernel messages, and pressure-stall information over the same time window.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "journalctl -k -p warning..alert --since today\nfree -h\nvmstat 1\npidstat -dur 1\ncat /proc/pressure/{cpu,memory,io}\ndmesg --level=err,warn"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Check for OOM Evidence",
+              "type": "tip",
+              "icon": "💡",
+              "text": "A disappeared process may have been killed by the kernel or its cgroup. Inspect kernel logs, unit results, memory.events, limits, and restart history.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "logs",
+            "metrics",
+            "psi",
+            "oom"
+          ]
+        },
+        {
+          "id": "packages-updates-security",
+          "title": "Packages, Updates & Host Security",
+          "description": "Use signed repositories, inventory installed versions, stage security updates, minimize services, enforce MAC policy, and reboot when kernel or foundational runtime fixes require it.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "uname -a\ncat /etc/os-release\nsystemctl --type=service --state=running\ngetenforce 2>/dev/null || true\naa-status 2>/dev/null || true\nfind / -xdev -perm -4000 -type f 2>/dev/null"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Distribution Procedures Differ",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Package commands, support windows, live patching, mandatory access control, network configuration, and service defaults vary. Follow the deployed distribution's documentation and lifecycle.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "package",
+            "selinux",
+            "apparmor",
+            "patching"
+          ]
+        },
+        {
+          "id": "incident-checklist",
+          "title": "Incident Workflow & Production Checklist",
+          "description": "Preserve evidence, establish scope and timing, make the smallest reversible change, and record commands and outcomes while maintaining communication.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "1. Confirm host, environment, time, and user impact\n2. Capture service state, logs, metrics, recent changes, capacity\n3. Form one hypothesis and run a low-risk discriminating check\n4. Mitigate with a reversible bounded action\n5. Verify user-facing recovery and hidden backlog/data integrity\n6. Preserve timeline, root cause, and follow-up ownership"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Use least privilege, managed configuration, tested backups, time synchronization, resource limits, centralized logs/metrics, vulnerability patching, service hardening, capacity alerts, documented ownership, and rehearsed recovery.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "incident",
+            "runbook",
+            "production"
+          ]
+        }
+      ]
+    }
+  ]
+}

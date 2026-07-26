@@ -6,12 +6,13 @@
   "technology": "Android / Kotlin",
   "version": "Kotlin 2.x / Modern Android",
   "difficulty": "BEGINNER",
-  "readTimeMinutes": 52,
-  "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, resources, intents, permissions, storage, and scalable app architecture.",
+  "readTimeMinutes": 62,
+  "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, target-SDK compatibility, edge-to-edge and adaptive UI, intents, permissions, storage, offline-first sync, and scalable app architecture.",
   "tags": ["ANDROID", "KOTLIN", "LIFECYCLE", "VIEWMODEL", "ARCHITECTURE", "PLATFORM"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["android development", "android kotlin basics", "android app components", "android architecture", "android lifecycle"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["android development", "android kotlin basics", "android app components", "android architecture", "android lifecycle", "target sdk", "photo picker", "edge to edge", "predictive back", "offline first"],
   "relatedSheets": ["android-kotlin-coroutines", "android-kotlin-flows", "android-testing", "android-jetpack-compose", "android-naming-conventions", "kotlin-collection-processing"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kotlin.json",
   "sections": [
     {
       "id": "kotlin-for-android",
@@ -143,13 +144,13 @@
         },
         {
           "id": "activity-result-api",
-          "title": "Activity Result Contracts",
-          "description": "Register contracts during initialization and keep result handling separate from launching.",
+          "title": "Activity Results & Photo Picker",
+          "description": "Register contracts during initialization, use the system Photo Picker for user-selected media, and keep result handling separate from launching.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "private val pickImage = registerForActivityResult(\n    ActivityResultContracts.GetContent()\n) { uri: Uri? ->\n    uri?.let(viewModel::onImageSelected)\n}\n\nfun chooseImage() = pickImage.launch(\"image/*\")"
+            "code": "private val pickImage = registerForActivityResult(\n    ActivityResultContracts.PickVisualMedia()\n) { uri: Uri? ->\n    uri?.let(viewModel::onImageSelected)\n}\n\nfun chooseImage() = pickImage.launch(\n    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)\n)"
           }],
-          "callouts": [{ "title": "Persist Long-Lived URI Access", "type": "note", "icon": "📌", "text": "If a document URI is needed after restart, use the appropriate document contract and persistable URI permission. A temporary grant may expire.", "color": "blue" }]
+          "callouts": [{ "title": "Choose the Narrowest Contract", "type": "note", "icon": "📌", "text": "Use Photo Picker for selected photos/videos without broad media permission. If a document URI must survive restart, use an appropriate OpenDocument contract and persistable URI permission.", "color": "blue" }]
         },
         {
           "id": "runtime-permissions",
@@ -159,7 +160,25 @@
             "language": "kotlin",
             "code": "val requestCamera = registerForActivityResult(\n    ActivityResultContracts.RequestPermission()\n) { granted ->\n    if (granted) openCamera() else showCameraAlternative()\n}\n\nwhen {\n    checkSelfPermission(Manifest.permission.CAMERA) == PERMISSION_GRANTED -> openCamera()\n    shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> showRationale()\n    else -> requestCamera.launch(Manifest.permission.CAMERA)\n}"
           }],
-          "callouts": [{ "title": "Denial Is a Valid State", "type": "warning", "icon": "⚠️", "text": "Users may deny permanently or policy may restrict access. The app must remain usable where possible and should not loop or pressure the user.", "color": "amber" }]
+          "callouts": [{ "title": "Denial Is a Valid State", "type": "warning", "icon": "⚠️", "text": "Users may deny permanently or policy may restrict access. The app must remain usable where possible and should not loop or pressure the user. Notification, media, nearby-device, and location rules differ by API level, so gate both requests and behavior.", "color": "amber" }]
+        },
+        {
+          "id": "target-sdk-compatibility",
+          "title": "Target SDK & Platform Behavior Changes",
+          "description": "Treat every target SDK upgrade as a compatibility project: read both all-app and target-specific behavior changes, then test affected journeys on that platform.",
+          "table": {
+            "title": "Modern Android Compatibility Watchlist",
+            "headers": ["Platform", "High-Impact Areas", "Required Review"],
+            "rows": [
+              ["Android 13+", "Notification permission, Photo Picker, media access", "Request only when needed; prefer picker-based access"],
+              ["Android 14+", "Foreground-service types, exact alarms, background starts", "Declare valid types and verify scheduling eligibility"],
+              ["Android 15 / target 35", "Edge-to-edge enforcement", "Handle system bars, cutouts, gesture and IME insets"],
+              ["Android 16 / target 36", "Predictive back defaults; edge-to-edge opt-out removed", "Use supported back APIs and test all back destinations"],
+              ["Android 17 preview / API 37", "Large-screen adaptation, local-network and other behavior changes", "Run preview compatibility tests; do not ship preview assumptions as stable contracts"]
+            ]
+          },
+          "callouts": [{ "title": "Compile SDK Is Not Target SDK", "type": "warning", "icon": "⚠️", "text": "compileSdk exposes APIs; targetSdk opts the app into platform behavior changes. Keep minSdk fallbacks explicit and test the actual targetSdk configuration used for release.", "color": "amber" }],
+          "tags": ["targetSdk", "compatibility", "android-17", "permissions"]
         }
       ]
     },
@@ -184,7 +203,7 @@
           "description": "Rotation, resize, locale, font scale, density, theme, and device posture can change while the app runs.",
           "codeBlocks": [{
             "language": "text",
-            "code": "Avoid caching configuration-derived values globally\nUse dp for layout and sp for scalable text\nTest large font scale and long translations\nUse window size classes/adaptive layouts, not device-name checks\nLet Activities recreate unless a proven platform integration requires manual handling"
+            "code": "Avoid caching configuration-derived values globally\nUse dp for layout and sp for scalable text\nDraw edge-to-edge and consume system-bar, cutout, gesture, and IME insets\nUse current window size/posture and canonical layouts, not device-name checks\nTest resize, multi-window, desktop windowing, fold posture, keyboard/mouse, large fonts, and long translations\nLet Activities recreate unless a proven platform integration requires manual handling"
           }],
           "callouts": [{ "title": "Recreation Is a Correctness Test", "type": "tip", "icon": "💡", "text": "Regularly enable developer options that destroy activities and test rotation/resizing. Bugs found there often reveal misplaced ownership or missing persistence.", "color": "green" }]
         }
@@ -204,6 +223,18 @@
             "code": "Relational entities, joins, migrations → Room\nTyped preferences or small settings → DataStore\nMedia/documents/blobs → files or platform document storage\nTemporary reproducible data → cache directory\nSensitive secrets → platform-backed secure design; minimize storage\nCross-device canonical data → server plus explicit offline strategy"
           }],
           "callouts": [{ "title": "Migrations Are Product Code", "type": "danger", "icon": "🗃️", "text": "Test schema and preference migrations against real historical versions. Destructive fallback can erase user data and should be an explicit product decision.", "color": "red" }]
+        },
+        {
+          "id": "offline-first-sync",
+          "title": "Offline-First Source of Truth & Sync",
+          "description": "For data that must remain usable without reliable connectivity, expose local persisted data as the read source and reconcile network updates through an explicit sync policy.",
+          "diagram": { "type": "mermaid", "content": "flowchart LR\n  UI[UI observes] --> R[Repository]\n  R --> L[Local source of truth]\n  N[Network] --> S[Sync and conflict policy]\n  S --> L\n  W[Durable WorkManager queue] --> S" },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Reads → observe the local source of truth\nRefresh → fetch, validate, then update local storage transactionally\nCritical offline write → save locally, enqueue durable sync, expose pending state\nConflict → define server-wins, client-wins, merge, or user resolution\nRetry → bounded backoff with idempotency and observable failure"
+          }],
+          "callouts": [{ "title": "Connectivity Is a Hint", "type": "warning", "icon": "⚠️", "text": "A network callback cannot guarantee that a request will succeed. Attempt operations under policy, handle failures, and let durable work retry when constraints are satisfied.", "color": "amber" }],
+          "tags": ["offline-first", "sync", "room", "workmanager"]
         },
         {
           "id": "work-selection",
@@ -249,7 +280,7 @@
           "description": "Audit boundary validation, exported components, lifecycle ownership, state restoration, accessibility, performance, and observability.",
           "codeBlocks": [{
             "language": "text",
-            "code": "□ External Intent/URI/provider input is validated\n□ Exported components are intentional and permission-protected\n□ Secrets and sensitive logs are minimized\n□ UI objects are not retained by long-lived owners\n□ Durable state is persisted before process death\n□ Rotation, resize, locale, night mode, and large fonts work\n□ Blocking/CPU work never stalls the main thread\n□ Offline, denial, empty, loading, and retry states are designed\n□ App startup and critical journeys are measured\n□ Errors have actionable telemetry without personal data\n□ Tests cover ViewModels, repositories, and navigation journeys"
+            "code": "□ All-app and target-SDK behavior changes are reviewed\n□ External Intent/URI/provider input is validated\n□ Exported components and package visibility are intentional\n□ Runtime permissions are requested in context with denial paths\n□ Secrets and sensitive logs are minimized\n□ UI objects are not retained by long-lived owners\n□ Durable state is persisted before process death\n□ Edge-to-edge, predictive back, resize, locale, night mode, and large fonts work\n□ Blocking/CPU work never stalls the main thread\n□ Offline, denial, empty, loading, and retry states are designed\n□ App startup, jank, ANRs, and critical journeys are measured\n□ Errors have actionable telemetry without personal data\n□ Tests cover ViewModels, repositories, migrations, navigation, and platform upgrades"
           }],
           "callouts": [{ "title": "Related Deep Dives", "type": "note", "icon": "🔗", "text": "Use the dedicated Coroutines, Flows, Compose, Modifiers, Testing, Collections, and Naming sheets for mechanics intentionally excluded here.", "color": "blue" }]
         }

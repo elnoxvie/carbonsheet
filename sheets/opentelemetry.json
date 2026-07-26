@@ -1,0 +1,434 @@
+{
+  "id": "opentelemetry-production-reference",
+  "title": "OpenTelemetry Observability",
+  "slug": "opentelemetry",
+  "category": "Observability",
+  "technology": "OpenTelemetry",
+  "version": "Current OpenTelemetry Specifications",
+  "difficulty": "INTERMEDIATE",
+  "readTimeMinutes": 54,
+  "description": "Production OpenTelemetry reference covering resources, instrumentation scopes, traces, metrics, logs, context propagation, semantic conventions, SDKs, OTLP, Collector pipelines, sampling, cardinality, security, testing, and operations.",
+  "tags": [
+    "OPENTELEMETRY",
+    "OTEL",
+    "TRACING",
+    "METRICS",
+    "LOGS",
+    "OBSERVABILITY"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "otel",
+    "distributed tracing",
+    "otlp",
+    "telemetry collector",
+    "observability"
+  ],
+  "relatedSheets": [
+    "kubernetes",
+    "docker",
+    "aws",
+    "nodejs",
+    "python",
+    "java",
+    "go",
+    "elasticsearch"
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/opentelemetry.json",
+  "sections": [
+    {
+      "id": "model-signals",
+      "title": "Telemetry Model & Signals",
+      "subtopics": [
+        {
+          "id": "resources-scopes-conventions",
+          "title": "Resources, Instrumentation Scopes & Semantic Conventions",
+          "description": "Resources identify the entity producing telemetry; scopes identify the instrumentation library; semantic conventions standardize operation names and attributes across languages.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Resource: service.name=checkout, service.version=2.4.0, deployment.environment.name=prod\nScope: com.example.checkout.instrumentation@1.3.0\nSignal data: spans, metric points, log records\nConventions: stable names for HTTP, database, messaging, RPC, exceptions"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "service.name Must Be Deliberate",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "A missing or inconsistent service identity fragments dashboards and traces. Define resource ownership, environment, version, and instance identity centrally.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "resource",
+            "scope",
+            "semantic conventions"
+          ]
+        },
+        {
+          "id": "traces-spans-links",
+          "title": "Traces, Spans, Events & Links",
+          "description": "A trace models causal work; spans have parentage, timing, kind, status, attributes, events, and links. Links connect related work that is not a strict parent-child relationship.",
+          "table": {
+            "headers": [
+              "Field",
+              "Use",
+              "Avoid"
+            ],
+            "rows": [
+              [
+                "Span name",
+                "Low-cardinality operation",
+                "Raw URL or user ID"
+              ],
+              [
+                "Attribute",
+                "Searchable dimension",
+                "Secrets and unbounded values"
+              ],
+              [
+                "Event",
+                "Timestamped occurrence",
+                "A span per log line"
+              ],
+              [
+                "Status",
+                "Operation error result",
+                "Marking every HTTP 4xx automatically"
+              ],
+              [
+                "Link",
+                "Batch/fan-in causal relation",
+                "Invented parentage"
+              ]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "SERVER span: POST /orders\n  attributes: http.request.method=POST, http.route=/orders\n  event: validation.failed {field_count=2}\n  child CLIENT span: payment authorize\n  status: ERROR only when operation failed by application semantics"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Record Exceptions Deliberately",
+              "type": "note",
+              "icon": "📌",
+              "text": "Recording an exception event does not necessarily set span status. Apply consistent domain and protocol error rules and avoid duplicating stack traces across every layer.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "trace",
+            "span",
+            "link",
+            "event"
+          ]
+        },
+        {
+          "id": "metrics-logs-baggage",
+          "title": "Metrics, Logs & Baggage",
+          "description": "Metrics aggregate measurements, logs record events, and baggage propagates contextual key/value data. Trace and span IDs can correlate logs with active traces.",
+          "table": {
+            "headers": [
+              "Metric Instrument",
+              "Measures",
+              "Example"
+            ],
+            "rows": [
+              [
+                "Counter",
+                "Monotonic additions",
+                "requests, bytes"
+              ],
+              [
+                "UpDownCounter",
+                "Positive/negative changes",
+                "active jobs"
+              ],
+              [
+                "Histogram",
+                "Distribution",
+                "request duration, payload size"
+              ],
+              [
+                "Gauge/observable gauge",
+                "Current sampled value",
+                "queue depth, temperature"
+              ]
+            ]
+          },
+          "callouts": [
+            {
+              "title": "Never Put Secrets or PII in Baggage",
+              "type": "danger",
+              "icon": "🔒",
+              "text": "Baggage crosses process and trust boundaries and may be copied into telemetry. Treat incoming values as untrusted and allowlist what may propagate externally.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "metric",
+            "log",
+            "baggage"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "instrumentation-context",
+      "title": "Instrumentation & Context Propagation",
+      "subtopics": [
+        {
+          "id": "api-sdk-auto-manual",
+          "title": "API, SDK, Auto-Instrumentation & Manual Spans",
+          "description": "Libraries depend on the API; applications configure SDK providers, processors, exporters, resources, and sampling. Auto-instrument common frameworks, then add manual domain spans sparingly.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Library → OpenTelemetry API only; emits telemetry if application configures SDK\nApplication → SDK + resource + processors/readers + exporter\nAuto-instrumentation → HTTP/database/messaging framework boundaries\nManual instrumentation → domain operations and missing causal boundaries"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Avoid Double Instrumentation",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Agent, framework, middleware, and manual instrumentation can produce duplicate spans or metrics. Inventory enabled instrumentations and verify one owner per boundary.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "api",
+            "sdk",
+            "auto instrumentation"
+          ]
+        },
+        {
+          "id": "context-propagation",
+          "title": "W3C Trace Context & Propagation",
+          "description": "Propagators inject context into outbound carriers and extract it from inbound carriers. The default commonly includes W3C traceparent/tracestate, optionally with baggage.",
+          "codeBlocks": [
+            {
+              "language": "http",
+              "code": "traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01\ntracestate: vendor=value\nbaggage: tenant.id=example"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Propagate Across Every Async Boundary",
+              "type": "tip",
+              "icon": "🔗",
+              "text": "Verify HTTP, RPC, queues, scheduled jobs, thread pools, callbacks, and custom transports. For messaging, model producer/consumer timing and use links when one message participates in batch or fan-in work.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "traceparent",
+            "propagator",
+            "context"
+          ]
+        },
+        {
+          "id": "cardinality-naming",
+          "title": "Attribute Cardinality & Naming",
+          "description": "Telemetry cost and usability depend on stable operation names and bounded attribute values. Keep raw identifiers in controlled logs or exemplars rather than metric labels.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Good metric labels: method, route template, status class, region\nDangerous labels: user_id, request_id, raw URL, SQL text, error message\nGood span name: GET /users/{id}\nDangerous span name: GET /users/839572?token=..."
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Cardinality Is a Reliability Limit",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "Unbounded dimensions can exhaust application, Collector, network, and backend resources. Enforce attribute limits and monitor dropped telemetry.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "cardinality",
+            "attribute",
+            "naming"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collector-pipelines",
+      "title": "OTLP & Collector Pipelines",
+      "subtopics": [
+        {
+          "id": "collector-components",
+          "title": "Receivers, Processors, Exporters & Connectors",
+          "description": "Collector service pipelines receive signal data, process it in declared order, and export it. Connectors join pipelines as both exporter and receiver.",
+          "diagram": {
+            "type": "mermaid",
+            "content": "flowchart LR\n  Apps[\"Instrumented applications\"] -->|OTLP| R[\"Receivers\"]\n  R --> P[\"Processors: memory, batch, filter, transform\"]\n  P --> E[\"Exporters\"]\n  E --> Backends[\"Observability backends\"]"
+          },
+          "codeBlocks": [
+            {
+              "language": "yaml",
+              "code": "service:\n  pipelines:\n    traces:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlp/backend]\n    metrics:\n      receivers: [otlp]\n      processors: [memory_limiter, batch]\n      exporters: [otlp/backend]"
+            }
+          ],
+          "tags": [
+            "collector",
+            "pipeline",
+            "otlp"
+          ]
+        },
+        {
+          "id": "deployment-patterns",
+          "title": "Agent, Gateway & Layered Deployment",
+          "description": "Agents collect host-local data and reduce network boundaries; gateways centralize routing, policy, tail sampling, and backend credentials. Layer only when operational benefits justify more failure modes.",
+          "table": {
+            "headers": [
+              "Pattern",
+              "Strength",
+              "Risk"
+            ],
+            "rows": [
+              [
+                "Direct export",
+                "Simple topology",
+                "Backend coupling and credentials in apps"
+              ],
+              [
+                "Node/host agent",
+                "Local buffering and host signals",
+                "Per-node capacity/config"
+              ],
+              [
+                "Gateway",
+                "Central policy and fan-out",
+                "Shared bottleneck/failure domain"
+              ],
+              [
+                "Agent + gateway",
+                "Local collection plus central processing",
+                "Highest operational complexity"
+              ]
+            ]
+          },
+          "callouts": [
+            {
+              "title": "Collectors Need Their Own Telemetry",
+              "type": "tip",
+              "icon": "📈",
+              "text": "Monitor accepted, refused, dropped, queued, retried, and exported items plus memory, CPU, queue capacity, connection failures, and config rollout health.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "agent",
+            "gateway",
+            "deployment"
+          ]
+        },
+        {
+          "id": "sampling-buffering-resilience",
+          "title": "Sampling, Queues & Failure Behavior",
+          "description": "Head sampling decides early using local context; tail sampling decides after observing trace data. Export queues and retries absorb brief failures but require memory/disk and loss budgets.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Always keep: errors, high latency, critical flows, rare outcomes\nProbability sample: healthy high-volume traffic\nTail sampling: route complete traces consistently by trace ID\nDefine: queue size, retry horizon, overload shedding, shutdown flush deadline"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Sampling Must Be Trace-Consistent",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Independent downstream decisions create partial traces. Propagate the sampled flag, route a trace to the same tail-sampling decision point, and account for late spans.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "sampling",
+            "queue",
+            "retry"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operations-quality",
+      "title": "Security, Testing & Operations",
+      "subtopics": [
+        {
+          "id": "security-redaction",
+          "title": "Security, Redaction & Trust Boundaries",
+          "description": "Telemetry can contain credentials, personal data, query text, payload fragments, topology, and business identifiers. Minimize at instrumentation time and filter again before export.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Allowlist attributes and headers\nRedact authorization, cookies, tokens, passwords, request/response bodies\nAuthenticate and encrypt OTLP\nSeparate tenant/environment credentials and endpoints\nRestrict Collector admin/debug interfaces\nAudit transform/filter rules and backend access"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Collector Redaction Is Defense in Depth",
+              "type": "danger",
+              "icon": "🔒",
+              "text": "Sensitive data has already crossed process/network boundaries before a gateway can remove it. Prevent capture at the source whenever possible.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "security",
+            "redaction",
+            "pii"
+          ]
+        },
+        {
+          "id": "testing-validation",
+          "title": "Instrumentation Tests & Validation",
+          "description": "Test span relationships, attributes, metric units, log correlation, propagation, error semantics, shutdown flush, and Collector configuration without coupling to one vendor UI.",
+          "codeBlocks": [
+            {
+              "language": "text",
+              "code": "Unit: in-memory exporter verifies domain spans/metrics\nIntegration: two services verify trace context and parentage\nLoad: cardinality, allocation and export overhead\nFailure: backend unavailable, queue full, malformed context\nConfig: start Collector and validate every pipeline/export path"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Telemetry Is a Product Contract",
+              "type": "note",
+              "icon": "📌",
+              "text": "Dashboards, alerts, SLOs, investigations, and billing depend on names and units. Review semantic changes and roll them out compatibly.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "testing",
+            "validation",
+            "contract"
+          ]
+        },
+        {
+          "id": "production-checklist",
+          "title": "Production Checklist",
+          "description": "Instrument user-visible and dependency boundaries, then prove that telemetry remains useful and affordable during normal load and incidents.",
+          "callouts": [
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Set resource identity, follow semantic conventions, preserve context, bound cardinality, configure sampling intentionally, secure OTLP, redact at source, monitor Collectors, test overload/export failure, correlate deploys, and document telemetry ownership.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "production",
+            "checklist",
+            "slo"
+          ]
+        }
+      ]
+    }
+  ]
+}

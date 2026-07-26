@@ -4,7 +4,7 @@
   "slug": "vite",
   "category": "Frontend Tooling",
   "technology": "Vite",
-  "version": "Current Vite",
+  "version": "Vite 8",
   "difficulty": "INTERMEDIATE",
   "readTimeMinutes": 46,
   "description": "Beginner-to-advanced Vite reference covering project setup, native-ESM development, configuration, environments, assets, CSS, plugins, dependency optimization, production builds, libraries, SSR, testing, and deployment.",
@@ -12,6 +12,7 @@
   "updatedAt": "Jul 2026",
   "aliases": ["vitejs", "vite config", "vite build", "vite plugins", "frontend dev server"],
   "relatedSheets": ["react", "typescript", "nodejs", "vscode"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/vite.json",
   "prerequisites": [{ "title": "Node.js Web Development", "slug": "nodejs" }],
   "sections": [
     {
@@ -267,6 +268,17 @@
             "language": "text",
             "code": "Works after restart only → module side effect/HMR invalidation/env reload\nWorks in dev, fails build → dynamic import, SSR/browser boundary, case-sensitive path\nDuplicate React/invalid hooks → multiple package copies; inspect lockfile + dedupe\nBlank deployed subpath → base or host rewrite mismatch\nStale dependency → optimizer/browser cache; inspect before --force\nMissing env → prefix/mode/priority/restart\nSource-map location wrong → transform plugin map"
           }]
+        },
+        {
+          "id": "vite-8-rolldown-oxc",
+          "title": "Vite 8: Rolldown, Oxc & Migration",
+          "description": "Vite 8 uses Rolldown as the unified bundler and Oxc-based tooling while retaining broad Rollup plugin compatibility. Review renamed options and behavioral differences instead of assuming a drop-in major upgrade.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "import { defineConfig } from 'vite';\n\nexport default defineConfig({\n  build: {\n    rolldownOptions: {\n      output: { manualChunks: { vendor: ['react', 'react-dom'] } },\n    },\n  },\n});"
+          }],
+          "callouts": [{"title":"Audit Rollup and esbuild Options","type":"warning","icon":"⚠️","text":"Rollup-compatible hooks remain useful, but Vite 8 migrations should review rolldownOptions, dependency optimization, transform behavior, Node support, plugin compatibility, and removed or deprecated esbuild-era settings.","color":"amber"}],
+          "tags": ["vite 8", "rolldown", "oxc", "migration"]
         },
         {
           "id": "vite-checklist",

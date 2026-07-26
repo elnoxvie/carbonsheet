@@ -1,25 +1,302 @@
 {
-  "id":"javascript-language-reference","title":"JavaScript Programming","slug":"javascript","category":"Languages","technology":"JavaScript","version":"ECMAScript 2026","difficulty":"BEGINNER","readTimeMinutes":68,"description":"Modern JavaScript reference covering values, scope, objects, collections, functions, modules, promises, iterators, browser APIs, performance, testing, and security.","tags":["JAVASCRIPT","ECMASCRIPT","ASYNC","DOM","MODULES","WEB"],"updatedAt":"Jul 2026","aliases":["js","ecmascript","vanilla js","browser javascript","promises"],"relatedSheets":["typescript","react","nodejs","bun","http"],
-  "sections":[
-    {"id":"values-scope-control","title":"Values, Scope & Control Flow","subtopics":[
-      {"id":"types-equality","title":"Types, Coercion & Equality","description":"JavaScript has primitive values and objects. Prefer strict equality, explicit conversion, nullish coalescing, and optional chaining at uncertain boundaries.","table":{"title":"Declaration Comparison","headers":["Keyword","Scope","Reassignable","Redeclarable","Use"],"rows":[["const","Block","No","No","Default binding"],["let","Block","Yes","No","Intentional reassignment"],["var","Function","Yes","Yes","Legacy code only"]]},"codeBlocks":[{"language":"javascript","code":"const count = Number(input);\nif (!Number.isFinite(count)) throw new TypeError('invalid count');\n\nconst label = config.label ?? 'Default'; // preserves '', 0, false\nconst city = user?.address?.city;\nObject.is(NaN, NaN); // true"}],"callouts":[{"title":"const Does Not Freeze Objects","type":"warning","icon":"⚠️","text":"const prevents rebinding. Use immutable update discipline or Object.freeze for shallow runtime protection.","color":"amber"}]},
-      {"id":"arrays-objects-map-set","title":"Objects, Arrays, Map & Set","description":"Objects are record-like property bags; arrays are indexed sequences; Map supports arbitrary keys; Set models uniqueness.","codeBlocks":[{"language":"javascript","code":"const next = { ...user, address: { ...user.address, city: 'Oslo' } };\nconst byId = new Map(users.map(user => [user.id, user]));\nconst uniqueTags = [...new Set(items.flatMap(item => item.tags))];"}],"callouts":[{"title":"Prototype-Safe Dictionaries","type":"note","icon":"📌","text":"Use Map for dynamic key collections or Object.create(null) when a plain string-key dictionary must have no prototype.","color":"blue"}]},
-      {"id":"control-patterns-errors","title":"Control Flow & Error Boundaries","description":"Use guard clauses and exhaustive domain checks. Throw Error objects with causes and catch only where recovery or context is possible.","codeBlocks":[{"language":"javascript","code":"try {\n  return await loadConfig();\n} catch (cause) {\n  throw new Error('Could not load checkout config', { cause });\n} finally {\n  resource.close();\n}"}]}
-    ]},
-    {"id":"functions-objects-modules","title":"Functions, Objects & Modules","subtopics":[
-      {"id":"functions-closures-this","title":"Functions, Closures & this","description":"Closures retain lexical bindings. Arrow functions capture this lexically; method calls bind this from the call site.","codeBlocks":[{"language":"javascript","code":"function makeCounter() {\n  let value = 0;\n  return () => ++value;\n}\n\nconst counter = { value: 0, increment() { this.value += 1; } };"}],"callouts":[{"title":"Avoid Accidental Receiver Loss","type":"warning","icon":"⚠️","text":"Passing object.method as a callback loses its receiver. Wrap it or bind explicitly when the method uses this.","color":"amber"}]},
-      {"id":"classes-prototypes","title":"Classes, Prototypes & Private Fields","description":"Class syntax builds on prototypes. Composition and small interfaces usually scale better than deep inheritance; #fields provide runtime privacy.","codeBlocks":[{"language":"javascript","code":"class Account {\n  #balance = 0;\n  deposit(amount) {\n    if (amount <= 0) throw new RangeError('amount');\n    this.#balance += amount;\n  }\n  get balance() { return this.#balance; }\n}"}]},
-      {"id":"esm-packages","title":"ES Modules & Package Boundaries","description":"Use explicit imports/exports, avoid circular initialization, and expose a small stable package surface through exports maps.","codeBlocks":[{"language":"javascript","code":"import { parseOrder } from './order.js';\nexport { createCheckout };\nexport default function main() {}\n\nconst plugin = await import(`./plugins/${safeName}.js`);"}],"callouts":[{"title":"Dynamic Import Inputs Need an Allowlist","type":"danger","icon":"🔒","text":"Never build module or file paths directly from untrusted input.","color":"red"}]}
-    ]},
-    {"id":"async-iteration-browser","title":"Async, Iteration & Browser APIs","subtopics":[
-      {"id":"promises-concurrency","title":"Promises, async/await & Cancellation","description":"Promises represent eventual settlement. async/await improves sequencing but does not make work cancellable; pass AbortSignal through every supporting layer.","codeBlocks":[{"language":"javascript","code":"const controller = new AbortController();\nconst timeout = setTimeout(() => controller.abort(), 2_000);\ntry {\n  const [user, orders] = await Promise.all([fetchUser(id), fetchOrders(id)]);\n} finally { clearTimeout(timeout); }"}],"callouts":[{"title":"Choose the Correct Promise Combinator","type":"tip","icon":"💡","text":"Promise.all fails fast, allSettled preserves every outcome, race settles on the first result, and any resolves on the first fulfillment.","color":"green"}]},
-      {"id":"iterators-generators","title":"Iterators, Generators & Async Iteration","description":"Iterator protocols decouple traversal from storage. Generators implement lazy state machines; for await consumes asynchronous iterables with backpressure per item.","codeBlocks":[{"language":"javascript","code":"async function* pages(client) {\n  let cursor;\n  do {\n    const page = await client.list({ cursor });\n    yield* page.items;\n    cursor = page.nextCursor;\n  } while (cursor);\n}\nfor await (const item of pages(client)) process(item);"}]},
-      {"id":"dom-events-storage","title":"DOM, Events & Client Storage","description":"Delegate events where useful, clean up listeners, prefer semantic DOM, and treat browser storage as untrusted persistence.","codeBlocks":[{"language":"javascript","code":"const controller = new AbortController();\nlist.addEventListener('click', event => {\n  const button = event.target.closest('[data-id]');\n  if (button) select(button.dataset.id);\n}, { signal: controller.signal });\n// controller.abort() removes the listener"}],"callouts":[{"title":"Never Put Secrets in Browser Storage","type":"danger","icon":"🔒","text":"localStorage and IndexedDB are accessible to same-origin scripts. Prevent XSS and keep durable credentials in appropriately protected mechanisms.","color":"red"}]}
-    ]},
-    {"id":"quality-performance-security","title":"Testing, Performance & Security","subtopics":[
-      {"id":"testing-boundaries","title":"Testing & Dependency Boundaries","description":"Test observable behavior, inject clocks/network/storage, and use integration tests for browser and server boundaries.","codeBlocks":[{"language":"javascript","code":"import test from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('calculates total', () => {\n  assert.equal(total([{ price: 5, quantity: 2 }]), 10);\n});"}]},
-      {"id":"performance-memory","title":"Performance, Memory & Event Loop","description":"Measure user-visible latency, long tasks, allocations, layout, network waterfalls, and retained listeners before memoizing or micro-optimizing.","callouts":[{"title":"Yield Long Work","type":"tip","icon":"⏱️","text":"Split CPU-heavy browser work, move suitable computation to Web Workers, virtualize large lists, and avoid layout thrashing.","color":"green"}]},
-      {"id":"security-checklist","title":"Security & Production Checklist","description":"Encode output by context, avoid eval-like APIs, validate inputs, pin dependencies, restrict capabilities, and deploy a strong Content Security Policy.","codeBlocks":[{"language":"javascript","code":"element.textContent = untrustedText; // not innerHTML\nconst url = new URL(input, location.origin);\nif (url.origin !== location.origin) throw new Error('cross-origin redirect');"}],"callouts":[{"title":"Production Checklist","type":"tip","icon":"✅","text":"Use strict mode through ESM, handle rejected promises, propagate AbortSignal, bound concurrency, remove listeners, audit dependencies, and test supported runtimes.","color":"green"}]}
-    ]}
+  "id": "javascript-language-reference",
+  "title": "JavaScript Programming",
+  "slug": "javascript",
+  "category": "Languages",
+  "technology": "JavaScript",
+  "version": "ECMAScript 2026",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 34,
+  "description": "Modern JavaScript reference covering values, scope, objects, collections, functions, modules, promises, iterators, browser APIs, performance, testing, and security.",
+  "tags": [
+    "JAVASCRIPT",
+    "ECMASCRIPT",
+    "ASYNC",
+    "DOM",
+    "MODULES",
+    "WEB"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "js",
+    "ecmascript",
+    "vanilla js",
+    "browser javascript",
+    "promises"
+  ],
+  "relatedSheets": [
+    "typescript",
+    "react",
+    "nodejs",
+    "bun",
+    "http",
+    "regex",
+    "package-publishing",
+    "data-structures-algorithms"
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/javascript.json",
+  "sections": [
+    {
+      "id": "values-scope-control",
+      "title": "Values, Scope & Control Flow",
+      "subtopics": [
+        {
+          "id": "types-equality",
+          "title": "Types, Coercion & Equality",
+          "description": "JavaScript has primitive values and objects. Prefer strict equality, explicit conversion, nullish coalescing, and optional chaining at uncertain boundaries.",
+          "table": {
+            "title": "Declaration Comparison",
+            "headers": [
+              "Keyword",
+              "Scope",
+              "Reassignable",
+              "Redeclarable",
+              "Use"
+            ],
+            "rows": [
+              [
+                "const",
+                "Block",
+                "No",
+                "No",
+                "Default binding"
+              ],
+              [
+                "let",
+                "Block",
+                "Yes",
+                "No",
+                "Intentional reassignment"
+              ],
+              [
+                "var",
+                "Function",
+                "Yes",
+                "Yes",
+                "Legacy code only"
+              ]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "const count = Number(input);\nif (!Number.isFinite(count)) throw new TypeError('invalid count');\n\nconst label = config.label ?? 'Default'; // preserves '', 0, false\nconst city = user?.address?.city;\nObject.is(NaN, NaN); // true"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "const Does Not Freeze Objects",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "const prevents rebinding. Use immutable update discipline or Object.freeze for shallow runtime protection.",
+              "color": "amber"
+            }
+          ]
+        },
+        {
+          "id": "arrays-objects-map-set",
+          "title": "Objects, Arrays, Map & Set",
+          "description": "Objects are record-like property bags; arrays are indexed sequences; Map supports arbitrary keys; Set models uniqueness.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "const next = { ...user, address: { ...user.address, city: 'Oslo' } };\nconst byId = new Map(users.map(user => [user.id, user]));\nconst uniqueTags = [...new Set(items.flatMap(item => item.tags))];"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Prototype-Safe Dictionaries",
+              "type": "note",
+              "icon": "📌",
+              "text": "Use Map for dynamic key collections or Object.create(null) when a plain string-key dictionary must have no prototype.",
+              "color": "blue"
+            }
+          ]
+        },
+        {
+          "id": "control-patterns-errors",
+          "title": "Control Flow & Error Boundaries",
+          "description": "Use guard clauses and exhaustive domain checks. Throw Error objects with causes and catch only where recovery or context is possible.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "try {\n  return await loadConfig();\n} catch (cause) {\n  throw new Error('Could not load checkout config', { cause });\n} finally {\n  resource.close();\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "functions-objects-modules",
+      "title": "Functions, Objects & Modules",
+      "subtopics": [
+        {
+          "id": "functions-closures-this",
+          "title": "Functions, Closures & this",
+          "description": "Closures retain lexical bindings. Arrow functions capture this lexically; method calls bind this from the call site.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "function makeCounter() {\n  let value = 0;\n  return () => ++value;\n}\n\nconst counter = { value: 0, increment() { this.value += 1; } };"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Avoid Accidental Receiver Loss",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Passing object.method as a callback loses its receiver. Wrap it or bind explicitly when the method uses this.",
+              "color": "amber"
+            }
+          ]
+        },
+        {
+          "id": "classes-prototypes",
+          "title": "Classes, Prototypes & Private Fields",
+          "description": "Class syntax builds on prototypes. Composition and small interfaces usually scale better than deep inheritance; #fields provide runtime privacy.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "class Account {\n  #balance = 0;\n  deposit(amount) {\n    if (amount <= 0) throw new RangeError('amount');\n    this.#balance += amount;\n  }\n  get balance() { return this.#balance; }\n}"
+            }
+          ]
+        },
+        {
+          "id": "esm-packages",
+          "title": "ES Modules & Package Boundaries",
+          "description": "Use explicit imports/exports, avoid circular initialization, and expose a small stable package surface through exports maps.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "import { parseOrder } from './order.js';\nexport { createCheckout };\nexport default function main() {}\n\nconst plugin = await import(`./plugins/${safeName}.js`);"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Dynamic Import Inputs Need an Allowlist",
+              "type": "danger",
+              "icon": "🔒",
+              "text": "Never build module or file paths directly from untrusted input.",
+              "color": "red"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "async-iteration-browser",
+      "title": "Async, Iteration & Browser APIs",
+      "subtopics": [
+        {
+          "id": "promises-concurrency",
+          "title": "Promises, async/await & Cancellation",
+          "description": "Promises represent eventual settlement. async/await improves sequencing but does not make work cancellable; pass AbortSignal through every supporting layer.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "const controller = new AbortController();\nconst timeout = setTimeout(() => controller.abort(new Error('timeout')), 2_000);\ntry {\n  const options = { signal: controller.signal };\n  const [user, orders] = await Promise.all([\n    fetchUser(id, options),\n    fetchOrders(id, options),\n  ]);\n} finally {\n  clearTimeout(timeout);\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Cancellation Must Be Propagated",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Creating an AbortController is not enough. Every cancellable API and wrapper must receive and forward the same signal.",
+              "color": "amber"
+            },
+            {
+              "title": "Choose the Correct Promise Combinator",
+              "type": "tip",
+              "icon": "💡",
+              "text": "Promise.all fails fast, allSettled preserves every outcome, race settles on the first result, and any resolves on the first fulfillment.",
+              "color": "green"
+            }
+          ]
+        },
+        {
+          "id": "iterators-generators",
+          "title": "Iterators, Generators & Async Iteration",
+          "description": "Iterator protocols decouple traversal from storage. Generators implement lazy state machines; for await consumes asynchronous iterables with backpressure per item.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "async function* pages(client) {\n  let cursor;\n  do {\n    const page = await client.list({ cursor });\n    yield* page.items;\n    cursor = page.nextCursor;\n  } while (cursor);\n}\nfor await (const item of pages(client)) process(item);"
+            }
+          ]
+        },
+        {
+          "id": "dom-events-storage",
+          "title": "DOM, Events & Client Storage",
+          "description": "Delegate events where useful, clean up listeners, prefer semantic DOM, and treat browser storage as untrusted persistence.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "const controller = new AbortController();\nlist.addEventListener('click', event => {\n  const button = event.target.closest('[data-id]');\n  if (button) select(button.dataset.id);\n}, { signal: controller.signal });\n// controller.abort() removes the listener"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Never Put Secrets in Browser Storage",
+              "type": "danger",
+              "icon": "🔒",
+              "text": "localStorage and IndexedDB are accessible to same-origin scripts. Prevent XSS and keep durable credentials in appropriately protected mechanisms.",
+              "color": "red"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quality-performance-security",
+      "title": "Testing, Performance & Security",
+      "subtopics": [
+        {
+          "id": "testing-boundaries",
+          "title": "Testing & Dependency Boundaries",
+          "description": "Test observable behavior, inject clocks/network/storage, and use integration tests for browser and server boundaries.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "import test from 'node:test';\nimport assert from 'node:assert/strict';\n\ntest('calculates total', () => {\n  assert.equal(total([{ price: 5, quantity: 2 }]), 10);\n});"
+            }
+          ]
+        },
+        {
+          "id": "performance-memory",
+          "title": "Performance, Memory & Event Loop",
+          "description": "Measure user-visible latency, long tasks, allocations, layout, network waterfalls, and retained listeners before memoizing or micro-optimizing.",
+          "callouts": [
+            {
+              "title": "Yield Long Work",
+              "type": "tip",
+              "icon": "⏱️",
+              "text": "Split CPU-heavy browser work, move suitable computation to Web Workers, virtualize large lists, and avoid layout thrashing.",
+              "color": "green"
+            }
+          ]
+        },
+        {
+          "id": "security-checklist",
+          "title": "Security & Production Checklist",
+          "description": "Encode output by context, avoid eval-like APIs, validate inputs, pin dependencies, restrict capabilities, and deploy a strong Content Security Policy.",
+          "codeBlocks": [
+            {
+              "language": "javascript",
+              "code": "element.textContent = untrustedText; // not innerHTML\nconst url = new URL(input, location.origin);\nif (url.origin !== location.origin) throw new Error('cross-origin redirect');"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Use strict mode through ESM, handle rejected promises, propagate AbortSignal, bound concurrency, remove listeners, audit dependencies, and test supported runtimes.",
+              "color": "green"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

@@ -11,7 +11,8 @@
   "tags": ["JAVA", "JVM", "OOP", "STREAMS", "CONCURRENCY", "TESTING"],
   "updatedAt": "Jul 2026",
   "aliases": ["jdk", "jvm language", "java syntax", "virtual threads", "java streams"],
-  "relatedSheets": ["kotlin-collection-processing", "sql", "postgres", "docker"],
+  "relatedSheets": ["spring-boot", "kotlin-collection-processing", "sql", "postgres", "docker", "opentelemetry", "kafka", "grpc-protobuf", "data-structures-algorithms"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/java.json",
   "sections": [
     {
       "id": "syntax-types-control",

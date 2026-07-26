@@ -6,8 +6,8 @@
   "technology": "Kotlin Standard Library",
   "version": "Kotlin 2.x",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 42,
-  "description": "Beginner-to-advanced Kotlin collection reference for Android, covering mutability, transformations, filtering, grouping, aggregation, sequences, allocation, complexity, concurrency boundaries, and production patterns.",
+  "readTimeMinutes": 47,
+  "description": "Beginner-to-advanced Kotlin collection reference for Android, covering mutability, transformations, filtering, grouping, aggregation, sequences, primitive arrays, persistent collections, allocation, complexity, concurrency boundaries, and production patterns.",
   "tags": [
     "KOTLIN",
     "COLLECTIONS",
@@ -15,9 +15,10 @@
     "FUNCTIONAL_PROGRAMMING",
     "SEQUENCES"
   ],
-  "updatedAt": "Jul 2026",
-  "aliases": ["android collections", "kotlin list operations", "kotlin map filter reduce", "kotlin sequence", "collection operators"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["android collections", "kotlin list operations", "kotlin map filter reduce", "kotlin sequence", "collection operators", "persistent collections", "primitive arrays"],
   "relatedSheets": ["android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kotlin_collection_processing_sheet.json",
   "sections": [
     {
       "id": "foundations",
@@ -112,6 +113,17 @@
             "naming",
             "mental-model"
           ]
+        },
+        {
+          "id": "primitive-and-persistent-collections",
+          "title": "Primitive Arrays & Persistent Immutable Collections",
+          "description": "Use primitive arrays only for measured numeric or binary hot paths; use persistent immutable collections when many versions share structure and ownership must be explicit.",
+          "tabs": [
+            { "label": "Primitive Arrays", "language": "kotlin", "code": "val pixels: IntArray = IntArray(width * height)\nval samples: FloatArray = floatArrayOf(0.1f, 0.4f, 0.9f)\n\n// Avoid boxing from List<Int> in a measured numeric hot path.\nval total = pixels.sumOf(Int::toLong)" },
+            { "label": "Persistent Collections", "language": "kotlin", "code": "val initial: PersistentList<Item> = persistentListOf(a, b)\nval next = initial.add(c)       // initial remains valid\nval updated = next.set(0, a2)  // structure is shared internally" }
+          ],
+          "callouts": [{ "title": "Different Trade-Offs", "type": "note", "icon": "📌", "text": "Primitive arrays reduce boxing but expose mutable indexed storage. Persistent collections provide immutable values with structural sharing but add a library and different performance characteristics. Measure realistic workloads.", "color": "blue" }],
+          "tags": ["IntArray", "persistent-collections", "boxing", "immutability"]
         }
       ]
     },

@@ -4,14 +4,15 @@
   "slug": "react",
   "category": "Frontend",
   "technology": "React",
-  "version": "React 19.x",
+  "version": "React 19.2",
   "difficulty": "BEGINNER",
   "readTimeMinutes": 58,
   "description": "Beginner-to-advanced React reference covering component design, JSX, state, events, forms, Hooks, effects, context, reducers, Suspense, errors, performance, accessibility, and testing.",
   "tags": ["REACT", "JAVASCRIPT", "TYPESCRIPT", "HOOKS", "FRONTEND", "UI"],
   "updatedAt": "Jul 2026",
   "aliases": ["reactjs", "react hooks", "react 19", "frontend components", "jsx"],
-  "relatedSheets": ["typescript", "vite", "nextjs", "vscode"],
+  "relatedSheets": ["html-css", "typescript", "vite", "nextjs", "graphql", "web-security", "vscode"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/react.json",
   "sections": [
     {
       "id": "react-foundations",
@@ -230,6 +231,17 @@
             "code": "const visible = useMemo(() => expensiveFilter(items, query), [items, query]);\nconst select = useCallback((id: string) => setSelectedId(id), []);\nconst Row = memo(function Row({ item, onSelect }: Props) { /*...*/ });"
           }],
           "callouts": [{ "title": "Memoization Has Cost", "type": "warning", "icon": "⚠️", "text": "Dependency comparison, retained values, and complexity can cost more than recomputation. Profile production builds and first fix state placement, effects, and expensive rendering.", "color": "amber" }]
+        },
+        {
+          "id": "react-compiler-activity-effect-event",
+          "title": "React Compiler, Activity & Effect Events",
+          "description": "React Compiler 1.0 can automatically memoize eligible components and Hooks. React 19.2 adds Activity for hiding/restoring UI state and useEffectEvent for non-reactive logic invoked from effects.",
+          "codeBlocks": [{
+            "language": "tsx",
+            "code": "import { Activity, useEffect, useEffectEvent } from 'react';\n\nfunction Chat({ roomId, theme }: Props) {\n  const onConnected = useEffectEvent(() => notify('Connected', theme));\n  useEffect(() => {\n    const connection = connect(roomId, onConnected);\n    return () => connection.close();\n  }, [roomId]);\n\n  return <Activity mode={roomId ? 'visible' : 'hidden'}><Messages /></Activity>;\n}"
+          }],
+          "callouts": [{"title":"Adopt Compiler Incrementally","type":"tip","icon":"⚙️","text":"Keep components pure, run the compiler lint rules, measure output, and remove manual memoization only when the compiler and profiler show it is redundant. Effect Events are called from effects and are not a way to suppress real dependencies.","color":"green"}],
+          "tags": ["react compiler", "activity", "useeffectevent"]
         },
         {
           "id": "accessibility-security",

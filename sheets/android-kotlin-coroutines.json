@@ -6,13 +6,14 @@
   "technology": "Kotlin Coroutines",
   "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 40,
-  "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, lifecycle scopes, and production coroutine design on Android.",
+  "readTimeMinutes": 44,
+  "description": "Beginner-to-advanced guide to structured concurrency, dispatchers, cancellation, errors, synchronization, bounded concurrency, callback interop, lifecycle scopes, and production coroutine design on Android.",
   "tags": ["ANDROID", "KOTLIN", "COROUTINES", "CONCURRENCY", "ASYNC", "STRUCTURED CONCURRENCY"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["kotlin coroutine", "suspend function", "viewmodelscope", "lifecyclescope", "structured concurrency", "dispatcher"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["kotlin coroutine", "suspend function", "viewmodelscope", "lifecyclescope", "structured concurrency", "dispatcher", "bounded concurrency", "semaphore", "rate limit"],
   "relatedSheets": ["android-kotlin-flows", "android-kotlin", "android-testing", "android-jetpack-compose"],
   "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-kotlin-coroutines.json",
   "sections": [
     {
       "id": "coroutine-foundations",
@@ -107,7 +108,7 @@
           },
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "class Importer(\n    private val io: CoroutineDispatcher,\n    default: CoroutineDispatcher\n) {\n    private val parsers = default.limitedParallelism(2)\n\n    suspend fun import(uri: Uri) = withContext(io) {\n        contentResolver.openInputStream(uri)!!.use { input ->\n            withContext(parsers) { parse(input.readBytes()) }\n        }\n    }\n}"
+            "code": "class Importer(\n    private val io: CoroutineDispatcher,\n    default: CoroutineDispatcher\n) {\n    private val parsers = default.limitedParallelism(2)\n\n    suspend fun import(uri: Uri): Model {\n        val bytes = withContext(io) {\n            contentResolver.openInputStream(uri)?.use(::readBounded)\n                ?: error(\"Cannot open $uri\")\n        }\n        return withContext(parsers) { parse(bytes) }\n    }\n\n    private fun readBounded(input: InputStream): ByteArray {\n        val output = ByteArrayOutputStream()\n        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)\n        while (true) {\n            val count = input.read(buffer)\n            if (count < 0) return output.toByteArray()\n            require(output.size() + count <= MAX_IMPORT_BYTES) { \"Import is too large\" }\n            output.write(buffer, 0, count)\n        }\n    }\n}"
           }],
           "callouts": [{ "title": "IO Is Not Faster CPU", "type": "warning", "icon": "⚠️", "text": "Dispatchers.IO permits more blocking tasks; it is not the correct pool for expensive computation. Excess CPU work on IO can still starve the device.", "color": "amber" }]
         },
@@ -235,9 +236,20 @@
           "description": "Use suspendCancellableCoroutine and unregister or cancel the platform operation when the coroutine is cancelled.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "suspend fun awaitLocation(): Location = suspendCancellableCoroutine { cont ->\n    val callback = object : LocationCallback() {\n        override fun onLocationResult(result: LocationResult) {\n            cont.resume(result.lastLocation ?: return)\n        }\n    }\n    client.requestLocationUpdates(request, callback, Looper.getMainLooper())\n    cont.invokeOnCancellation { client.removeLocationUpdates(callback) }\n}"
+            "code": "suspend fun awaitLocation(): Location = suspendCancellableCoroutine { cont ->\n    val completed = AtomicBoolean(false)\n    lateinit var callback: LocationCallback\n\n    fun complete(result: Result<Location>) {\n        if (!completed.compareAndSet(false, true)) return\n        client.removeLocationUpdates(callback)\n        cont.resumeWith(result)\n    }\n\n    callback = object : LocationCallback() {\n        override fun onLocationResult(result: LocationResult) {\n            result.lastLocation?.let { complete(Result.success(it)) }\n        }\n    }\n\n    try {\n        client.requestLocationUpdates(request, callback, Looper.getMainLooper())\n    } catch (error: Throwable) {\n        complete(Result.failure(error))\n        return@suspendCancellableCoroutine\n    }\n    cont.invokeOnCancellation {\n        if (completed.compareAndSet(false, true)) client.removeLocationUpdates(callback)\n    }\n}"
           }],
           "callouts": [{ "title": "Resume Exactly Once", "type": "danger", "icon": "🛑", "text": "Callback APIs can fire repeatedly or race with cancellation. Guard one-shot completion and unregister promptly; use callbackFlow for multi-shot streams.", "color": "red" }]
+        },
+        {
+          "id": "bounded-concurrency",
+          "title": "Bounded Concurrency & Rate Limits",
+          "description": "Bound concurrent work to device and service capacity. A coroutine per item is cheap to create but the I/O, memory, sockets, and remote quota it consumes are not free.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val permits = Semaphore(4)\n\nsuspend fun loadAll(ids: List<ItemId>): List<Item> = coroutineScope {\n    ids.map { id ->\n        async { permits.withPermit { api.load(id) } }\n    }.awaitAll()\n}"
+          }],
+          "callouts": [{ "title": "Retries Multiply Load", "type": "warning", "icon": "⚠️", "text": "Combine bounded concurrency with retry limits, jittered backoff, idempotency, and server guidance. Unbounded fan-out plus synchronized retries can amplify an outage.", "color": "amber" }],
+          "tags": ["semaphore", "rate-limit", "backpressure", "retry"]
         },
         {
           "id": "debugging-checklist",
@@ -245,7 +257,7 @@
           "description": "Name important coroutines and audit every lifetime, dispatcher, and failure boundary.",
           "codeBlocks": [{
             "language": "text",
-            "code": "□ Every launched coroutine has an intentional owner\n□ Suspend APIs are main-safe\n□ Dispatchers and long-lived scopes are injected\n□ Independent work uses async only when concurrency helps\n□ CancellationException is never swallowed\n□ CPU loops check cancellation\n□ Child failure versus supervision matches product semantics\n□ Blocking calls run on IO; CPU work runs on Default\n□ Shared mutable state has one owner or synchronization\n□ Callback bridges unregister on cancellation and resume once\n□ Durable work uses WorkManager\n□ Tests use one TestCoroutineScheduler"
+            "code": "□ Every launched coroutine has an intentional owner\n□ Suspend APIs are main-safe\n□ Dispatchers and long-lived scopes are injected\n□ Independent work uses async only when concurrency helps\n□ Fan-out is bounded to device/service capacity\n□ Retries are bounded, jittered, and safe to repeat\n□ CancellationException is never swallowed\n□ CPU loops check cancellation\n□ Child failure versus supervision matches product semantics\n□ Blocking calls run on IO; CPU work runs on Default\n□ Large inputs are streamed or explicitly size-bounded\n□ Shared mutable state has one owner or synchronization\n□ Callback bridges unregister and complete atomically once\n□ Durable work uses WorkManager\n□ Tests use one TestCoroutineScheduler"
           }],
           "callouts": [{ "title": "Name Long-Lived Work", "type": "tip", "icon": "💡", "text": "CoroutineName plus structured logging makes job dumps and crash reports far easier to understand. Measure before adding concurrency; more coroutines can increase contention and battery use.", "color": "green" }]
         }

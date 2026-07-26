@@ -11,7 +11,8 @@
   "tags": ["FASTAPI", "PYTHON", "PYDANTIC", "REST API", "ASGI", "BACKEND"],
   "updatedAt": "Jul 2026",
   "aliases": ["fast api", "python api", "pydantic api", "asgi", "uvicorn", "openapi python"],
-  "relatedSheets": ["python", "docker", "kubernetes", "vscode"],
+  "relatedSheets": ["python", "docker", "kubernetes", "graphql", "web-security", "opentelemetry", "vscode"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/fastapi.json",
   "prerequisites": [{ "title": "Python Programming", "slug": "python" }],
   "sections": [
     {

@@ -6,13 +6,14 @@
   "technology": "Kotlin Flow",
   "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 38,
-  "description": "Beginner-to-advanced reference for building, transforming, sharing, collecting, debugging, and testing Kotlin Flow streams in Android applications.",
+  "readTimeMinutes": 43,
+  "description": "Beginner-to-advanced reference for building, transforming, sharing, lifecycle-aware collection, Room and Paging integration, debugging, and testing Kotlin Flow streams in Android applications.",
   "tags": ["ANDROID", "KOTLIN", "FLOW", "STATEFLOW", "SHAREDFLOW", "REACTIVE"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["kotlin flow", "stateflow", "sharedflow", "android reactive streams", "cold flow", "hot flow"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["kotlin flow", "stateflow", "sharedflow", "android reactive streams", "cold flow", "hot flow", "room flow", "paging flow"],
   "relatedSheets": ["android-kotlin-coroutines", "android-kotlin", "android-testing", "android-jetpack-compose"],
   "prerequisites": [{ "title": "Android Kotlin Coroutines", "slug": "android-kotlin-coroutines" }],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-kotlin-flows.json",
   "sections": [
     {
       "id": "flow-mental-model",
@@ -172,7 +173,7 @@
           "description": "StateFlow is hot, always has a current value, replays that value to new collectors, and conflates updates using equality.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "data class ProfileUiState(\n    val loading: Boolean = false,\n    val profile: Profile? = null,\n    val errorMessage: String? = null\n)\n\nprivate val _uiState = MutableStateFlow(ProfileUiState())\nval uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()\n\nfun beginLoad() = _uiState.update { it.copy(loading = true) }"
+            "code": "sealed interface ProfileUiState {\n    data object Loading : ProfileUiState\n    data class Ready(val profile: Profile) : ProfileUiState\n    data class Failed(val message: String) : ProfileUiState\n}\n\nprivate val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)\nval uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()\n\nfun show(profile: Profile) {\n    _uiState.value = ProfileUiState.Ready(profile)\n}"
           }],
           "callouts": [
             { "title": "Atomic Updates", "type": "tip", "icon": "💡", "text": "Use update or compareAndSet when the next value depends on the current value; direct read-modify-write can lose concurrent changes.", "color": "green" },
@@ -228,6 +229,17 @@
             "code": "@Composable\nfun FeedRoute(viewModel: FeedViewModel = viewModel()) {\n    val uiState by viewModel.uiState.collectAsStateWithLifecycle()\n    FeedScreen(uiState = uiState, onRetry = viewModel::retry)\n}"
           }],
           "callouts": [{ "title": "Keep Reusable UI Platform-Neutral", "type": "tip", "icon": "💡", "text": "Collect at the screen boundary and pass plain values and callbacks to reusable composables. This improves previews, testing, and reuse.", "color": "green" }]
+        },
+        {
+          "id": "room-paging-integration",
+          "title": "Room, Paging & Database Invalidation",
+          "description": "Room query Flows re-run when observed tables are invalidated. Use Paging when datasets are too large to load and transform as one in-memory list.",
+          "tabs": [
+            { "label": "Room Flow", "language": "kotlin", "code": "@Query(\"SELECT * FROM article ORDER BY publishedAt DESC\")\nfun observeArticles(): Flow<List<ArticleEntity>>\n\nval articles = dao.observeArticles()\n    .map { rows -> rows.map(ArticleEntity::asExternalModel) }" },
+            { "label": "Paging", "language": "kotlin", "code": "val pagingData: Flow<PagingData<Article>> = Pager(\n    config = PagingConfig(pageSize = 30),\n    pagingSourceFactory = dao::pagingSource\n).flow.cachedIn(viewModelScope)" }
+          ],
+          "callouts": [{ "title": "Transactions Define Consistency", "type": "warning", "icon": "🗃️", "text": "A Flow makes updates observable; it does not make multi-table reads or writes atomic. Use Room transactions for invariants and map database models outside the UI.", "color": "amber" }],
+          "tags": ["room", "paging", "database", "invalidation"]
         }
       ]
     },
@@ -252,7 +264,7 @@
           "description": "Check semantics, ownership, cancellation, thread usage, and loss behavior before shipping.",
           "codeBlocks": [{
             "language": "text",
-            "code": "□ Cold versus hot behavior is intentional\n□ Hot Flow scope matches the resource lifetime\n□ Mutable state is private; exposed type is immutable\n□ UI collection is lifecycle-aware\n□ Blocking work is main-safe and injected for tests\n□ Latest/conflation/drop behavior cannot lose required work\n□ Callback listeners unregister in awaitClose\n□ CancellationException is not swallowed\n□ retry is bounded and limited to retryable failures\n□ combine inputs have sensible initial emissions\n□ State values are immutable and equality behaves correctly\n□ Infinite streams have deterministic tests"
+            "code": "□ Cold versus hot behavior is intentional\n□ Hot Flow scope matches the resource lifetime\n□ Mutable state is private; exposed type is immutable\n□ UI state cannot represent contradictory conditions\n□ UI collection is lifecycle-aware\n□ Large datasets use paging instead of whole-list loading\n□ Database invariants use transactions, not observation alone\n□ Blocking work is main-safe and injected for tests\n□ Latest/conflation/drop behavior cannot lose required work\n□ Callback listeners unregister in awaitClose\n□ CancellationException is not swallowed\n□ retry is bounded and limited to retryable failures\n□ combine inputs have sensible initial emissions\n□ State values are immutable and equality behaves correctly\n□ Infinite streams have deterministic tests"
           }]
         }
       ]

@@ -1,0 +1,389 @@
+{
+  "id": "go-language-reference",
+  "title": "Go Programming",
+  "slug": "go",
+  "category": "Languages",
+  "technology": "Go",
+  "version": "Go 1.26",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 48,
+  "description": "Beginner-to-advanced Go reference covering values, slices, maps, structs, interfaces, generics, errors, context, goroutines, channels, synchronization, modules, testing, profiling, security, and production services.",
+  "tags": [
+    "GO",
+    "GOLANG",
+    "CONCURRENCY",
+    "BACKEND",
+    "MODULES",
+    "TESTING"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "golang",
+    "go language",
+    "goroutine",
+    "go modules",
+    "go concurrency"
+  ],
+  "relatedSheets": [
+    "http",
+    "postgres",
+    "redis",
+    "docker",
+    "kubernetes",
+    "opentelemetry",
+    "grpc-protobuf",
+    "data-structures-algorithms"
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/go.json",
+  "sections": [
+    {
+      "id": "language-foundations",
+      "title": "Language Foundations",
+      "subtopics": [
+        {
+          "id": "values-control-functions",
+          "title": "Values, Control Flow & Functions",
+          "description": "Go favors explicit control flow, zero values, short declarations inside functions, and multiple return values for results plus errors.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "package main\n\nimport \"fmt\"\n\nfunc divide(a, b float64) (float64, error) {\n    if b == 0 { return 0, fmt.Errorf(\"divide by zero\") }\n    return a / b, nil\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Shadowing Is Easy",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": ":= may create a new inner variable instead of assigning the intended outer variable. Keep scopes small and inspect declarations in error-handling blocks.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "syntax",
+            "functions",
+            "zero value"
+          ]
+        },
+        {
+          "id": "arrays-slices-maps",
+          "title": "Arrays, Slices & Maps",
+          "description": "Arrays have fixed length in their type; slices are views over backing arrays; maps are reference-like hash tables whose iteration order is unspecified.",
+          "table": {
+            "headers": [
+              "Type",
+              "Key Property",
+              "Common Risk"
+            ],
+            "rows": [
+              [
+                "[N]T",
+                "Fixed-size value",
+                "Copies all elements"
+              ],
+              [
+                "[]T",
+                "Descriptor over backing array",
+                "Aliasing and retained capacity"
+              ],
+              [
+                "map[K]V",
+                "Unordered key/value store",
+                "Concurrent writes and missing-key zero values"
+              ]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "items := make([]string, 0, 8)\nitems = append(items, \"a\", \"b\")\ncopyOfItems := append([]string(nil), items...)\n\ncounts := map[string]int{}\ncounts[\"ready\"]++\nvalue, ok := counts[\"missing\"]"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Copy at Ownership Boundaries",
+              "type": "note",
+              "icon": "📌",
+              "text": "A subslice can retain a large backing array and callers can mutate shared elements. Copy when storing untrusted caller-owned slices or returning internal mutable data.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "slice",
+            "map",
+            "array"
+          ]
+        },
+        {
+          "id": "structs-methods-pointers",
+          "title": "Structs, Methods & Pointers",
+          "description": "Structs compose data; methods attach behavior to named types. Use pointer receivers for mutation or large values and keep receiver choice consistent.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "type Account struct {\n    ID string\n    balance int64\n}\n\nfunc (a *Account) Deposit(cents int64) error {\n    if cents <= 0 { return fmt.Errorf(\"invalid deposit: %d\", cents) }\n    a.balance += cents\n    return nil\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Embedding Is Promotion, Not Inheritance",
+              "type": "tip",
+              "icon": "💡",
+              "text": "Embedded fields promote methods and fields but do not create subtype inheritance. Prefer explicit composition when promoted APIs would blur ownership.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "struct",
+            "method",
+            "pointer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "abstraction-errors",
+      "title": "Interfaces, Generics & Errors",
+      "subtopics": [
+        {
+          "id": "interfaces-composition",
+          "title": "Interfaces & Composition",
+          "description": "Types satisfy interfaces implicitly. Define small interfaces near consumers and accept behavior while returning useful concrete types.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "type UserStore interface {\n    Find(ctx context.Context, id string) (User, error)\n}\n\ntype Service struct { store UserStore }"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Typed nil Inside an Interface Is Not nil",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "An interface is nil only when both dynamic type and value are absent. Avoid returning typed nil pointers as interface values.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "interface",
+            "composition",
+            "dependency injection"
+          ]
+        },
+        {
+          "id": "generics-constraints",
+          "title": "Generics & Constraints",
+          "description": "Use type parameters when one implementation preserves relationships across multiple concrete types. Constraints describe permitted operations, not runtime interfaces.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "type Ordered interface { ~int | ~int64 | ~float64 | ~string }\n\nfunc Min[T Ordered](a, b T) T {\n    if a < b { return a }\n    return b\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Prefer Ordinary Functions Until Repetition Is Real",
+              "type": "tip",
+              "icon": "💡",
+              "text": "Generics are strongest for containers and algorithms. An interface may better express behavior, while duplication may be clearer for two unrelated domain operations.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "generics",
+            "constraint",
+            "type set"
+          ]
+        },
+        {
+          "id": "errors-defer-panic",
+          "title": "Errors, Wrapping, defer & panic",
+          "description": "Return errors for expected failures, wrap them with context, inspect with errors.Is/As, and reserve panic for unrecoverable invariant violations.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "file, err := os.Open(name)\nif err != nil { return fmt.Errorf(\"open config %q: %w\", name, err) }\ndefer file.Close()\n\nif errors.Is(err, context.DeadlineExceeded) { /* retry policy */ }"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "defer Arguments Evaluate Immediately",
+              "type": "note",
+              "icon": "📌",
+              "text": "Deferred function arguments are captured when defer executes. Deferred calls run in last-in-first-out order when the surrounding function returns.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "error",
+            "defer",
+            "panic"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "concurrency-context",
+      "title": "Concurrency & Context",
+      "subtopics": [
+        {
+          "id": "goroutines-ownership",
+          "title": "Goroutines & Lifetime Ownership",
+          "description": "Every goroutine needs an owner, termination condition, bounded resource use, and a way to communicate failure or cancellation.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "group, ctx := errgroup.WithContext(ctx)\nfor _, job := range jobs {\n    job := job\n    group.Go(func() error { return process(ctx, job) })\n}\nif err := group.Wait(); err != nil { return err }"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "A Goroutine Is Not Automatically Structured",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "A go statement detaches lifetime unless the caller waits and cancels it. Avoid fire-and-forget work in request handlers and libraries.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "goroutine",
+            "errgroup",
+            "lifecycle"
+          ]
+        },
+        {
+          "id": "channels-select",
+          "title": "Channels, select & Backpressure",
+          "description": "Channels communicate ownership or events. The sender normally closes; receivers range until closure; select coordinates readiness, cancellation, and timeouts.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "select {\ncase jobs <- job:\ncase <-ctx.Done():\n    return context.Cause(ctx)\n}\n\nfor result := range results { consume(result) }"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Close from the Receiver",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "Closing asserts that no more values will be sent. Multiple senders require one coordinating owner; sending to or closing an already closed channel panics.",
+              "color": "red"
+            }
+          ],
+          "tags": [
+            "channel",
+            "select",
+            "backpressure"
+          ]
+        },
+        {
+          "id": "mutex-atomic-context",
+          "title": "Mutexes, Atomics & Context",
+          "description": "Protect shared invariants with mutexes, use atomics for narrow measured cases, and pass context as the first parameter for cancellation and deadlines.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "type Cache struct {\n    mu sync.RWMutex\n    values map[string]Value\n}\nfunc (c *Cache) Get(key string) (Value, bool) {\n    c.mu.RLock(); defer c.mu.RUnlock()\n    value, ok := c.values[key]\n    return value, ok\n}"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Store Context in Structs",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Pass context per operation, do not use it for optional parameters, and always call returned cancel functions to release timers and child references.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "mutex",
+            "atomic",
+            "context"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tooling-production",
+      "title": "Modules, Testing & Production",
+      "subtopics": [
+        {
+          "id": "modules-packages-toolchain",
+          "title": "Modules, Packages & Toolchain",
+          "description": "Modules version dependency graphs; packages define compilation/API boundaries. Commit go.mod and go.sum and make the supported Go language/toolchain policy explicit.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "go mod init example.com/service\ngo get example.com/dependency@v1.2.3\ngo mod tidy\ngo list -m -u all\ngo vet ./...\ngo fix ./..."
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Go 1.26 Modernizes go fix",
+              "type": "note",
+              "icon": "📌",
+              "text": "Review go fix changes like any automated migration. Run formatting, vet, tests, race checks, and benchmarks before accepting generated modernizations.",
+              "color": "blue"
+            }
+          ],
+          "tags": [
+            "module",
+            "package",
+            "toolchain"
+          ]
+        },
+        {
+          "id": "testing-fuzz-benchmark",
+          "title": "Tests, Fuzzing, Race Detection & Benchmarks",
+          "description": "Use table-driven tests for cases, fuzzing for invariants, the race detector for executed concurrency paths, and benchmarks with allocation reporting.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "go test ./...\ngo test -race ./...\ngo test -fuzz=FuzzParse ./parser\ngo test -bench=. -benchmem ./...\ngo test -coverprofile=coverage.out ./..."
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Race-Free Does Not Mean Correct",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "The race detector observes only executed paths and cannot prove higher-level ordering or atomicity invariants. Design synchronization first, then test it under load.",
+              "color": "amber"
+            }
+          ],
+          "tags": [
+            "test",
+            "fuzz",
+            "race detector",
+            "benchmark"
+          ]
+        },
+        {
+          "id": "http-profiling-checklist",
+          "title": "HTTP Services, Profiling & Checklist",
+          "description": "Configure server timeouts and graceful shutdown, propagate request context, bound bodies and concurrency, expose health separately, and profile before optimizing.",
+          "codeBlocks": [
+            {
+              "language": "go",
+              "code": "server := &http.Server{\n    Addr: \":8080\", Handler: handler,\n    ReadHeaderTimeout: 5 * time.Second,\n    IdleTimeout: 60 * time.Second,\n}\n// on termination: server.Shutdown(deadlineCtx)"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Pin supported Go versions, format/vet/test/race in CI, bound goroutines and I/O, propagate context, wrap errors, avoid data races, set HTTP/database timeouts, redact secrets, profile release binaries, and rehearse graceful shutdown.",
+              "color": "green"
+            }
+          ],
+          "tags": [
+            "http",
+            "pprof",
+            "production"
+          ]
+        }
+      ]
+    }
+  ]
+}

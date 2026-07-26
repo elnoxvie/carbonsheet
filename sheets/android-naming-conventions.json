@@ -6,12 +6,13 @@
   "technology": "Kotlin / Android / Compose",
   "version": "Modern Android",
   "difficulty": "BEGINNER",
-  "readTimeMinutes": 36,
-  "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, resources, Compose APIs, state, events, streams, tests, and implementation variants.",
+  "readTimeMinutes": 39,
+  "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, Gradle modules and variants, resources, Compose APIs, state, events, streams, tests, and implementation strategies.",
   "tags": ["ANDROID", "KOTLIN", "NAMING", "CONVENTIONS", "RESOURCES", "API DESIGN"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["android code style", "kotlin naming", "android resource naming", "compose naming", "test naming", "android conventions"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["android code style", "kotlin naming", "android resource naming", "compose naming", "test naming", "android conventions", "gradle module naming", "version catalog naming"],
   "relatedSheets": ["android-kotlin", "android-kotlin-flows", "android-jetpack-compose", "android-jetpack-compose-modifiers", "android-testing"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-naming-conventions.json",
   "sections": [
     {
       "id": "core-kotlin-names",
@@ -86,6 +87,17 @@
             "code": "com.example.app.feature.checkout.ui\ncom.example.app.feature.checkout.data\ncom.example.app.feature.checkout.domain\ncom.example.app.core.network\ncom.example.app.core.database\n\nGradle modules:\n:feature:checkout\n:core:network\n:core:designsystem"
           }],
           "callouts": [{ "title": "Avoid Redundant Prefixes", "type": "tip", "icon": "💡", "text": "Inside feature.checkout, names such as CheckoutCheckoutScreen or CheckoutFeatureRepository repeat context. Retain the domain word only when it distinguishes the public symbol during imports/search.", "color": "green" }]
+        },
+        {
+          "id": "build-variant-catalog-names",
+          "title": "Build Variants, Convention Plugins & Catalog Aliases",
+          "description": "Build names become command-line and CI APIs. Keep variants, modules, convention plugins, and version-catalog aliases predictable and free of redundant context.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Build types: debug, release, benchmark\nFlavors: demo, production (one consistent flavor dimension)\nModules: :app, :feature:checkout, :core:network, :benchmark\nConvention plugins: company.android.application, company.android.library.compose\nCatalog aliases: androidx-lifecycle-runtime-compose, kotlinx-coroutines-test\nBundles: androidx-compose-ui, test-unit"
+          }],
+          "callouts": [{ "title": "Names Are Automation Contracts", "type": "warning", "icon": "⚙️", "text": "Renaming a variant or module can break CI tasks, publishing, Baseline Profile wiring, and external consumers. Prefer durable domain/capability names and migrate automation deliberately.", "color": "amber" }],
+          "tags": ["gradle", "version-catalog", "build-variants", "modules"]
         }
       ]
     },

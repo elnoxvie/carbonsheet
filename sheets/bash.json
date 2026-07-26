@@ -1,21 +1,229 @@
 {
-  "id":"bash-shell-reference","title":"Bash Shell Scripting","slug":"bash","category":"Languages","technology":"Bash","version":"Bash 5.x","difficulty":"BEGINNER","readTimeMinutes":60,"description":"Bash reference covering quoting, parameters, arrays, tests, pipelines, functions, traps, files, processes, portability, security, debugging, and production-grade scripting.","tags":["BASH","SHELL","CLI","LINUX","AUTOMATION"],"updatedAt":"Jul 2026","aliases":["shell script","sh","bash scripting","linux shell","command line"],"relatedSheets":["docker","git","aws","postgres"],
-  "sections":[
-    {"id":"syntax-expansion","title":"Syntax, Expansion & Quoting","subtopics":[
-      {"id":"strict-mode-quoting","title":"Options, Quoting & Expansion Order","description":"Quote parameter expansions by default. Use arrays for argument lists and understand that shell parsing happens before commands receive arguments.","table":{"title":"Quoting Reference","headers":["Form","Expansion","Word Splitting / Glob","Use"],"rows":[["'$value'","None","No","Literal text"],["\"$value\"","Parameter/command/arithmetic","No","Default variable use"],["$value","Parameter","Yes","Rare intentional splitting"],["\"${array[@]}\"","Each array element","No","Safe argument vector"]]},"codeBlocks":[{"language":"bash","code":"#!/usr/bin/env bash\nset -Eeuo pipefail\nIFS=$'\\n\\t'\nreadonly script_dir=\"$(cd -- \"$(dirname -- \"${BASH_SOURCE[0]}\")\" && pwd -P)\""}],"callouts":[{"title":"Strict Mode Is Not Error Handling","type":"warning","icon":"⚠️","text":"set -e has contextual exceptions. Handle expected failures explicitly and test pipelines, conditions, subshells, and cleanup paths.","color":"amber"}]},
-      {"id":"parameters-arrays","title":"Parameters, Defaults & Arrays","description":"Use parameter expansion for required/default values and indexed/associative arrays to preserve argument boundaries.","codeBlocks":[{"language":"bash","code":"environment=${ENVIRONMENT:-dev}\n: \"${DATABASE_URL:?DATABASE_URL is required}\"\nfiles=(\"report one.csv\" \"report two.csv\")\ndeclare -A ports=([http]=80 [https]=443)\ncommand -- \"${files[@]}\""}]}
-    ]},
-    {"id":"control-functions","title":"Tests, Control Flow & Functions","subtopics":[
-      {"id":"tests-loops","title":"[[ ]], Arithmetic, case & Loops","description":"Prefer [[ ]] in Bash for strings/patterns, (( )) for arithmetic, case for dispatch, and read loops that preserve whitespace.","codeBlocks":[{"language":"bash","code":"if [[ -f $config && $environment == prod ]]; then load_config \"$config\"; fi\ncase $command in start|stop) run \"$command\" ;; *) usage >&2; exit 2 ;; esac\nwhile IFS= read -r line; do process \"$line\"; done < \"$input\""}]},
-      {"id":"functions-status-traps","title":"Functions, Exit Status & Traps","description":"Functions return integer status, not rich values. Send data to stdout deliberately, diagnostics to stderr, and install cleanup traps early.","codeBlocks":[{"language":"bash","code":"tmp_dir=$(mktemp -d)\ncleanup() { local status=$?; rm -rf -- \"$tmp_dir\"; exit \"$status\"; }\ntrap cleanup EXIT INT TERM\nlog() { printf '%s\\n' \"$*\" >&2; }"}],"callouts":[{"title":"Validate Destructive Targets","type":"danger","icon":"🛑","text":"Before rm/mv/chmod, reject empty, root, home, unresolved, and unexpected paths. Prefer explicit paths over globs.","color":"red"}]}
-    ]},
-    {"id":"process-files","title":"Processes, Pipelines & Files","subtopics":[
-      {"id":"pipelines-background","title":"Pipelines, Subshells & Background Jobs","description":"Pipeline stages usually run in separate processes; pipefail surfaces earlier failures; capture PIDs and wait to own background work.","codeBlocks":[{"language":"bash","code":"producer | transformer | consumer\nprintf '%s\\n' \"${PIPESTATUS[@]}\"\nworker_one & pid_one=$!\nworker_two & pid_two=$!\nwait \"$pid_one\"; wait \"$pid_two\""}]},
-      {"id":"files-portability","title":"Files, find, NUL Delimiters & Portability","description":"Use NUL delimiters for arbitrary filenames, -- before path operands, and select Bash versus POSIX sh deliberately.","codeBlocks":[{"language":"bash","code":"while IFS= read -r -d '' file; do\n  sha256sum -- \"$file\"\ndone < <(find \"$root\" -type f -print0)"}],"callouts":[{"title":"Never Parse ls","type":"warning","icon":"⚠️","text":"Filenames may contain spaces, tabs, newlines, and leading dashes. Use globs, find -print0, or arrays.","color":"amber"}]}
-    ]},
-    {"id":"quality-security","title":"Debugging, Security & Review","subtopics":[
-      {"id":"debug-lint-test","title":"Tracing, ShellCheck & Tests","description":"Use bash -n for syntax, ShellCheck for static issues, controlled xtrace for debugging, and automated tests for edge-case inputs and failure paths.","codeBlocks":[{"language":"bash","code":"bash -n script.sh\nshellcheck script.sh\nPS4='+${BASH_SOURCE}:${LINENO}:${FUNCNAME[0]}: ' bash -x script.sh"}]},
-      {"id":"production-checklist","title":"Production Checklist","description":"Pin commands and formats, validate environment/input, avoid eval, preserve exit statuses, bound retries, and make reruns idempotent.","callouts":[{"title":"Production Checklist","type":"tip","icon":"✅","text":"Quote expansions, use arrays, validate paths, create secure temp files, trap cleanup, avoid secret xtrace, check dependencies, use timeouts, lint, test, and document Bash-only features.","color":"green"}]}
-    ]}
+  "id": "bash-shell-reference",
+  "title": "Bash Shell Scripting",
+  "slug": "bash",
+  "category": "Languages",
+  "technology": "Bash",
+  "version": "Bash 5.x",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 22,
+  "description": "Bash reference covering quoting, parameters, arrays, tests, pipelines, functions, traps, files, processes, portability, security, debugging, and production-grade scripting.",
+  "tags": [
+    "BASH",
+    "SHELL",
+    "CLI",
+    "LINUX",
+    "AUTOMATION"
+  ],
+  "updatedAt": "Jul 2026",
+  "aliases": [
+    "shell script",
+    "sh",
+    "bash scripting",
+    "linux shell",
+    "command line"
+  ],
+  "relatedSheets": [
+    "linux",
+    "docker",
+    "git",
+    "aws",
+    "postgres",
+    "make-task-runners",
+    "regex"
+  ],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/bash.json",
+  "sections": [
+    {
+      "id": "syntax-expansion",
+      "title": "Syntax, Expansion & Quoting",
+      "subtopics": [
+        {
+          "id": "strict-mode-quoting",
+          "title": "Options, Quoting & Expansion Order",
+          "description": "Quote parameter expansions by default. Use arrays for argument lists and understand that shell parsing happens before commands receive arguments.",
+          "table": {
+            "title": "Quoting Reference",
+            "headers": [
+              "Form",
+              "Expansion",
+              "Word Splitting / Glob",
+              "Use"
+            ],
+            "rows": [
+              [
+                "'$value'",
+                "None",
+                "No",
+                "Literal text"
+              ],
+              [
+                "\"$value\"",
+                "Parameter/command/arithmetic",
+                "No",
+                "Default variable use"
+              ],
+              [
+                "$value",
+                "Parameter",
+                "Yes",
+                "Rare intentional splitting"
+              ],
+              [
+                "\"${array[@]}\"",
+                "Each array element",
+                "No",
+                "Safe argument vector"
+              ]
+            ]
+          },
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "#!/usr/bin/env bash\nset -Eeuo pipefail\nreadonly script_dir=\"$(cd -- \"$(dirname -- \"${BASH_SOURCE[0]}\")\" && pwd -P)\""
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Do Not Change IFS Globally by Habit",
+              "type": "note",
+              "icon": "📌",
+              "text": "Quoting expansions and using arrays preserve argument boundaries. Set IFS locally for a specific read or split operation instead of changing it for the entire script.",
+              "color": "blue"
+            },
+            {
+              "title": "Strict Mode Is Not Error Handling",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "set -e has contextual exceptions. Handle expected failures explicitly and test pipelines, conditions, subshells, and cleanup paths.",
+              "color": "amber"
+            }
+          ]
+        },
+        {
+          "id": "parameters-arrays",
+          "title": "Parameters, Defaults & Arrays",
+          "description": "Use parameter expansion for required/default values and indexed/associative arrays to preserve argument boundaries.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "environment=${ENVIRONMENT:-dev}\n: \"${DATABASE_URL:?DATABASE_URL is required}\"\nfiles=(\"report one.csv\" \"report two.csv\")\ndeclare -A ports=([http]=80 [https]=443)\ncommand -- \"${files[@]}\""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "control-functions",
+      "title": "Tests, Control Flow & Functions",
+      "subtopics": [
+        {
+          "id": "tests-loops",
+          "title": "[[ ]], Arithmetic, case & Loops",
+          "description": "Prefer [[ ]] in Bash for strings/patterns, (( )) for arithmetic, case for dispatch, and read loops that preserve whitespace.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "if [[ -f $config && $environment == prod ]]; then load_config \"$config\"; fi\ncase $command in start|stop) run \"$command\" ;; *) usage >&2; exit 2 ;; esac\nwhile IFS= read -r line; do process \"$line\"; done < \"$input\""
+            }
+          ]
+        },
+        {
+          "id": "functions-status-traps",
+          "title": "Functions, Exit Status & Traps",
+          "description": "Functions return integer status, not rich values. Send data to stdout deliberately, diagnostics to stderr, and install cleanup traps early.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "tmp_dir=$(mktemp -d)\ncleanup() {\n  local status=$?\n  trap - EXIT\n  rm -rf -- \"$tmp_dir\"\n  exit \"$status\"\n}\ntrap cleanup EXIT\ntrap 'exit 130' INT\ntrap 'exit 143' TERM\nlog() { printf '%s\\n' \"$*\" >&2; }"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Keep Cleanup Idempotent",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Signal handlers commonly exit and then trigger the EXIT trap. Register cleanup on EXIT once, or clear traps before exiting, so cleanup cannot recurse or run twice.",
+              "color": "amber"
+            },
+            {
+              "title": "Validate Destructive Targets",
+              "type": "danger",
+              "icon": "🛑",
+              "text": "Before rm/mv/chmod, reject empty, root, home, unresolved, and unexpected paths. Prefer explicit paths over globs.",
+              "color": "red"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "process-files",
+      "title": "Processes, Pipelines & Files",
+      "subtopics": [
+        {
+          "id": "pipelines-background",
+          "title": "Pipelines, Subshells & Background Jobs",
+          "description": "Pipeline stages usually run in separate processes; pipefail surfaces earlier failures; capture PIDs and wait to own background work.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "producer | transformer | consumer\nprintf '%s\\n' \"${PIPESTATUS[@]}\"\nworker_one & pid_one=$!\nworker_two & pid_two=$!\nwait \"$pid_one\"; wait \"$pid_two\""
+            }
+          ]
+        },
+        {
+          "id": "files-portability",
+          "title": "Files, find, NUL Delimiters & Portability",
+          "description": "Use NUL delimiters for arbitrary filenames, -- before path operands, and select Bash versus POSIX sh deliberately.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "while IFS= read -r -d '' file; do\n  sha256sum -- \"$file\"\ndone < <(find \"$root\" -type f -print0)"
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Never Parse ls",
+              "type": "warning",
+              "icon": "⚠️",
+              "text": "Filenames may contain spaces, tabs, newlines, and leading dashes. Use globs, find -print0, or arrays.",
+              "color": "amber"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quality-security",
+      "title": "Debugging, Security & Review",
+      "subtopics": [
+        {
+          "id": "debug-lint-test",
+          "title": "Tracing, ShellCheck & Tests",
+          "description": "Use bash -n for syntax, ShellCheck for static issues, controlled xtrace for debugging, and automated tests for edge-case inputs and failure paths.",
+          "codeBlocks": [
+            {
+              "language": "bash",
+              "code": "bash -n script.sh\nshellcheck script.sh\nPS4='+${BASH_SOURCE}:${LINENO}:${FUNCNAME[0]}: ' bash -x script.sh"
+            }
+          ]
+        },
+        {
+          "id": "production-checklist",
+          "title": "Production Checklist",
+          "description": "Pin commands and formats, validate environment/input, avoid eval, preserve exit statuses, bound retries, and make reruns idempotent.",
+          "callouts": [
+            {
+              "title": "Production Checklist",
+              "type": "tip",
+              "icon": "✅",
+              "text": "Quote expansions, use arrays, validate paths, create secure temp files, trap cleanup, avoid secret xtrace, check dependencies, use timeouts, lint, test, and document Bash-only features.",
+              "color": "green"
+            }
+          ]
+        }
+      ]
+    }
   ]
 }

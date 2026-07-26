@@ -6,12 +6,13 @@
   "technology": "JUnit / AndroidX Test / Compose Test",
   "version": "Modern Android Testing",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 48,
-  "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, test doubles, coroutines and Flow, Compose UI, navigation, storage, reliability, and CI.",
+  "readTimeMinutes": 58,
+  "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, coroutines and Flow, Compose UI, screenshots, accessibility, navigation, storage, Macrobenchmark, Baseline Profiles, reliability, and CI.",
   "tags": ["ANDROID", "TESTING", "JUNIT", "COMPOSE TEST", "COROUTINE TEST", "ESPRESSO"],
-  "updatedAt": "Jul 2026",
-  "aliases": ["android unit test", "instrumented test", "compose ui test", "coroutine test", "androidx test", "test doubles"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["android unit test", "instrumented test", "compose ui test", "coroutine test", "androidx test", "test doubles", "screenshot test", "accessibility test", "macrobenchmark", "baseline profile"],
   "relatedSheets": ["android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-testing.json",
   "sections": [
     {
       "id": "testing-strategy",
@@ -115,7 +116,7 @@
           "description": "runTest supplies a TestScope and scheduler, skips virtual delays, propagates child failures, and waits for scheduled work.",
           "codeBlocks": [{
             "language": "kotlin",
-            "code": "@Test\nfun `refresh waits then publishes content`() = runTest {\n    val dispatcher = StandardTestDispatcher(testScheduler)\n    val repository = FakeRepository(delayMs = 1_000)\n    val vm = FeedViewModel(repository, dispatcher)\n\n    vm.refresh()\n    assertEquals(FeedUiState.Loading, vm.uiState.value)\n    advanceTimeBy(1_000)\n    runCurrent()\n    assertEquals(FeedUiState.Content(items), vm.uiState.value)\n}"
+            "code": "@Test\nfun `refresh waits then publishes content`() = runTest {\n    val dispatcher = StandardTestDispatcher(testScheduler)\n    val repository = FakeRepository(delayMs = 1_000)\n    val vm = FeedViewModel(repository, dispatcher)\n\n    vm.refresh()\n    runCurrent() // enter the queued refresh coroutine\n    assertEquals(FeedUiState.Loading, vm.uiState.value)\n    advanceTimeBy(1_000)\n    runCurrent()\n    assertEquals(FeedUiState.Content(items), vm.uiState.value)\n}"
           }],
           "callouts": [{ "title": "Share the Scheduler", "type": "danger", "icon": "⏱️", "text": "Every TestDispatcher in a test must use testScheduler. Independent schedulers create work that advanceUntilIdle cannot see and produce hanging or flaky tests.", "color": "red" }]
         },
@@ -194,6 +195,17 @@
           "callouts": [{ "title": "External Work Needs Idling", "type": "warning", "icon": "⚠️", "text": "Compose cannot automatically observe every executor, callback, or network client. Inject controllable dependencies or register an idling resource rather than sleeping.", "color": "amber" }]
         },
         {
+          "id": "screenshot-accessibility-tests",
+          "title": "Screenshot & Automated Accessibility Tests",
+          "description": "Use screenshot tests for visual contracts and automated accessibility checks for common semantic, contrast, traversal, and touch-target problems; retain manual assistive-technology testing.",
+          "tabs": [
+            { "label": "Accessibility Checks", "language": "kotlin", "code": "@get:Rule\nval compose = createAndroidComposeRule<ComponentActivity>()\n\n@Test\nfun profile_hasNoCommonAccessibilityIssues() {\n    compose.setContent { ProfileScreen(state) }\n    compose.enableAccessibilityChecks()\n    compose.onRoot().tryPerformAccessibilityChecks()\n}" },
+            { "label": "Screenshot Matrix", "language": "text", "code": "Capture approved references for:\n• light and dark themes\n• compact and expanded windows\n• default and large font scales\n• loading, empty, error, and populated states\n• representative locales and long translations" }
+          ],
+          "callouts": [{ "title": "Golden Images Are Reviewed Artifacts", "type": "warning", "icon": "🖼️", "text": "Pin rendering configuration and inspect diffs. Regenerating every reference without review turns visual regressions into accepted output.", "color": "amber" }],
+          "tags": ["screenshot", "accessibility", "golden-test", "compose-test"]
+        },
+        {
           "id": "navigation-tests",
           "title": "Navigation & Back Stack",
           "description": "Test destinations through a test navigation controller or host and assert route/back-stack outcomes after user actions.",
@@ -231,12 +243,33 @@
           "callouts": [{ "title": "Shard by Historical Duration", "type": "tip", "icon": "⚡", "text": "Balance shards using measured runtime rather than test count. Keep emulator snapshots and dependencies pinned so infrastructure changes are deliberate.", "color": "green" }]
         },
         {
+          "id": "macrobenchmark-baseline-profiles",
+          "title": "Macrobenchmark, Startup & Baseline Profiles",
+          "description": "Measure startup and critical user journeys from a separate benchmark module against release-like builds; generate Baseline Profiles from representative journeys and verify their benefit.",
+          "table": {
+            "title": "Performance Verification",
+            "headers": ["Tool", "Measures", "Run Against", "Key Caution"],
+            "rows": [
+              ["Microbenchmark", "A focused algorithm or small code path", "Benchmark module", "Avoid measuring setup or debug behavior"],
+              ["Macrobenchmark", "Startup, scrolling, navigation, jank", "Profileable release-like app", "Use stable devices and repeated measurements"],
+              ["Baseline Profile", "Ahead-of-time compilation of critical paths", "Generated critical user journeys", "Benchmark with and without the profile"],
+              ["Android vitals / field telemetry", "ANRs, crashes, slow rendering in production", "Released app", "Protect privacy and inspect device-specific clusters"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Measure TTID and TTFD for startup\nMeasure frame timing for scroll/animation journeys\nGenerate profiles automatically for release variants\nCompare CompilationMode.Partial with and without Baseline Profiles\nStore benchmark JSON/traces and alert on meaningful regressions\nUse physical reference devices for trustworthy release decisions"
+          }],
+          "callouts": [{ "title": "Debug Builds Lie About Performance", "type": "danger", "icon": "📈", "text": "Debugger, instrumentation, emulator load, compilation state, thermal throttling, and debuggable builds distort results. Record the environment and compare statistically meaningful repeated runs.", "color": "red" }],
+          "tags": ["macrobenchmark", "baseline-profile", "startup", "jank", "anr"]
+        },
+        {
           "id": "test-review-checklist",
           "title": "Test Review Checklist",
           "description": "Review value, determinism, isolation, readability, fidelity, and failure diagnostics.",
           "codeBlocks": [{
             "language": "text",
-            "code": "□ Test name states behavior and condition\n□ Assertions cover an observable contract\n□ Correct environment is used\n□ Time and dispatchers are controllable\n□ No sleeps, live network, or order dependence\n□ Fakes preserve important contract semantics\n□ Cleanup runs even after assertion failure\n□ Failure output identifies expected versus actual\n□ Error, cancellation, empty, and restoration paths exist\n□ UI queries use meaningful semantics\n□ Migration paths and critical journeys are represented\n□ Suite placement matches feedback-speed needs"
+            "code": "□ Test name states behavior and condition\n□ Assertions cover an observable contract\n□ Correct environment is used\n□ Time and dispatchers are controllable\n□ No sleeps, live network, or order dependence\n□ Fakes preserve important contract semantics\n□ Cleanup runs even after assertion failure\n□ Failure output identifies expected versus actual\n□ Error, cancellation, empty, process-restoration, and upgrade paths exist\n□ UI queries use meaningful semantics\n□ Screenshot references and accessibility checks are reviewed\n□ Predictive back, edge-to-edge, and adaptive layouts are exercised\n□ Migrations and critical journeys are represented\n□ Startup and jank have release-like performance baselines\n□ Suite placement matches feedback-speed needs"
           }]
         }
       ]

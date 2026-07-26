@@ -1,83 +1,230 @@
 {
-  "id": "typescript-class",
-  "title": "TypeScript Class & Type System",
+  "id": "typescript-language-reference",
+  "title": "TypeScript Programming",
   "slug": "typescript",
   "category": "Frontend",
   "technology": "TypeScript",
-  "version": "v5.4",
+  "version": "TypeScript 6.0",
   "difficulty": "INTERMEDIATE",
-  "readTimeMinutes": 12,
-  "description": "Essential syntax reference for TypeScript classes, generic constraints, type-only modifiers, control flow analysis, and type evaluation.",
-  "tags": ["TYPESCRIPT", "CLASS", "GENERICS", "TYPES", "INTERFACES"],
-  "updatedAt": "Oct 2026",
+  "readTimeMinutes": 58,
+  "description": "Beginner-to-advanced TypeScript reference covering strict configuration, inference, narrowing, generics, object modeling, classes, modules, async code, runtime validation, advanced types, declaration files, and scalable builds.",
+  "tags": ["TYPESCRIPT", "TYPES", "GENERICS", "NARROWING", "MODULES", "JAVASCRIPT"],
+  "updatedAt": "Jul 2026",
+  "aliases": ["ts", "typed javascript", "tsconfig", "type system", "type guard"],
+  "relatedSheets": ["javascript", "react", "nodejs", "zod", "vite"],
+  "prerequisites": [{"title": "JavaScript Programming", "slug": "javascript"}],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/typescript.json",
   "sections": [
     {
-      "id": "class-syntax",
-      "title": "Class Declarations",
-      "description": "Field modifiers and constructor parameter properties.",
+      "id": "configuration-inference",
+      "title": "Configuration, Values & Inference",
+      "description": "Start strict, preserve useful literal information, and let inference work locally while documenting public boundaries.",
       "subtopics": [
         {
-          "id": "parameter-properties",
-          "title": "Parameter Properties & Modifiers",
-          "description": "Automatic instance field initialization via constructor parameters.",
+          "id": "strict-tsconfig",
+          "title": "Strict tsconfig Foundations",
+          "description": "Use strict checking and choose module settings that match the real runtime and bundler. TypeScript 6 enables stricter modern defaults for newly initialized projects.",
           "table": {
-            "title": "TypeScript Class Member Modifiers",
-            "headers": ["Modifier", "Access / Effect", "Runtime Enforcement", "Typical Use"],
+            "title": "High-Value Compiler Options",
+            "headers": ["Option", "Purpose", "Typical Choice"],
             "rows": [
-              ["public", "Accessible everywhere; default", "Normal JavaScript property", "Public class API"],
-              ["protected", "Class and subclasses", "Type-checker only", "Extension points for derived classes"],
-              ["private", "Declaring class only", "Type-checker only", "Compile-time encapsulation"],
-              ["#private", "Declaring class only", "Yes; JavaScript private field", "Hard runtime encapsulation"],
-              ["readonly", "Cannot be reassigned after initialization", "Type-checker only", "Stable reference or value"],
-              ["static", "Member belongs to the class constructor", "Yes", "Factories, constants, shared utilities"]
+              ["strict", "Enables the strict type-checking family", "true"],
+              ["noUncheckedIndexedAccess", "Adds undefined to unchecked indexed reads", "true for application code"],
+              ["exactOptionalPropertyTypes", "Distinguishes missing from explicitly undefined", "true when API semantics require it"],
+              ["verbatimModuleSyntax", "Preserves import/export intent", "true with modern ESM"],
+              ["noEmit", "Type-checks without producing JavaScript", "true when a bundler emits"],
+              ["skipLibCheck", "Skips declaration-file checking", "Use deliberately, not to hide project errors"]
             ]
           },
-          "codeBlocks": [
-            {
-              "language": "typescript",
-              "code": "class User extends Account implements Updatable {\n  id: string;\n  readonly createdAt = new Date();\n\n  constructor(public email: string) {\n    super();\n  }\n}",
-              "annotations": [
-                {
-                  "id": "ann-extends",
-                  "targetToken": "extends Account",
-                  "text": "Subclasses base Account class",
-                  "position": "top"
-                },
-                {
-                  "id": "ann-constructor",
-                  "targetToken": "public email: string",
-                  "text": "Parameter property automatically sets instance field",
-                  "position": "bottom"
-                }
-              ]
-            }
-          ]
+          "codeBlocks": [{
+            "language": "json",
+            "code": "{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noUncheckedIndexedAccess\": true,\n    \"exactOptionalPropertyTypes\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"verbatimModuleSyntax\": true,\n    \"noEmit\": true\n  }\n}"
+          }],
+          "callouts": [{"title":"Match the Runtime","type":"warning","icon":"⚠️","text":"module, moduleResolution, target, and lib describe the environment. A configuration that type-checks but does not match Node, a browser bundler, or the emitted package can still fail at runtime.","color":"amber"}],
+          "tags": ["tsconfig", "strict", "compiler"]
+        },
+        {
+          "id": "inference-annotations-literals",
+          "title": "Inference, Annotations & Literal Types",
+          "description": "Allow inference for obvious local values; annotate public inputs, recursive functions, and boundaries where the intended contract matters.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "const environment = 'production'; // type: 'production'\nlet retries = 3;                  // type: number\n\nconst routes = {\n  home: '/',\n  user: '/users/:id',\n} as const;\n\ntype RouteName = keyof typeof routes; // 'home' | 'user'"
+          }],
+          "callouts": [{"title":"as const Is Deeply Readonly in the Type","type":"note","icon":"📌","text":"A const assertion preserves literal values and marks object/array members readonly in the inferred type. It does not freeze the value at runtime.","color":"blue"}],
+          "tags": ["inference", "literal types", "as const"]
+        },
+        {
+          "id": "satisfies-operator",
+          "title": "Validate Shape with satisfies",
+          "description": "satisfies checks compatibility without replacing the expression's more specific inferred type.",
+          "codeBlocks": [{
+            "language": "typescript",
+            "code": "type RGB = readonly [number, number, number];\ntype Color = 'red' | 'green' | 'blue';\n\nconst palette = {\n  red: [255, 0, 0],\n  green: '#00ff00',\n  blue: [0, 0, 255],\n} satisfies Record<Color, string | RGB>;\n\npalette.green.toUpperCase(); // remains string"
+          }],
+          "callouts": [{"title":"Prefer satisfies to Broad Annotation","type":"tip","icon":"💡","text":"Use a type annotation when you want the variable to have that declared type. Use satisfies when you want validation while retaining precise property types.","color":"green"}],
+          "tags": ["satisfies", "inference", "contracts"]
         }
       ]
     },
     {
-      "id": "control-flow-analysis",
-      "title": "Control Flow & Narrowing",
-      "description": "Type guard functions and predicate assertions.",
+      "id": "unions-narrowing",
+      "title": "Unions, Narrowing & Exhaustiveness",
+      "description": "Model alternatives explicitly and narrow them with evidence available at runtime.",
       "subtopics": [
         {
-          "id": "type-predicates",
-          "title": "Type Predicates & Narrowing",
-          "description": "Custom type assertion functions with obj is Type return signatures.",
-          "codeBlocks": [
-            {
-              "language": "typescript",
-              "code": "function isErrorResponse(obj: Response): obj is APIErrorResponse {\n  return obj instanceof APIErrorResponse;\n}\n\nif (isErrorResponse(res)) {\n  console.error(res.message);\n}",
-              "annotations": [
-                {
-                  "id": "ann-predicate",
-                  "targetToken": "obj is APIErrorResponse",
-                  "text": "Type predicate assertion for scope narrowing",
-                  "position": "right"
-                }
-              ]
-            }
-          ]
+          "id": "unknown-any-never",
+          "title": "unknown, any & never",
+          "description": "unknown requires proof before use, any opts out of checking, and never represents an impossible value or non-returning path.",
+          "table": {
+            "headers": ["Type", "Meaning", "Guidance"],
+            "rows": [
+              ["unknown", "A value whose type is not yet known", "Default for untrusted input and caught errors"],
+              ["any", "Disable type checking for this value", "Confine to migrations or unavoidable interop"],
+              ["never", "No value can exist", "Exhaustiveness checks and functions that cannot return"]
+            ]
+          },
+          "codeBlocks": [{"language":"typescript","code":"function messageFrom(error: unknown): string {\n  if (error instanceof Error) return error.message;\n  return String(error);\n}\n\nfunction fail(message: string): never {\n  throw new Error(message);\n}"}],
+          "tags": ["unknown", "any", "never"]
+        },
+        {
+          "id": "discriminated-unions",
+          "title": "Discriminated Unions",
+          "description": "Give each variant a stable literal discriminator so control-flow analysis can narrow safely.",
+          "codeBlocks": [{"language":"typescript","code":"type Result<T> =\n  | { status: 'ok'; value: T }\n  | { status: 'error'; error: Error };\n\nfunction unwrap<T>(result: Result<T>): T {\n  switch (result.status) {\n    case 'ok': return result.value;\n    case 'error': throw result.error;\n  }\n}"}],
+          "callouts": [{"title":"Avoid Boolean Flag Combinations","type":"tip","icon":"💡","text":"A discriminated union makes invalid state combinations unrepresentable and gives rendering, reducers, and protocol handlers exhaustive branches.","color":"green"}],
+          "tags": ["union", "narrowing", "state modeling"]
+        },
+        {
+          "id": "guards-assertions-exhaustiveness",
+          "title": "Type Guards, Assertion Functions & Exhaustiveness",
+          "description": "A predicate returns boolean evidence; an assertion function throws when evidence is absent. Both must perform real runtime checks.",
+          "codeBlocks": [{"language":"typescript","code":"interface ApiError { code: string; message: string }\n\nfunction isApiError(value: unknown): value is ApiError {\n  if (typeof value !== 'object' || value === null) return false;\n  const candidate = value as Record<string, unknown>;\n  return typeof candidate.code === 'string'\n    && typeof candidate.message === 'string';\n}\n\nfunction assertNever(value: never): never {\n  throw new Error(`Unhandled variant: ${JSON.stringify(value)}`);\n}"}],
+          "callouts": [{"title":"Interfaces Do Not Exist at Runtime","type":"warning","icon":"⚠️","text":"Do not use instanceof with an interface or assume parsed JSON has a class prototype. Check structure explicitly or validate with a runtime schema library.","color":"amber"}],
+          "tags": ["type guard", "assertion function", "exhaustive"]
+        }
+      ]
+    },
+    {
+      "id": "generics-type-composition",
+      "title": "Generics & Type Composition",
+      "description": "Use generics to preserve relationships between inputs and outputs, not merely to replace specific types with placeholders.",
+      "subtopics": [
+        {
+          "id": "generic-functions-constraints",
+          "title": "Generic Functions & Constraints",
+          "description": "Constrain only the capability an implementation needs and let callers retain their more specific types.",
+          "codeBlocks": [{"language":"typescript","code":"function getProperty<T, K extends keyof T>(object: T, key: K): T[K] {\n  return object[key];\n}\n\nfunction first<T>(values: readonly [T, ...T[]]): T {\n  return values[0];\n}"}],
+          "callouts": [{"title":"Do Not Add Unused Type Parameters","type":"warning","icon":"⚠️","text":"A type parameter should relate two or more positions or preserve caller information. Otherwise, use a concrete type or unknown.","color":"amber"}],
+          "tags": ["generics", "keyof", "constraints"]
+        },
+        {
+          "id": "mapped-utility-types",
+          "title": "Mapped Types & Utility Types",
+          "description": "Mapped types transform property sets; standard utilities cover common selection, omission, optionality, and immutability operations.",
+          "codeBlocks": [{"language":"typescript","code":"type Flags<T> = { [K in keyof T]: boolean };\ntype Mutable<T> = { -readonly [K in keyof T]-?: T[K] };\n\ninterface User { id: string; name: string; passwordHash: string }\ntype PublicUser = Omit<User, 'passwordHash'>;\ntype UserPatch = Partial<Pick<User, 'name'>>;"}],
+          "callouts": [{"title":"Readonly Is Shallow","type":"note","icon":"📌","text":"Readonly<T> prevents assignment to top-level properties in the type system. Nested objects remain mutable unless modeled recursively, and no runtime freeze is applied.","color":"blue"}],
+          "tags": ["mapped types", "utility types", "keyof"]
+        },
+        {
+          "id": "conditional-template-types",
+          "title": "Conditional, infer & Template Literal Types",
+          "description": "Conditional types select types based on assignability; infer captures a component; template literal types model constrained string protocols.",
+          "codeBlocks": [{"language":"typescript","code":"type AwaitedValue<T> = T extends PromiseLike<infer U> ? AwaitedValue<U> : T;\ntype EventName<K extends string> = `${K}Changed`;\n\ntype ApiPath = `/api/${'users' | 'orders'}/${string}`;\nconst path: ApiPath = '/api/users/42';"}],
+          "callouts": [{"title":"Keep Type Computation Readable","type":"tip","icon":"💡","text":"Complex conditional types can slow checking and produce unreadable errors. Name intermediate concepts and prefer ordinary interfaces when metaprogramming does not improve the public API.","color":"green"}],
+          "tags": ["conditional type", "infer", "template literal"]
+        }
+      ]
+    },
+    {
+      "id": "objects-classes-modules",
+      "title": "Objects, Classes & Modules",
+      "description": "Model stable boundaries structurally and distinguish compile-time visibility from JavaScript runtime behavior.",
+      "subtopics": [
+        {
+          "id": "interfaces-type-aliases",
+          "title": "Interfaces, Type Aliases & Structural Typing",
+          "description": "Interfaces excel at extendable object contracts; aliases name unions, primitives, tuples, functions, and computed types.",
+          "table": {"headers":["Capability","interface","type alias"],"rows":[["Object shape","Yes","Yes"],["Declaration merging","Yes","No"],["Union/primitive/tuple alias","No","Yes"],["Mapped/conditional expression","No","Yes"]]},
+          "codeBlocks": [{"language":"typescript","code":"interface Repository<T> {\n  find(id: string): Promise<T | undefined>;\n  save(value: T): Promise<void>;\n}\n\ntype Identifier = string | number;\ntype Handler<T> = (event: T) => void;"}],
+          "callouts": [{"title":"Structural Compatibility Can Admit Extra Capabilities","type":"note","icon":"📌","text":"Compatibility is based on members, not declared names. Use branded types when two primitive values must not be interchangeable despite identical representation.","color":"blue"}],
+          "tags": ["interface", "type alias", "structural typing"]
+        },
+        {
+          "id": "classes-modifiers",
+          "title": "Classes, Parameter Properties & Runtime Privacy",
+          "description": "Class modifiers mostly guide the checker. JavaScript #private fields provide runtime-enforced privacy.",
+          "table": {"headers":["Modifier","Checker Effect","Runtime Effect"],"rows":[["public","Accessible everywhere","Normal property"],["protected","Class and subclasses","Normal property"],["private","Declaring class only","Normal property"],["#field","Declaring class only","Runtime private slot"],["readonly","No reassignment after initialization","None"]]},
+          "codeBlocks": [{"language":"typescript","code":"class Session {\n  #token: string;\n\n  constructor(\n    token: string,\n    public readonly userId: string,\n  ) {\n    this.#token = token;\n  }\n\n  authorizationHeader(): string {\n    return `Bearer ${this.#token}`;\n  }\n}"}],
+          "tags": ["class", "private", "readonly"]
+        },
+        {
+          "id": "esm-import-types",
+          "title": "ES Modules, Type-Only Imports & Package Exports",
+          "description": "Use import type for erased dependencies and publish declarations that match the package's real ESM/CommonJS entry points.",
+          "codeBlocks": [{"language":"typescript","code":"import { createClient } from './client.js';\nimport type { ClientOptions } from './types.js';\n\nexport { createClient };\nexport type { ClientOptions };"}],
+          "callouts": [{"title":"Use Runtime File Specifiers","type":"warning","icon":"⚠️","text":"Under Node ESM modes, relative imports commonly use the emitted .js extension in TypeScript source. Do not rely on the checker to invent a runtime resolution strategy.","color":"amber"}],
+          "tags": ["esm", "import type", "packages"]
+        }
+      ]
+    },
+    {
+      "id": "async-boundaries",
+      "title": "Async Code & Runtime Boundaries",
+      "description": "Types disappear after compilation, so network, storage, environment, and user input still need runtime validation.",
+      "subtopics": [
+        {
+          "id": "promises-async",
+          "title": "Promises, Awaited Values & Cancellation",
+          "description": "An async function always returns Promise<T>. Model failures deliberately and propagate AbortSignal through cancellable operations.",
+          "codeBlocks": [{"language":"typescript","code":"async function loadUser(\n  id: string,\n  signal: AbortSignal,\n): Promise<User> {\n  const response = await fetch(`/api/users/${encodeURIComponent(id)}`, { signal });\n  if (!response.ok) throw new Error(`HTTP ${response.status}`);\n  return parseUser(await response.json());\n}"}],
+          "callouts": [{"title":"Promise Rejection Is Not in the Return Type","type":"note","icon":"📌","text":"Promise<User> describes fulfillment. JavaScript permits any rejection value, so catch unknown and normalize errors at process, transport, or UI boundaries.","color":"blue"}],
+          "tags": ["promise", "async", "abortsignal"]
+        },
+        {
+          "id": "runtime-validation",
+          "title": "Validate Untrusted Data",
+          "description": "Treat JSON.parse, fetch bodies, environment variables, storage, and postMessage payloads as unknown until checked.",
+          "codeBlocks": [{"language":"typescript","code":"import { z } from 'zod';\n\nconst UserSchema = z.object({\n  id: z.string().uuid(),\n  name: z.string().min(1),\n});\n\ntype User = z.infer<typeof UserSchema>;\nconst user = UserSchema.parse(await response.json());"}],
+          "callouts": [{"title":"Assertions Do Not Validate","type":"danger","icon":"🛑","text":"value as User only instructs the compiler. It neither checks nor converts the runtime value and can move a boundary error deeper into the application.","color":"red"}],
+          "tags": ["validation", "unknown", "zod"]
+        },
+        {
+          "id": "result-domain-errors",
+          "title": "Domain Errors & Result Types",
+          "description": "Use thrown errors for exceptional control flow or a discriminated result when failure is an expected value callers must handle.",
+          "codeBlocks": [{"language":"typescript","code":"type ParseResult<T> =\n  | { ok: true; value: T }\n  | { ok: false; issues: readonly string[] };\n\nfunction parsePort(input: string): ParseResult<number> {\n  const value = Number(input);\n  return Number.isInteger(value) && value > 0 && value <= 65_535\n    ? { ok: true, value }\n    : { ok: false, issues: ['Expected a valid TCP port'] };\n}"}],
+          "tags": ["errors", "result", "domain modeling"]
+        }
+      ]
+    },
+    {
+      "id": "scale-tooling-migration",
+      "title": "Declarations, Project Scale & Migration",
+      "description": "Keep public types small, build packages in dependency order, and treat compiler upgrades as reviewed migrations.",
+      "subtopics": [
+        {
+          "id": "declaration-files",
+          "title": "Declaration Files & Library Design",
+          "description": ".d.ts files describe JavaScript APIs without implementing them. Export only supported contracts and test declarations from a consumer perspective.",
+          "codeBlocks": [{"language":"typescript","code":"// analytics.d.ts\nexport interface TrackOptions {\n  properties?: Readonly<Record<string, string | number | boolean>>;\n}\n\nexport function track(name: string, options?: TrackOptions): void;"}],
+          "callouts": [{"title":"Avoid Global Augmentation","type":"warning","icon":"⚠️","text":"Prefer module exports. Global declarations and module augmentation are appropriate only when the runtime truly mutates that shared namespace or third-party module.","color":"amber"}],
+          "tags": ["declaration files", "library", "public api"]
+        },
+        {
+          "id": "project-references",
+          "title": "Project References & Incremental Builds",
+          "description": "Composite projects create explicit dependency boundaries for large repositories and allow tsc --build to order and cache work.",
+          "codeBlocks": [{"language":"json","code":"{\n  \"files\": [],\n  \"references\": [\n    { \"path\": \"./packages/core\" },\n    { \"path\": \"./packages/web\" }\n  ]\n}"},{"language":"bash","code":"tsc --build\ntsc --build --clean"}],
+          "tags": ["project references", "build", "monorepo"]
+        },
+        {
+          "id": "typescript-6-migration",
+          "title": "TypeScript 6.0 Migration Checklist",
+          "description": "TypeScript 6 is the compatibility bridge toward the native TypeScript 7 toolchain and removes or changes long-deprecated configuration behavior.",
+          "codeBlocks": [{"language":"bash","code":"npx tsc --version\nnpx tsc --noEmit --extendedDiagnostics\nnpx tsc --showConfig"}],
+          "callouts": [{"title":"Review New Defaults Explicitly","type":"warning","icon":"⚠️","text":"New TypeScript 6 projects receive modern strict defaults. Existing projects should compare --showConfig output, remove deprecated options, check module resolution, and run the complete test/build matrix before upgrading.","color":"amber"},{"title":"Production Checklist","type":"tip","icon":"✅","text":"Enable strict checking, avoid any leakage, validate runtime inputs, model variants with discriminated unions, use type-only imports, test declarations, measure checker performance, and pin a supported compiler version in CI.","color":"green"}],
+          "tags": ["typescript 6", "migration", "upgrade"]
         }
       ]
     }

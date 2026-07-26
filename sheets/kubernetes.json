@@ -4,14 +4,15 @@
   "slug": "kubernetes",
   "category": "DevOps",
   "technology": "Kubernetes",
-  "version": "Current Stable Kubernetes",
+  "version": "Kubernetes 1.36",
   "difficulty": "ADVANCED",
   "readTimeMinutes": 95,
   "description": "Beginner-to-advanced Kubernetes reference covering architecture, API objects, Pods, workloads, Services, configuration, storage, health, resources, scheduling, scaling, security, observability, kubectl, Kustomize, Helm, and production operations.",
   "tags": ["KUBERNETES", "KUBECTL", "CONTAINERS", "ORCHESTRATION", "KUSTOMIZE", "HELM"],
   "updatedAt": "Jul 2026",
   "aliases": ["k8s", "kubernates", "kubectl", "cluster orchestration", "kustomize", "helm charts"],
-  "relatedSheets": ["docker", "git", "nodejs", "fastapi", "vscode"],
+  "relatedSheets": ["linux", "docker", "git", "nodejs", "fastapi", "opentelemetry", "vscode", "google-cloud", "kafka", "rabbitmq", "elasticsearch"],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kubernetes.json",
   "prerequisites": [{ "title": "Docker Containers & Compose", "slug": "docker" }],
   "sections": [
     {
@@ -360,6 +361,17 @@
       "title": "Production Readiness Checklist",
       "description": "Review workload correctness, capacity, availability, security, data, and operations as one system.",
       "subtopics": [
+        {
+          "id": "version-skew-upgrades-deprecations",
+          "title": "Version Skew, Upgrades & API Deprecations",
+          "description": "Kubernetes 1.36 upgrades require supported component skew, compatible add-ons, reviewed API removals, and workload validation before control-plane and node rollout.",
+          "codeBlocks": [{
+            "language": "bash",
+            "code": "kubectl version\nkubectl api-resources\nkubectl get --raw /readyz?verbose\n# Render manifests and scan deprecated APIs before upgrading\nkubectl diff -k overlays/production"
+          }],
+          "callouts": [{"title":"Upgrade One Supported Minor at a Time","type":"warning","icon":"⚠️","text":"Check the official skew policy and release notes for the exact source and target versions. Validate CNI, CSI, ingress/Gateway, metrics, admission webhooks, autoscaling, backup, and rollback procedures in a representative environment.","color":"amber"}],
+          "tags": ["kubernetes 1.36", "upgrade", "version skew", "deprecation"]
+        },
         {
           "id": "kubernetes-checklist",
           "title": "Workload & Cluster Checklist",
