@@ -12,7 +12,7 @@
       "technology": "Jetpack Compose Modifier",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/android-jetpack-compose-modifiers.json"
+      "file": "sheets/android-jetpack-compose-modifiers.json"
     },
     {
       "slug": "android-jetpack-compose",
@@ -21,7 +21,7 @@
       "technology": "Jetpack Compose",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/android-jetpack-compose.json"
+      "file": "sheets/android-jetpack-compose.json"
     },
     {
       "slug": "android-kotlin-coroutines",
@@ -30,7 +30,7 @@
       "technology": "Kotlin Coroutines",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/android-kotlin-coroutines.json"
+      "file": "sheets/android-kotlin-coroutines.json"
     },
     {
       "slug": "android-kotlin-flows",
@@ -39,7 +39,7 @@
       "technology": "Kotlin Flow",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/android-kotlin-flows.json"
+      "file": "sheets/android-kotlin-flows.json"
     },
     {
       "slug": "android-naming-conventions",
@@ -48,7 +48,7 @@
       "technology": "Kotlin / Android / Compose",
       "category": "Android",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/android-naming-conventions.json"
+      "file": "sheets/android-naming-conventions.json"
     },
     {
       "slug": "android-testing",
@@ -57,7 +57,7 @@
       "technology": "JUnit / AndroidX Test / Compose Test",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/android-testing.json"
+      "file": "sheets/android-testing.json"
     },
     {
       "slug": "bun",
@@ -66,7 +66,7 @@
       "technology": "Bun",
       "category": "Web Development",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/bun.json"
+      "file": "sheets/bun.json"
     },
     {
       "slug": "docker",
@@ -75,7 +75,7 @@
       "technology": "Docker",
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/docker.json"
+      "file": "sheets/docker.json"
     },
     {
       "slug": "fastapi",
@@ -84,7 +84,7 @@
       "technology": "FastAPI / Pydantic",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/fastapi.json"
+      "file": "sheets/fastapi.json"
     },
     {
       "slug": "git",
@@ -93,7 +93,7 @@
       "technology": "Git",
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/git.json"
+      "file": "sheets/git.json"
     },
     {
       "slug": "java",
@@ -102,7 +102,7 @@
       "technology": "Java",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/java.json"
+      "file": "sheets/java.json"
     },
     {
       "slug": "javascript",
@@ -111,7 +111,7 @@
       "technology": "JavaScript",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/javascript.json"
+      "file": "sheets/javascript.json"
     },
     {
       "slug": "android-kotlin",
@@ -120,7 +120,7 @@
       "technology": "Android / Kotlin",
       "category": "Android",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/kotlin.json"
+      "file": "sheets/kotlin.json"
     },
     {
       "slug": "kotlin-collection-processing",
@@ -129,7 +129,7 @@
       "technology": "Kotlin Standard Library",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/kotlin_collection_processing_sheet.json"
+      "file": "sheets/kotlin_collection_processing_sheet.json"
     },
     {
       "slug": "kubernetes",
@@ -138,7 +138,7 @@
       "technology": "Kubernetes",
       "category": "DevOps",
       "difficulty": "ADVANCED",
-      "file": "src/content/sheets/kubernetes.json"
+      "file": "sheets/kubernetes.json"
     },
     {
       "slug": "nextjs",
@@ -147,7 +147,7 @@
       "technology": "Next.js",
       "category": "Full Stack Web",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/nextjs.json"
+      "file": "sheets/nextjs.json"
     },
     {
       "slug": "nodejs",
@@ -156,7 +156,7 @@
       "technology": "Node.js",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/nodejs.json"
+      "file": "sheets/nodejs.json"
     },
     {
       "slug": "python-design-patterns",
@@ -165,7 +165,7 @@
       "technology": "Python",
       "category": "Software Design",
       "difficulty": "ADVANCED",
-      "file": "src/content/sheets/python-design-patterns.json"
+      "file": "sheets/python-design-patterns.json"
     },
     {
       "slug": "python",
@@ -174,7 +174,7 @@
       "technology": "Python",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/python.json"
+      "file": "sheets/python.json"
     },
     {
       "slug": "react",
@@ -183,7 +183,7 @@
       "technology": "React",
       "category": "Frontend",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/react.json"
+      "file": "sheets/react.json"
     },
     {
       "slug": "rust",
@@ -192,7 +192,7 @@
       "technology": "Rust",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/rust.json"
+      "file": "sheets/rust.json"
     },
     {
       "slug": "swift",
@@ -201,7 +201,7 @@
       "technology": "Swift",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/swift.json"
+      "file": "sheets/swift.json"
     },
     {
       "slug": "swiftui",
@@ -210,7 +210,7 @@
       "technology": "SwiftUI",
       "category": "Mobile Development",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/swiftui.json"
+      "file": "sheets/swiftui.json"
     },
     {
       "slug": "tailwind",
@@ -219,7 +219,7 @@
       "technology": "Tailwind CSS",
       "category": "Web Development",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/tailwind.json"
+      "file": "sheets/tailwind.json"
     },
     {
       "slug": "typescript",
@@ -228,7 +228,7 @@
       "technology": "TypeScript",
       "category": "Frontend",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/typescript.json"
+      "file": "sheets/typescript.json"
     },
     {
       "slug": "vite",
@@ -237,7 +237,7 @@
       "technology": "Vite",
       "category": "Frontend Tooling",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/vite.json"
+      "file": "sheets/vite.json"
     },
     {
       "slug": "vscode",
@@ -246,7 +246,7 @@
       "technology": "Visual Studio Code",
       "category": "Developer Tools",
       "difficulty": "BEGINNER",
-      "file": "src/content/sheets/vscode.json"
+      "file": "sheets/vscode.json"
     },
     {
       "slug": "zod",
@@ -255,7 +255,7 @@
       "technology": "Zod",
       "category": "Web Development",
       "difficulty": "INTERMEDIATE",
-      "file": "src/content/sheets/zod.json"
+      "file": "sheets/zod.json"
     }
   ]
 }
