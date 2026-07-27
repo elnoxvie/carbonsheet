@@ -9,7 +9,7 @@
   "readTimeMinutes": 62,
   "description": "Beginner-to-advanced Git reference covering the object database, refs, index, commits, branches, merging, rebasing, remotes, refspecs, undo, reflog recovery, worktrees, hooks, signing, security, and collaborative workflows.",
   "tags": ["GIT", "VERSION CONTROL", "BRANCHING", "REBASE", "REFLOG", "DEVOPS"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["vcs", "version control", "source control", "rebase", "reflog", "git commands"],
   "relatedSheets": ["bash", "docker", "vscode", "make-task-runners", "package-publishing"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/git.json",

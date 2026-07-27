@@ -9,7 +9,7 @@
   "readTimeMinutes": 58,
   "description": "Beginner-to-advanced React reference covering component design, JSX, state, events, forms, Hooks, effects, context, reducers, Suspense, errors, performance, accessibility, and testing.",
   "tags": ["REACT", "JAVASCRIPT", "TYPESCRIPT", "HOOKS", "FRONTEND", "UI"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["reactjs", "react hooks", "react 19", "frontend components", "jsx"],
   "relatedSheets": ["html-css", "typescript", "vite", "nextjs", "graphql", "web-security", "vscode"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/react.json",

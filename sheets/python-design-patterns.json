@@ -9,7 +9,7 @@
   "readTimeMinutes": 95,
   "description": "Complete reference to all 23 Gang of Four design patterns using typed, Pythonic examples, selection guidance, trade-offs, implementation hints, and modern language alternatives.",
   "tags": ["PYTHON", "DESIGN PATTERNS", "GANG OF FOUR", "GOF", "ARCHITECTURE", "OOP"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["gof patterns", "23 design patterns", "python patterns", "creational structural behavioral", "object oriented design"],
   "relatedSheets": ["python", "java", "typescript"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/python-design-patterns.json",

@@ -9,7 +9,7 @@
   "readTimeMinutes": 58,
   "description": "Beginner-to-advanced Jetpack Compose reference for composition, state, effects, layouts, edge-to-edge UI, adaptive structure, Navigation 3, predictive back, accessibility, interoperability, and performance.",
   "tags": ["ANDROID", "JETPACK COMPOSE", "COMPOSABLE", "STATE", "UI", "RECOMPOSITION"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["compose ui", "android declarative ui", "composable", "recomposition", "compose state", "compose side effects", "navigation 3", "predictive back", "edge to edge", "adaptive layout"],
   "relatedSheets": ["android-jetpack-compose-modifiers", "android-kotlin", "android-kotlin-flows", "android-testing", "android-naming-conventions"],
   "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],

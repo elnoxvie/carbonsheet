@@ -9,7 +9,7 @@
   "readTimeMinutes": 39,
   "description": "Beginner-to-advanced naming reference for Kotlin declarations, Android layers and components, Gradle modules and variants, resources, Compose APIs, state, events, streams, tests, and implementation strategies.",
   "tags": ["ANDROID", "KOTLIN", "NAMING", "CONVENTIONS", "RESOURCES", "API DESIGN"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["android code style", "kotlin naming", "android resource naming", "compose naming", "test naming", "android conventions", "gradle module naming", "version catalog naming"],
   "relatedSheets": ["android-kotlin", "android-kotlin-flows", "android-jetpack-compose", "android-jetpack-compose-modifiers", "android-testing"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-naming-conventions.json",

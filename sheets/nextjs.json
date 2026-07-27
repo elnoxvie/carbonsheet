@@ -9,7 +9,7 @@
   "readTimeMinutes": 68,
   "description": "Beginner-to-advanced Next.js App Router reference covering routing, Server and Client Components, data and cache behavior, mutations, Route Handlers, metadata, errors, security, performance, testing, and deployment.",
   "tags": ["NEXTJS", "REACT", "APP ROUTER", "SERVER COMPONENTS", "FULL STACK", "SSR"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["next js", "nextjs app router", "react server components", "server actions", "cache components"],
   "relatedSheets": ["react", "nodejs", "typescript", "docker", "vscode"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/nextjs.json",

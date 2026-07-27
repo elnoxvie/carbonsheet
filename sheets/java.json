@@ -9,7 +9,7 @@
   "readTimeMinutes": 70,
   "description": "Beginner-to-advanced Java reference covering the type system, object model, collections, streams, exceptions, generics, records, sealed types, concurrency, JVM behavior, testing, and production practices.",
   "tags": ["JAVA", "JVM", "OOP", "STREAMS", "CONCURRENCY", "TESTING"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["jdk", "jvm language", "java syntax", "virtual threads", "java streams"],
   "relatedSheets": ["kotlin", "spring-boot", "kotlin-collection-processing", "sql", "postgres", "docker", "opentelemetry", "kafka", "grpc-protobuf", "data-structures-algorithms"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/java.json",

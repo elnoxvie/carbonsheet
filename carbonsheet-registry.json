@@ -12,7 +12,9 @@
       "technology": "Jetpack Compose",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-jetpack-compose.json"
+      "file": "sheets/android-jetpack-compose.json",
+      "version": "Modern Jetpack Compose",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-jetpack-compose-modifiers",
@@ -21,7 +23,9 @@
       "technology": "Jetpack Compose Modifier",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-jetpack-compose-modifiers.json"
+      "file": "sheets/android-jetpack-compose-modifiers.json",
+      "version": "Modern Jetpack Compose",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-kotlin",
@@ -30,7 +34,9 @@
       "technology": "Android / Kotlin",
       "category": "Android",
       "difficulty": "BEGINNER",
-      "file": "sheets/android-kotlin.json"
+      "file": "sheets/android-kotlin.json",
+      "version": "Kotlin 2.x / Modern Android",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-kotlin-coroutines",
@@ -39,7 +45,9 @@
       "technology": "Kotlin Coroutines",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-kotlin-coroutines.json"
+      "file": "sheets/android-kotlin-coroutines.json",
+      "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-kotlin-flows",
@@ -48,7 +56,9 @@
       "technology": "Kotlin Flow",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-kotlin-flows.json"
+      "file": "sheets/android-kotlin-flows.json",
+      "version": "Kotlin 2.x / kotlinx.coroutines 1.10+",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-naming-conventions",
@@ -57,7 +67,9 @@
       "technology": "Kotlin / Android / Compose",
       "category": "Android",
       "difficulty": "BEGINNER",
-      "file": "sheets/android-naming-conventions.json"
+      "file": "sheets/android-naming-conventions.json",
+      "version": "Modern Android",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "android-testing",
@@ -66,7 +78,9 @@
       "technology": "JUnit / AndroidX Test / Compose Test",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/android-testing.json"
+      "file": "sheets/android-testing.json",
+      "version": "Modern Android Testing",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "aws",
@@ -75,7 +89,9 @@
       "technology": "AWS",
       "category": "Cloud & DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/aws.json"
+      "file": "sheets/aws.json",
+      "version": "Current AWS Platform",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "bash",
@@ -84,7 +100,9 @@
       "technology": "Bash",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/bash.json"
+      "file": "sheets/bash.json",
+      "version": "Bash 5.x",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "bun",
@@ -93,7 +111,9 @@
       "technology": "Bun",
       "category": "Web Development",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/bun.json"
+      "file": "sheets/bun.json",
+      "version": "Bun 1.x",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "data-structures-algorithms",
@@ -102,7 +122,9 @@
       "technology": "Language-Agnostic Algorithms",
       "category": "Computer Science",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/data-structures-algorithms.json"
+      "file": "sheets/data-structures-algorithms.json",
+      "version": "Foundational Computer Science",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "docker",
@@ -111,7 +133,9 @@
       "technology": "Docker",
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/docker.json"
+      "file": "sheets/docker.json",
+      "version": "Current Docker Engine / Compose",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "elasticsearch",
@@ -120,7 +144,9 @@
       "technology": "Elasticsearch",
       "category": "Databases",
       "difficulty": "ADVANCED",
-      "file": "sheets/elasticsearch.json"
+      "file": "sheets/elasticsearch.json",
+      "version": "Current Elasticsearch",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "fastapi",
@@ -129,7 +155,9 @@
       "technology": "FastAPI / Pydantic",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/fastapi.json"
+      "file": "sheets/fastapi.json",
+      "version": "Current FastAPI",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "git",
@@ -138,7 +166,9 @@
       "technology": "Git",
       "category": "DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/git.json"
+      "file": "sheets/git.json",
+      "version": "Git 2.55",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "go",
@@ -147,7 +177,9 @@
       "technology": "Go",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/go.json"
+      "file": "sheets/go.json",
+      "version": "Go 1.26",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "google-cloud",
@@ -156,7 +188,9 @@
       "technology": "Google Cloud",
       "category": "Cloud & DevOps",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/google-cloud.json"
+      "file": "sheets/google-cloud.json",
+      "version": "Current Google Cloud Platform",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "graphql",
@@ -165,7 +199,9 @@
       "technology": "GraphQL",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/graphql.json"
+      "file": "sheets/graphql.json",
+      "version": "Current GraphQL Specification",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "grpc-protobuf",
@@ -174,7 +210,9 @@
       "technology": "gRPC / Protocol Buffers",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/grpc-protobuf.json"
+      "file": "sheets/grpc-protobuf.json",
+      "version": "gRPC Current / Protobuf Edition 2024",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "html-css",
@@ -183,7 +221,9 @@
       "technology": "HTML / CSS / Accessibility",
       "category": "Frontend",
       "difficulty": "BEGINNER",
-      "file": "sheets/html-css.json"
+      "file": "sheets/html-css.json",
+      "version": "HTML Living Standard / Modern CSS",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "http",
@@ -192,7 +232,9 @@
       "technology": "HTTP",
       "category": "Web Development",
       "difficulty": "BEGINNER",
-      "file": "sheets/http.json"
+      "file": "sheets/http.json",
+      "version": "HTTP/1.1, HTTP/2 & HTTP/3",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "java",
@@ -201,7 +243,9 @@
       "technology": "Java",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/java.json"
+      "file": "sheets/java.json",
+      "version": "JDK 25 LTS",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "javascript",
@@ -210,7 +254,9 @@
       "technology": "JavaScript",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/javascript.json"
+      "file": "sheets/javascript.json",
+      "version": "ECMAScript 2026",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "kafka",
@@ -219,7 +265,9 @@
       "technology": "Apache Kafka",
       "category": "Data & Messaging",
       "difficulty": "ADVANCED",
-      "file": "sheets/kafka.json"
+      "file": "sheets/kafka.json",
+      "version": "Apache Kafka 4.3",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "kotlin",
@@ -228,7 +276,9 @@
       "technology": "Kotlin",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/kotlin.json"
+      "file": "sheets/kotlin.json",
+      "version": "Kotlin 2.4.10",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "kotlin-collection-processing",
@@ -237,7 +287,9 @@
       "technology": "Kotlin Standard Library",
       "category": "Android",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/kotlin_collection_processing_sheet.json"
+      "file": "sheets/kotlin_collection_processing_sheet.json",
+      "version": "Kotlin 2.x",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "kubernetes",
@@ -246,7 +298,9 @@
       "technology": "Kubernetes",
       "category": "DevOps",
       "difficulty": "ADVANCED",
-      "file": "sheets/kubernetes.json"
+      "file": "sheets/kubernetes.json",
+      "version": "Kubernetes 1.36",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "linux",
@@ -255,7 +309,9 @@
       "technology": "Linux",
       "category": "Operating Systems",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/linux.json"
+      "file": "sheets/linux.json",
+      "version": "Linux 6.x / Modern User Space",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "make-task-runners",
@@ -264,7 +320,9 @@
       "technology": "GNU Make / Task Runners",
       "category": "Developer Tools",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/make-task-runners.json"
+      "file": "sheets/make-task-runners.json",
+      "version": "GNU Make 4.4 / Modern Task Automation",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "nextjs",
@@ -273,7 +331,9 @@
       "technology": "Next.js",
       "category": "Full Stack Web",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/nextjs.json"
+      "file": "sheets/nextjs.json",
+      "version": "Next.js 16.2 App Router",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "nodejs",
@@ -282,7 +342,9 @@
       "technology": "Node.js",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/nodejs.json"
+      "file": "sheets/nodejs.json",
+      "version": "Node.js 24 LTS / 26 Current",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "opentelemetry",
@@ -291,7 +353,9 @@
       "technology": "OpenTelemetry",
       "category": "Observability",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/opentelemetry.json"
+      "file": "sheets/opentelemetry.json",
+      "version": "Current OpenTelemetry Specifications",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "package-publishing",
@@ -300,7 +364,9 @@
       "technology": "npm / PyPI / Maven Central / crates.io",
       "category": "Developer Tools",
       "difficulty": "ADVANCED",
-      "file": "sheets/package-publishing.json"
+      "file": "sheets/package-publishing.json",
+      "version": "Current Registry Workflows",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "playwright",
@@ -309,7 +375,9 @@
       "technology": "Playwright",
       "category": "Testing",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/playwright.json"
+      "file": "sheets/playwright.json",
+      "version": "Playwright 1.x",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "postgres",
@@ -318,7 +386,9 @@
       "technology": "PostgreSQL",
       "category": "Databases",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/postgres.json"
+      "file": "sheets/postgres.json",
+      "version": "PostgreSQL 18",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "python",
@@ -327,7 +397,9 @@
       "technology": "Python",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/python.json"
+      "file": "sheets/python.json",
+      "version": "Python 3.14",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "python-design-patterns",
@@ -336,7 +408,9 @@
       "technology": "Python",
       "category": "Software Design",
       "difficulty": "ADVANCED",
-      "file": "sheets/python-design-patterns.json"
+      "file": "sheets/python-design-patterns.json",
+      "version": "Python 3.12+",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "rabbitmq",
@@ -345,7 +419,9 @@
       "technology": "RabbitMQ / AMQP 0-9-1",
       "category": "Data & Messaging",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/rabbitmq.json"
+      "file": "sheets/rabbitmq.json",
+      "version": "RabbitMQ 4.x",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "react",
@@ -354,7 +430,9 @@
       "technology": "React",
       "category": "Frontend",
       "difficulty": "BEGINNER",
-      "file": "sheets/react.json"
+      "file": "sheets/react.json",
+      "version": "React 19.2",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "redis",
@@ -363,7 +441,9 @@
       "technology": "Redis",
       "category": "Databases",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/redis.json"
+      "file": "sheets/redis.json",
+      "version": "Redis 8.8",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "regex",
@@ -372,7 +452,9 @@
       "technology": "Regular Expressions",
       "category": "Developer Tools",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/regex.json"
+      "file": "sheets/regex.json",
+      "version": "Flavor-Aware Modern Regex",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "rest-api-design",
@@ -381,7 +463,9 @@
       "technology": "REST / HTTP APIs",
       "category": "Software Design",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/rest-api-design.json"
+      "file": "sheets/rest-api-design.json",
+      "version": "HTTP Semantics & Modern API Practice",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "rust",
@@ -390,7 +474,9 @@
       "technology": "Rust",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/rust.json"
+      "file": "sheets/rust.json",
+      "version": "Rust 2024 Edition",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "spring-boot",
@@ -399,7 +485,9 @@
       "technology": "Spring Boot / Spring Framework",
       "category": "Backend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/spring-boot.json"
+      "file": "sheets/spring-boot.json",
+      "version": "Spring Boot 4.1",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "sql",
@@ -408,7 +496,9 @@
       "technology": "SQL",
       "category": "Databases",
       "difficulty": "BEGINNER",
-      "file": "sheets/sql.json"
+      "file": "sheets/sql.json",
+      "version": "Modern SQL (SQL:2023 concepts)",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "swift",
@@ -417,7 +507,9 @@
       "technology": "Swift",
       "category": "Languages",
       "difficulty": "BEGINNER",
-      "file": "sheets/swift.json"
+      "file": "sheets/swift.json",
+      "version": "Swift 6",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "swiftui",
@@ -426,7 +518,9 @@
       "technology": "SwiftUI",
       "category": "Mobile Development",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/swiftui.json"
+      "file": "sheets/swiftui.json",
+      "version": "Modern SwiftUI",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "system-design",
@@ -435,7 +529,9 @@
       "technology": "Distributed Systems Architecture",
       "category": "Software Design",
       "difficulty": "ADVANCED",
-      "file": "sheets/system-design.json"
+      "file": "sheets/system-design.json",
+      "version": "Technology-Agnostic Fundamentals",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "tailwind",
@@ -444,7 +540,9 @@
       "technology": "Tailwind CSS",
       "category": "Web Development",
       "difficulty": "BEGINNER",
-      "file": "sheets/tailwind.json"
+      "file": "sheets/tailwind.json",
+      "version": "Tailwind CSS 4",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "typescript",
@@ -453,7 +551,9 @@
       "technology": "TypeScript",
       "category": "Frontend",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/typescript.json"
+      "file": "sheets/typescript.json",
+      "version": "TypeScript 6.0",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "vite",
@@ -462,7 +562,9 @@
       "technology": "Vite",
       "category": "Frontend Tooling",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/vite.json"
+      "file": "sheets/vite.json",
+      "version": "Vite 8",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "vscode",
@@ -471,7 +573,9 @@
       "technology": "Visual Studio Code",
       "category": "Developer Tools",
       "difficulty": "BEGINNER",
-      "file": "sheets/vscode.json"
+      "file": "sheets/vscode.json",
+      "version": "Current VS Code",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "web-security",
@@ -480,7 +584,9 @@
       "technology": "Web Security / OAuth 2.0 / OpenID Connect",
       "category": "Security",
       "difficulty": "ADVANCED",
-      "file": "sheets/web-security.json"
+      "file": "sheets/web-security.json",
+      "version": "Current Web & IETF Security Guidance",
+      "updatedAt": "2026-07-27T02:51:36Z"
     },
     {
       "slug": "zod",
@@ -489,7 +595,10 @@
       "technology": "Zod",
       "category": "Web Development",
       "difficulty": "INTERMEDIATE",
-      "file": "sheets/zod.json"
+      "file": "sheets/zod.json",
+      "version": "Zod 4",
+      "updatedAt": "2026-07-27T02:51:36Z"
     }
-  ]
+  ],
+  "updatedAt": "2026-07-27T02:51:36Z"
 }

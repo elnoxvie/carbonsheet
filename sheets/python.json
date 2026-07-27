@@ -9,7 +9,7 @@
   "readTimeMinutes": 78,
   "description": "Beginner-to-advanced Python reference covering syntax, values, collections, functions, typing, iterators, classes, dataclasses, exceptions, context managers, modules, packaging, I/O, concurrency, testing, performance, and security.",
   "tags": ["PYTHON", "PROGRAMMING", "TYPING", "ASYNCIO", "PACKAGING", "TESTING"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["python3", "python syntax", "python tutorial", "python typing", "python async", "pyproject"],
   "relatedSheets": ["fastapi", "python-design-patterns", "docker", "vscode", "regex", "package-publishing", "data-structures-algorithms"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/python.json",

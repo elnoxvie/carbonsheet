@@ -9,7 +9,7 @@
   "readTimeMinutes": 48,
   "description": "Beginner-to-advanced Visual Studio Code reference for navigation, editing, search, IntelliSense, refactoring, Git, terminal, tasks, debugging, testing, settings, shortcuts, profiles, extensions, remote development, and troubleshooting.",
   "tags": ["VSCODE", "EDITOR", "SHORTCUTS", "DEBUGGING", "GIT", "PRODUCTIVITY"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["vs code", "visual studio code", "vscode shortcuts", "code editor", "launch json", "tasks json"],
   "relatedSheets": ["git", "typescript", "nodejs", "python", "docker", "kubernetes"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/vscode.json",

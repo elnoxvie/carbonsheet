@@ -9,7 +9,7 @@
   "readTimeMinutes": 62,
   "description": "Beginner-to-advanced Docker reference covering images, containers, Dockerfiles, BuildKit, cache, lifecycle, storage, networking, Compose, registries, multi-platform builds, security, diagnostics, and production practices.",
   "tags": ["DOCKER", "CONTAINERS", "DOCKERFILE", "COMPOSE", "BUILDKIT", "DEVOPS"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["docker cli", "docker compose", "dockerfile", "container", "docker build", "buildkit"],
   "relatedSheets": ["linux", "kubernetes", "nodejs", "nextjs", "python", "fastapi", "git", "opentelemetry"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/docker.json",

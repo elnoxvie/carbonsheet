@@ -9,7 +9,7 @@
   "readTimeMinutes": 58,
   "description": "Beginner-to-advanced TypeScript reference covering strict configuration, inference, narrowing, generics, object modeling, classes, modules, async code, runtime validation, advanced types, declaration files, and scalable builds.",
   "tags": ["TYPESCRIPT", "TYPES", "GENERICS", "NARROWING", "MODULES", "JAVASCRIPT"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["ts", "typed javascript", "tsconfig", "type system", "type guard"],
   "relatedSheets": ["javascript", "react", "nodejs", "zod", "vite"],
   "prerequisites": [{"title": "JavaScript Programming", "slug": "javascript"}],

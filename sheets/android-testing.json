@@ -9,7 +9,7 @@
   "readTimeMinutes": 58,
   "description": "Beginner-to-advanced Android testing reference for strategy, unit and instrumented tests, coroutines and Flow, Compose UI, screenshots, accessibility, navigation, storage, Macrobenchmark, Baseline Profiles, reliability, and CI.",
   "tags": ["ANDROID", "TESTING", "JUNIT", "COMPOSE TEST", "COROUTINE TEST", "ESPRESSO"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["android unit test", "instrumented test", "compose ui test", "coroutine test", "androidx test", "test doubles", "screenshot test", "accessibility test", "macrobenchmark", "baseline profile"],
   "relatedSheets": ["android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-testing.json",

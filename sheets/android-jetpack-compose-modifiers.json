@@ -9,7 +9,7 @@
   "readTimeMinutes": 46,
   "description": "Beginner-to-advanced reference for modifier order, constraints, edge-to-edge insets, layout, drawing, input, focus, semantics, reuse, parent data, and custom Modifier.Node implementations.",
   "tags": ["ANDROID", "JETPACK COMPOSE", "MODIFIER", "LAYOUT", "SEMANTICS", "GESTURES"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["compose modifier", "modifier order", "compose padding", "compose custom modifier", "modifier node", "compose constraints", "window insets", "edge to edge"],
   "relatedSheets": ["android-jetpack-compose", "android-testing", "android-naming-conventions"],
   "prerequisites": [{ "title": "Android Jetpack Compose", "slug": "android-jetpack-compose" }],

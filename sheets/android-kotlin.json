@@ -9,7 +9,7 @@
   "readTimeMinutes": 62,
   "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, target-SDK compatibility, edge-to-edge and adaptive UI, intents, permissions, storage, offline-first sync, and scalable app architecture.",
   "tags": ["ANDROID", "KOTLIN", "LIFECYCLE", "VIEWMODEL", "ARCHITECTURE", "PLATFORM"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["android development", "android kotlin basics", "android app components", "android architecture", "android lifecycle", "target sdk", "photo picker", "edge to edge", "predictive back", "offline first"],
   "relatedSheets": ["kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-testing", "android-jetpack-compose", "android-naming-conventions", "kotlin-collection-processing"],
   "prerequisites": [{"title":"Kotlin Programming","slug":"kotlin"}],

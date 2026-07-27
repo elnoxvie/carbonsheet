@@ -9,7 +9,7 @@
   "readTimeMinutes": 95,
   "description": "Beginner-to-advanced Kubernetes reference covering architecture, API objects, Pods, workloads, Services, configuration, storage, health, resources, scheduling, scaling, security, observability, kubectl, Kustomize, Helm, and production operations.",
   "tags": ["KUBERNETES", "KUBECTL", "CONTAINERS", "ORCHESTRATION", "KUSTOMIZE", "HELM"],
-  "updatedAt": "Jul 2026",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["k8s", "kubernates", "kubectl", "cluster orchestration", "kustomize", "helm charts"],
   "relatedSheets": ["linux", "docker", "git", "nodejs", "fastapi", "opentelemetry", "vscode", "google-cloud", "kafka", "rabbitmq", "elasticsearch"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kubernetes.json",

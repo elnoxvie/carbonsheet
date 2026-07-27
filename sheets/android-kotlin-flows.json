@@ -9,7 +9,7 @@
   "readTimeMinutes": 43,
   "description": "Beginner-to-advanced reference for building, transforming, sharing, lifecycle-aware collection, Room and Paging integration, debugging, and testing Kotlin Flow streams in Android applications.",
   "tags": ["ANDROID", "KOTLIN", "FLOW", "STATEFLOW", "SHAREDFLOW", "REACTIVE"],
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27T02:51:36Z",
   "aliases": ["kotlin flow", "stateflow", "sharedflow", "android reactive streams", "cold flow", "hot flow", "room flow", "paging flow"],
   "relatedSheets": ["kotlin", "android-kotlin-coroutines", "android-kotlin", "android-testing", "android-jetpack-compose"],
   "prerequisites": [{ "title": "Android Kotlin Coroutines", "slug": "android-kotlin-coroutines" }],
