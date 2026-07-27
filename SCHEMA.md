@@ -184,3 +184,39 @@ export const SheetMetadataSchema = z.object({
 6. **Validation Commands**:
    - Run `npx tsc --noEmit` to verify TypeScript type safety.
    - Run `npm run build` to verify Next.js static page generation.
+
+---
+
+## 5. Registry Manifest Specification ([`src/types/registry.ts`](file:///Users/elnoxvie/Developments/github/stitch_devsheet_hub/src/types/registry.ts))
+
+CarbonSheet supports hosting and importing cheat sheet collections via public GitHub repositories using a `carbonsheet-registry.json` manifest file.
+
+```typescript
+// Manifest Sheet Entry
+export const RegistrySheetEntrySchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  technology: z.string(),
+  category: z.string().optional(),
+  difficulty: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).optional(),
+  file: z.string(), // relative path e.g. "sheets/kotlin.json"
+  version: z.string().optional(), // e.g. "v1.2"
+  updatedAt: z.string().optional(), // ISO date e.g. "2026-07-27T10:40:00Z"
+});
+
+// Top-Level Manifest Document
+export const RegistryManifestSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  author: z.string().optional(),
+  version: z.string().optional(),
+  updatedAt: z.string().optional(),
+  homepage: z.string().optional(),
+  sheets: z.array(RegistrySheetEntrySchema),
+});
+```
+
+### Upstream Update Protocol
+By including `updatedAt` and `version` fields in manifest sheet entries, CarbonSheet can automatically detect when an upstream repository has published updated content and re-sync local storage in 1 click via **Check Upstream Updates**.
+
