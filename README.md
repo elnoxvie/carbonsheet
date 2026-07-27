@@ -1,8 +1,24 @@
 # carbonsheet
 This is a repositories containing CarbonSheet registeries for all cheatsheets. The web app will make use of this repo as the database for all the cheatsheets. You can also host your own cheatsheets in your own public GitHub repository. Check below for more information. 
 
-![alt text](image-1.png)
-![alt text](image.png)
+## ✨ Features
+
+- **🌐 Community-First & Self-Hostable:** Host cheatsheet registries directly on your own public GitHub repository.
+- **⚡ Power-User Navigation:** Lightning-fast keyboard shortcuts for instant searching and command execution.
+- **📐 Flexible Schemas:** Rich JSON schema support for building structured, highly expressive cheatsheets.
+- **📥 Import & Export:** Easily import from external sources and export cheatsheets to **PNG** or **PDF**.
+- **🎨 Dynamic View Modes:** Toggle between Detailed, Compact, Sheet, and Poster grid layouts.
+- **👁️ Distraction-Free Zen Mode:** Focus mode designed for uninterrupted reading and reference.
+- **🌓 Light & Dark Theme:** Full native support for dark and light modes.
+- **🔓 100% Free & Privacy-Friendly:** No account required, completely free to use.
+
+
+## Screenshots
+### Main Page
+![alt text](resources/main.png)
+### CheetSheets Page
+![alt text](resources/sheets.png)
+![alt text](resources/sheets_docker.png)
 
 ## Cheatsheet Schemas
 Check the SCHEMA.md to learn how to create it. 
@@ -43,3 +59,7 @@ Use the shortcuts to navigate faster in cheatsheet:
 | | `G` | `G` | Cycle Columns |
 | **Focus & Controls** | `Z` | `Z` | Toggle Zen Mode |
 | | `Esc` | `Esc` | Exit Zen / Close Modals |
+
+
+## License 
+CarbonSheet is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/). See the [LICENSE](LICENSE) file for more information.
