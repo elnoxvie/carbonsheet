@@ -1,0 +1,291 @@
+{
+  "id": "android-kotlin",
+  "title": "Android Kotlin",
+  "slug": "android-kotlin",
+  "category": "Android",
+  "technology": "Android / Kotlin",
+  "version": "Kotlin 2.x / Modern Android",
+  "difficulty": "BEGINNER",
+  "readTimeMinutes": 62,
+  "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, target-SDK compatibility, edge-to-edge and adaptive UI, intents, permissions, storage, offline-first sync, and scalable app architecture.",
+  "tags": ["ANDROID", "KOTLIN", "LIFECYCLE", "VIEWMODEL", "ARCHITECTURE", "PLATFORM"],
+  "updatedAt": "2026-07-26",
+  "aliases": ["android development", "android kotlin basics", "android app components", "android architecture", "android lifecycle", "target sdk", "photo picker", "edge to edge", "predictive back", "offline first"],
+  "relatedSheets": ["kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-testing", "android-jetpack-compose", "android-naming-conventions", "kotlin-collection-processing"],
+  "prerequisites": [{"title":"Kotlin Programming","slug":"kotlin"}],
+  "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-kotlin.json",
+  "sections": [
+    {
+      "id": "kotlin-for-android",
+      "title": "Kotlin Essentials for Android",
+      "description": "Use Kotlin's type system to make Android boundaries explicit and safe.",
+      "subtopics": [
+        {
+          "id": "null-safety",
+          "title": "Null Safety & Platform Boundaries",
+          "description": "Model absence with nullable types, narrow once, and avoid assertions at lifecycle and Java interop boundaries.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val userId: String = intent.getStringExtra(EXTRA_USER_ID)\n    ?: return finish()\n\nval title = user?.displayName.orEmpty()\nval avatar = user?.avatarUrl?.let(imageLoader::load)\n\nrequireNotNull(savedState[KEY_ACCOUNT_ID]) { \"Missing account id\" }",
+            "annotations": [
+              { "id": "elvis-exit", "targetToken": "?: return finish()", "text": "Fail or exit at the boundary so the rest of the function uses a non-null value.", "position": "right" },
+              { "id": "let-narrow", "targetToken": "?.let", "text": "Run an operation only when the receiver is non-null.", "position": "bottom" }
+            ]
+          }],
+          "callouts": [{ "title": "Avoid !!", "type": "danger", "icon": "🛑", "text": "Lifecycle timing, missing Bundle keys, Java platform types, and process recreation make non-null assertions fragile. Validate at boundaries or model a loading/absent state.", "color": "red" }]
+        },
+        {
+          "id": "domain-types",
+          "title": "data, sealed, enum & value Types",
+          "description": "Use data classes for immutable values, sealed hierarchies for closed alternatives, enums for fixed constants, and value classes to prevent primitive confusion.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "@JvmInline value class UserId(val value: String)\n\ndata class User(val id: UserId, val name: String)\n\nsealed interface LoadState<out T> {\n    data object Loading : LoadState<Nothing>\n    data class Ready<T>(val value: T) : LoadState<T>\n    data class Failed(val message: String) : LoadState<Nothing>\n}\n\nfun render(state: LoadState<User>) = when (state) {\n    LoadState.Loading -> showSpinner()\n    is LoadState.Ready -> showUser(state.value)\n    is LoadState.Failed -> showError(state.message)\n}"
+          }],
+          "callouts": [{ "title": "Prefer Impossible States to Be Unrepresentable", "type": "tip", "icon": "💡", "text": "A sealed state prevents contradictory flags such as loading=true and error!=null. A data class is better when states can coexist independently.", "color": "green" }]
+        },
+        {
+          "id": "extensions-delegation-scope",
+          "title": "Extensions, Delegation & Scope Functions",
+          "description": "Use extensions for discoverable boundary helpers, delegation for reusable behavior, and scope functions only when the receiver/result distinction stays obvious.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "fun Context.dp(value: Int): Float = value * resources.displayMetrics.density\n\nclass Settings(private val prefs: SharedPreferences) {\n    var darkMode: Boolean by BooleanPreference(prefs, \"dark_mode\", false)\n}\n\nval intent = Intent(context, DetailActivity::class.java).apply {\n    putExtra(EXTRA_ID, id.value)\n}"
+          }],
+          "callouts": [{ "title": "Extensions Are Statically Dispatched", "type": "note", "icon": "📌", "text": "An extension does not modify or virtually override the receiver type. Prefer an injected collaborator when behavior needs state, substitution, or polymorphism.", "color": "blue" }]
+        }
+      ]
+    },
+    {
+      "id": "android-components",
+      "title": "Android Components & Process Model",
+      "description": "Know which platform component owns entry, UI, background, and cross-app work.",
+      "subtopics": [
+        {
+          "id": "component-selection",
+          "title": "Activity, Service, Receiver & Provider",
+          "description": "Activities host user-facing windows; services perform user-visible ongoing work; receivers handle brief broadcasts; providers expose structured data across process boundaries.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Activity: screen/window entry point; can be recreated at any time\nForeground service: ongoing user-noticeable work with notification\nBroadcastReceiver: short event handler; schedule longer work\nContentProvider: URI-based data contract, often cross-process\nWorkManager: persistent deferrable work with constraints\nViewModel: screen state/business-logic holder, not a platform component"
+          }],
+          "callouts": [{ "title": "The Process Is Disposable", "type": "danger", "icon": "🛑", "text": "Android may kill a background process without calling a final callback. Persist durable state as it changes; never rely on an Application singleton as permanent storage.", "color": "red" }]
+        },
+        {
+          "id": "application-context",
+          "title": "Context & Memory Ownership",
+          "description": "Activity context carries UI configuration and window identity; application context follows the process and must not own screen objects.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class AvatarCache(context: Context) {\n    private val appContext = context.applicationContext\n}\n\nfun showDialog(activity: Activity) {\n    MaterialAlertDialogBuilder(activity) // UI needs themed Activity context\n        .setMessage(R.string.confirm)\n        .show()\n}"
+          }],
+          "callouts": [{ "title": "Do Not Store Activities", "type": "danger", "icon": "🧠", "text": "Long-lived objects retaining Activity, Fragment, View, binding, or callback references leak an obsolete UI after configuration changes.", "color": "red" }]
+        }
+      ]
+    },
+    {
+      "id": "lifecycle-state",
+      "title": "Lifecycle, Configuration & State Restoration",
+      "description": "Match every value and task to the lifetime it must survive.",
+      "subtopics": [
+        {
+          "id": "lifecycle-basics",
+          "title": "Lifecycle Ownership",
+          "description": "Lifecycle callbacks describe transitions, not guaranteed paired events. Use lifecycle-aware APIs and keep callbacks small.",
+          "diagram": { "type": "mermaid", "content": "stateDiagram-v2\n  [*] --> Created: onCreate\n  Created --> Started: onStart\n  Started --> Resumed: onResume\n  Resumed --> Started: onPause\n  Started --> Created: onStop\n  Created --> [*]: onDestroy" },
+          "callouts": [{ "title": "onDestroy Is Not Persistence", "type": "danger", "icon": "🛑", "text": "Process death may bypass cleanup callbacks. Persist important user data immediately or transactionally; use callbacks only to release resources while the process remains alive.", "color": "red" }]
+        },
+        {
+          "id": "state-survival-matrix",
+          "title": "ViewModel, Saved State & Persistent Storage",
+          "description": "Choose storage by lifetime, size, and source of truth rather than convenience.",
+          "table": {
+            "title": "Android State Survival Matrix",
+            "headers": ["State Holder", "Recomposition", "Configuration Change", "Process Death", "Durable Relaunch", "Best For"],
+            "rows": [
+              ["remember", "Yes", "No", "No", "No", "Ephemeral composable-local state"],
+              ["rememberSaveable", "Yes", "Yes", "Usually, if saveable", "No", "Small UI state such as input and selection"],
+              ["ViewModel", "Yes", "Yes", "No by itself", "No", "Screen state and orchestration"],
+              ["SavedStateHandle", "Yes", "Yes", "Yes for small saveable values", "No", "Navigation arguments and restoration keys"],
+              ["Room / DataStore / file", "Yes when observed", "Yes", "Yes", "Yes", "Authoritative durable application or preference data"]
+            ]
+          },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Configuration change only → ViewModel\nProcess recreation, small UI input/key → SavedStateHandle / saved-state APIs\nApp restart, user/application data → Room, DataStore, file, or server\nLarge/complex state → persist canonical data; save only an ID or query\nEphemeral derived UI → recompute from source of truth"
+          }],
+          "callouts": [{ "title": "ViewModel Does Not Survive Process Death", "type": "warning", "icon": "⚠️", "text": "A ViewModel survives owner recreation such as rotation, not system process termination. SavedStateHandle is for small reconstruction inputs, not a database replacement.", "color": "amber" }]
+        },
+        {
+          "id": "saved-state-handle",
+          "title": "SavedStateHandle",
+          "description": "Store small, serializable inputs needed to reconstruct screen state after process recreation.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class SearchViewModel(\n    private val savedState: SavedStateHandle,\n    private val repository: SearchRepository\n) : ViewModel() {\n    var query: String\n        get() = savedState[\"query\"] ?: \"\"\n        set(value) { savedState[\"query\"] = value }\n\n    fun restore() = repository.search(query)\n}"
+          }],
+          "callouts": [{ "title": "Save Reconstruction Inputs", "type": "tip", "icon": "💡", "text": "Save the query or entity ID, then reload canonical records. Saving whole object graphs risks transaction-size failures and stale duplicated data.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "intents-navigation-permissions",
+      "title": "Intents, Results, Deep Links & Permissions",
+      "description": "Treat every platform or external-app boundary as untrusted input.",
+      "subtopics": [
+        {
+          "id": "intents",
+          "title": "Explicit & Implicit Intents",
+          "description": "Use explicit intents for known in-app components and implicit intents for capabilities another app may handle.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val internal = Intent(this, DetailActivity::class.java)\n    .putExtra(EXTRA_ITEM_ID, itemId.value)\n\nval share = Intent(Intent.ACTION_SEND).apply {\n    type = \"text/plain\"\n    putExtra(Intent.EXTRA_TEXT, publicUrl)\n}\nstartActivity(Intent.createChooser(share, getString(R.string.share_with)))"
+          }],
+          "callouts": [{ "title": "Validate Incoming Data", "type": "danger", "icon": "🔐", "text": "Intent extras, URIs, ClipData, and deep-link parameters can be absent, malformed, oversized, or attacker-controlled. Parse into domain types before use.", "color": "red" }]
+        },
+        {
+          "id": "activity-result-api",
+          "title": "Activity Results & Photo Picker",
+          "description": "Register contracts during initialization, use the system Photo Picker for user-selected media, and keep result handling separate from launching.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "private val pickImage = registerForActivityResult(\n    ActivityResultContracts.PickVisualMedia()\n) { uri: Uri? ->\n    uri?.let(viewModel::onImageSelected)\n}\n\nfun chooseImage() = pickImage.launch(\n    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)\n)"
+          }],
+          "callouts": [{ "title": "Choose the Narrowest Contract", "type": "note", "icon": "📌", "text": "Use Photo Picker for selected photos/videos without broad media permission. If a document URI must survive restart, use an appropriate OpenDocument contract and persistable URI permission.", "color": "blue" }]
+        },
+        {
+          "id": "runtime-permissions",
+          "title": "Runtime Permission Flow",
+          "description": "Ask in context, explain value, handle denial gracefully, and request only permissions required by the current platform behavior.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val requestCamera = registerForActivityResult(\n    ActivityResultContracts.RequestPermission()\n) { granted ->\n    if (granted) openCamera() else showCameraAlternative()\n}\n\nwhen {\n    checkSelfPermission(Manifest.permission.CAMERA) == PERMISSION_GRANTED -> openCamera()\n    shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> showRationale()\n    else -> requestCamera.launch(Manifest.permission.CAMERA)\n}"
+          }],
+          "callouts": [{ "title": "Denial Is a Valid State", "type": "warning", "icon": "⚠️", "text": "Users may deny permanently or policy may restrict access. The app must remain usable where possible and should not loop or pressure the user. Notification, media, nearby-device, and location rules differ by API level, so gate both requests and behavior.", "color": "amber" }]
+        },
+        {
+          "id": "target-sdk-compatibility",
+          "title": "Target SDK & Platform Behavior Changes",
+          "description": "Treat every target SDK upgrade as a compatibility project: read both all-app and target-specific behavior changes, then test affected journeys on that platform.",
+          "table": {
+            "title": "Modern Android Compatibility Watchlist",
+            "headers": ["Platform", "High-Impact Areas", "Required Review"],
+            "rows": [
+              ["Android 13+", "Notification permission, Photo Picker, media access", "Request only when needed; prefer picker-based access"],
+              ["Android 14+", "Foreground-service types, exact alarms, background starts", "Declare valid types and verify scheduling eligibility"],
+              ["Android 15 / target 35", "Edge-to-edge enforcement", "Handle system bars, cutouts, gesture and IME insets"],
+              ["Android 16 / target 36", "Predictive back defaults; edge-to-edge opt-out removed", "Use supported back APIs and test all back destinations"],
+              ["Android 17 preview / API 37", "Large-screen adaptation, local-network and other behavior changes", "Run preview compatibility tests; do not ship preview assumptions as stable contracts"]
+            ]
+          },
+          "callouts": [{ "title": "Compile SDK Is Not Target SDK", "type": "warning", "icon": "⚠️", "text": "compileSdk exposes APIs; targetSdk opts the app into platform behavior changes. Keep minSdk fallbacks explicit and test the actual targetSdk configuration used for release.", "color": "amber" }],
+          "tags": ["targetSdk", "compatibility", "android-17", "permissions"]
+        }
+      ]
+    },
+    {
+      "id": "resources-localization",
+      "title": "Resources, Localization & Configuration",
+      "description": "Keep user-facing values in resources and design for runtime configuration changes.",
+      "subtopics": [
+        {
+          "id": "resource-selection",
+          "title": "Resource Types & Qualifiers",
+          "description": "Use strings, plurals, dimensions, colors, drawables, and qualified alternatives so Android selects the best resource for locale, density, size, and night mode.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "val message = resources.getQuantityString(\n    R.plurals.download_count,\n    count,\n    count\n)\nval spacing = resources.getDimensionPixelSize(R.dimen.content_spacing)"
+          }],
+          "callouts": [{ "title": "Do Not Concatenate Sentences", "type": "warning", "icon": "🌍", "text": "Word order and plural rules vary by language. Use formatted string/plural resources with translator context rather than assembling user-visible fragments in Kotlin.", "color": "amber" }]
+        },
+        {
+          "id": "configuration-adaptation",
+          "title": "Configuration & Adaptive UI",
+          "description": "Rotation, resize, locale, font scale, density, theme, and device posture can change while the app runs.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Avoid caching configuration-derived values globally\nUse dp for layout and sp for scalable text\nDraw edge-to-edge and consume system-bar, cutout, gesture, and IME insets\nUse current window size/posture and canonical layouts, not device-name checks\nTest resize, multi-window, desktop windowing, fold posture, keyboard/mouse, large fonts, and long translations\nLet Activities recreate unless a proven platform integration requires manual handling"
+          }],
+          "callouts": [{ "title": "Recreation Is a Correctness Test", "type": "tip", "icon": "💡", "text": "Regularly enable developer options that destroy activities and test rotation/resizing. Bugs found there often reveal misplaced ownership or missing persistence.", "color": "green" }]
+        }
+      ]
+    },
+    {
+      "id": "data-background-work",
+      "title": "Data, Storage & Background Work",
+      "description": "Select persistence and scheduling tools based on data shape, consistency, durability, and user visibility.",
+      "subtopics": [
+        {
+          "id": "storage-selection",
+          "title": "Room, DataStore, Files & Cache",
+          "description": "Room fits relational/queryable data; DataStore fits small settings; files fit opaque or streamed data; cache is disposable and must have a source of truth.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Relational entities, joins, migrations → Room\nTyped preferences or small settings → DataStore\nMedia/documents/blobs → files or platform document storage\nTemporary reproducible data → cache directory\nSensitive secrets → platform-backed secure design; minimize storage\nCross-device canonical data → server plus explicit offline strategy"
+          }],
+          "callouts": [{ "title": "Migrations Are Product Code", "type": "danger", "icon": "🗃️", "text": "Test schema and preference migrations against real historical versions. Destructive fallback can erase user data and should be an explicit product decision.", "color": "red" }]
+        },
+        {
+          "id": "offline-first-sync",
+          "title": "Offline-First Source of Truth & Sync",
+          "description": "For data that must remain usable without reliable connectivity, expose local persisted data as the read source and reconcile network updates through an explicit sync policy.",
+          "diagram": { "type": "mermaid", "content": "flowchart LR\n  UI[UI observes] --> R[Repository]\n  R --> L[Local source of truth]\n  N[Network] --> S[Sync and conflict policy]\n  S --> L\n  W[Durable WorkManager queue] --> S" },
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Reads → observe the local source of truth\nRefresh → fetch, validate, then update local storage transactionally\nCritical offline write → save locally, enqueue durable sync, expose pending state\nConflict → define server-wins, client-wins, merge, or user resolution\nRetry → bounded backoff with idempotency and observable failure"
+          }],
+          "callouts": [{ "title": "Connectivity Is a Hint", "type": "warning", "icon": "⚠️", "text": "A network callback cannot guarantee that a request will succeed. Attempt operations under policy, handle failures, and let durable work retry when constraints are satisfied.", "color": "amber" }],
+          "tags": ["offline-first", "sync", "room", "workmanager"]
+        },
+        {
+          "id": "work-selection",
+          "title": "Coroutine, WorkManager, Alarm or Foreground Service",
+          "description": "Use a coroutine for in-process lifetime-bound work, WorkManager for persistent deferrable jobs, alarms for precise user-facing time semantics when allowed, and foreground services for ongoing noticeable work.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "Needed only while screen exists → ViewModel/lifecycle coroutine\nMust finish eventually after app exit → WorkManager\nPeriodic best-effort maintenance → periodic WorkManager\nExact calendar/user alarm → alarm APIs and current permission rules\nOngoing user-noticeable operation → foreground service + notification"
+          }],
+          "callouts": [{ "title": "Background Limits Change", "type": "warning", "icon": "⚠️", "text": "Android background execution and permission rules evolve. Check official guidance for your target SDK before shipping scheduling, alarms, or foreground services.", "color": "amber" }]
+        }
+      ]
+    },
+    {
+      "id": "architecture-production",
+      "title": "Architecture, Security & Production Readiness",
+      "description": "Scale through clear ownership and boundaries, not layers added by habit.",
+      "subtopics": [
+        {
+          "id": "layered-architecture",
+          "title": "UI, Data & Optional Domain Layers",
+          "description": "The UI renders state and sends actions; repositories expose application data; use cases are valuable when business logic is reused or a ViewModel becomes complex.",
+          "diagram": { "type": "mermaid", "content": "flowchart LR\n  UI[UI: state + user actions] --> VM[Screen ViewModel]\n  VM --> UC[Optional use cases]\n  VM --> R[Repository]\n  UC --> R\n  R --> L[Local source]\n  R --> N[Network source]\n  R --> P[Platform source]" },
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class ProfileViewModel(\n    repository: ProfileRepository,\n    private val saveProfile: SaveProfile\n) : ViewModel() {\n    val uiState = repository.observeProfile() // stream details in Flow sheet\n    fun save(input: ProfileInput) = saveProfile(input)\n}"
+          }],
+          "callouts": [{ "title": "Single Source of Truth", "type": "tip", "icon": "💡", "text": "Choose one authoritative owner for each piece of data. Other layers observe or derive it rather than maintaining unsynchronized copies.", "color": "green" }]
+        },
+        {
+          "id": "dependency-injection",
+          "title": "Dependency Injection & Boundaries",
+          "description": "Prefer constructor injection. Use Hilt when component graph complexity warrants it; manual composition is sufficient for small apps.",
+          "codeBlocks": [{
+            "language": "kotlin",
+            "code": "class DefaultUserRepository(\n    private val api: UserApi,\n    private val dao: UserDao,\n    private val clock: Clock\n) : UserRepository"
+          }],
+          "callouts": [{ "title": "Inject Behavior, Not Service Locators", "type": "warning", "icon": "⚠️", "text": "Passing Context, a container, or a global singleton deep into business code hides dependencies. Inject the narrow API the class needs.", "color": "amber" }]
+        },
+        {
+          "id": "security-performance-checklist",
+          "title": "Production Checklist",
+          "description": "Audit boundary validation, exported components, lifecycle ownership, state restoration, accessibility, performance, and observability.",
+          "codeBlocks": [{
+            "language": "text",
+            "code": "□ All-app and target-SDK behavior changes are reviewed\n□ External Intent/URI/provider input is validated\n□ Exported components and package visibility are intentional\n□ Runtime permissions are requested in context with denial paths\n□ Secrets and sensitive logs are minimized\n□ UI objects are not retained by long-lived owners\n□ Durable state is persisted before process death\n□ Edge-to-edge, predictive back, resize, locale, night mode, and large fonts work\n□ Blocking/CPU work never stalls the main thread\n□ Offline, denial, empty, loading, and retry states are designed\n□ App startup, jank, ANRs, and critical journeys are measured\n□ Errors have actionable telemetry without personal data\n□ Tests cover ViewModels, repositories, migrations, navigation, and platform upgrades"
+          }],
+          "callouts": [{ "title": "Related Deep Dives", "type": "note", "icon": "🔗", "text": "Use the dedicated Coroutines, Flows, Compose, Modifiers, Testing, Collections, and Naming sheets for mechanics intentionally excluded here.", "color": "blue" }]
+        }
+      ]
+    }
+  ]
+}

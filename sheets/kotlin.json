@@ -1,288 +1,2875 @@
 {
-  "id": "android-kotlin",
-  "title": "Android Kotlin",
-  "slug": "android-kotlin",
-  "category": "Android",
-  "technology": "Android / Kotlin",
-  "version": "Kotlin 2.x / Modern Android",
+  "id": "kotlin-language-reference",
+  "title": "Kotlin Programming",
+  "slug": "kotlin",
+  "category": "Languages",
+  "technology": "Kotlin",
+  "version": "Kotlin 2.4.10",
   "difficulty": "BEGINNER",
-  "readTimeMinutes": 62,
-  "description": "Beginner-to-advanced Android application reference covering Kotlin essentials, platform components, lifecycle, state, target-SDK compatibility, edge-to-edge and adaptive UI, intents, permissions, storage, offline-first sync, and scalable app architecture.",
-  "tags": ["ANDROID", "KOTLIN", "LIFECYCLE", "VIEWMODEL", "ARCHITECTURE", "PLATFORM"],
-  "updatedAt": "2026-07-26",
-  "aliases": ["android development", "android kotlin basics", "android app components", "android architecture", "android lifecycle", "target sdk", "photo picker", "edge to edge", "predictive back", "offline first"],
-  "relatedSheets": ["android-kotlin-coroutines", "android-kotlin-flows", "android-testing", "android-jetpack-compose", "android-naming-conventions", "kotlin-collection-processing"],
+  "readTimeMinutes": 96,
+  "description": "Beginner-to-advanced Kotlin language reference covering syntax, types, null safety, functions, object modeling, generics, collections, delegation, DSLs, context parameters, coroutines, Flow, JVM interoperability, multiplatform development, testing, performance, tooling, and production API design.",
+  "tags": [
+    "KOTLIN",
+    "JVM",
+    "MULTIPLATFORM",
+    "COROUTINES",
+    "TYPE SAFETY",
+    "FUNCTIONAL PROGRAMMING"
+  ],
+  "updatedAt": "2026-07-27",
+  "aliases": [
+    "kotlin language",
+    "kotlinc",
+    "kotlin jvm",
+    "kotlin multiplatform",
+    "kmp",
+    "kotlin native",
+    "kotlin js",
+    "kotlin wasm",
+    "kotlin coroutines",
+    "kotlin syntax"
+  ],
+  "relatedSheets": [
+    "java",
+    "android-kotlin",
+    "android-kotlin-coroutines",
+    "android-kotlin-flows",
+    "kotlin-collection-processing",
+    "spring-boot",
+    "data-structures-algorithms",
+    "package-publishing"
+  ],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kotlin.json",
   "sections": [
     {
-      "id": "kotlin-for-android",
-      "title": "Kotlin Essentials for Android",
-      "description": "Use Kotlin's type system to make Android boundaries explicit and safe.",
+      "id": "getting-started",
+      "title": "Getting Started, Platforms & Tooling",
+      "description": "Select a target and establish a reproducible build before adopting language features.",
       "subtopics": [
         {
-          "id": "null-safety",
-          "title": "Null Safety & Platform Boundaries",
-          "description": "Model absence with nullable types, narrow once, and avoid assertions at lifecycle and Java interop boundaries.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "val userId: String = intent.getStringExtra(EXTRA_USER_ID)\n    ?: return finish()\n\nval title = user?.displayName.orEmpty()\nval avatar = user?.avatarUrl?.let(imageLoader::load)\n\nrequireNotNull(savedState[KEY_ACCOUNT_ID]) { \"Missing account id\" }",
-            "annotations": [
-              { "id": "elvis-exit", "targetToken": "?: return finish()", "text": "Fail or exit at the boundary so the rest of the function uses a non-null value.", "position": "right" },
-              { "id": "let-narrow", "targetToken": "?.let", "text": "Run an operation only when the receiver is non-null.", "position": "bottom" }
-            ]
-          }],
-          "callouts": [{ "title": "Avoid !!", "type": "danger", "icon": "🛑", "text": "Lifecycle timing, missing Bundle keys, Java platform types, and process recreation make non-null assertions fragile. Validate at boundaries or model a loading/absent state.", "color": "red" }]
-        },
-        {
-          "id": "domain-types",
-          "title": "data, sealed, enum & value Types",
-          "description": "Use data classes for immutable values, sealed hierarchies for closed alternatives, enums for fixed constants, and value classes to prevent primitive confusion.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "@JvmInline value class UserId(val value: String)\n\ndata class User(val id: UserId, val name: String)\n\nsealed interface LoadState<out T> {\n    data object Loading : LoadState<Nothing>\n    data class Ready<T>(val value: T) : LoadState<T>\n    data class Failed(val message: String) : LoadState<Nothing>\n}\n\nfun render(state: LoadState<User>) = when (state) {\n    LoadState.Loading -> showSpinner()\n    is LoadState.Ready -> showUser(state.value)\n    is LoadState.Failed -> showError(state.message)\n}"
-          }],
-          "callouts": [{ "title": "Prefer Impossible States to Be Unrepresentable", "type": "tip", "icon": "💡", "text": "A sealed state prevents contradictory flags such as loading=true and error!=null. A data class is better when states can coexist independently.", "color": "green" }]
-        },
-        {
-          "id": "extensions-delegation-scope",
-          "title": "Extensions, Delegation & Scope Functions",
-          "description": "Use extensions for discoverable boundary helpers, delegation for reusable behavior, and scope functions only when the receiver/result distinction stays obvious.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "fun Context.dp(value: Int): Float = value * resources.displayMetrics.density\n\nclass Settings(private val prefs: SharedPreferences) {\n    var darkMode: Boolean by BooleanPreference(prefs, \"dark_mode\", false)\n}\n\nval intent = Intent(context, DetailActivity::class.java).apply {\n    putExtra(EXTRA_ID, id.value)\n}"
-          }],
-          "callouts": [{ "title": "Extensions Are Statically Dispatched", "type": "note", "icon": "📌", "text": "An extension does not modify or virtually override the receiver type. Prefer an injected collaborator when behavior needs state, substitution, or polymorphism.", "color": "blue" }]
-        }
-      ]
-    },
-    {
-      "id": "android-components",
-      "title": "Android Components & Process Model",
-      "description": "Know which platform component owns entry, UI, background, and cross-app work.",
-      "subtopics": [
-        {
-          "id": "component-selection",
-          "title": "Activity, Service, Receiver & Provider",
-          "description": "Activities host user-facing windows; services perform user-visible ongoing work; receivers handle brief broadcasts; providers expose structured data across process boundaries.",
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Activity: screen/window entry point; can be recreated at any time\nForeground service: ongoing user-noticeable work with notification\nBroadcastReceiver: short event handler; schedule longer work\nContentProvider: URI-based data contract, often cross-process\nWorkManager: persistent deferrable work with constraints\nViewModel: screen state/business-logic holder, not a platform component"
-          }],
-          "callouts": [{ "title": "The Process Is Disposable", "type": "danger", "icon": "🛑", "text": "Android may kill a background process without calling a final callback. Persist durable state as it changes; never rely on an Application singleton as permanent storage.", "color": "red" }]
-        },
-        {
-          "id": "application-context",
-          "title": "Context & Memory Ownership",
-          "description": "Activity context carries UI configuration and window identity; application context follows the process and must not own screen objects.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "class AvatarCache(context: Context) {\n    private val appContext = context.applicationContext\n}\n\nfun showDialog(activity: Activity) {\n    MaterialAlertDialogBuilder(activity) // UI needs themed Activity context\n        .setMessage(R.string.confirm)\n        .show()\n}"
-          }],
-          "callouts": [{ "title": "Do Not Store Activities", "type": "danger", "icon": "🧠", "text": "Long-lived objects retaining Activity, Fragment, View, binding, or callback references leak an obsolete UI after configuration changes.", "color": "red" }]
-        }
-      ]
-    },
-    {
-      "id": "lifecycle-state",
-      "title": "Lifecycle, Configuration & State Restoration",
-      "description": "Match every value and task to the lifetime it must survive.",
-      "subtopics": [
-        {
-          "id": "lifecycle-basics",
-          "title": "Lifecycle Ownership",
-          "description": "Lifecycle callbacks describe transitions, not guaranteed paired events. Use lifecycle-aware APIs and keep callbacks small.",
-          "diagram": { "type": "mermaid", "content": "stateDiagram-v2\n  [*] --> Created: onCreate\n  Created --> Started: onStart\n  Started --> Resumed: onResume\n  Resumed --> Started: onPause\n  Started --> Created: onStop\n  Created --> [*]: onDestroy" },
-          "callouts": [{ "title": "onDestroy Is Not Persistence", "type": "danger", "icon": "🛑", "text": "Process death may bypass cleanup callbacks. Persist important user data immediately or transactionally; use callbacks only to release resources while the process remains alive.", "color": "red" }]
-        },
-        {
-          "id": "state-survival-matrix",
-          "title": "ViewModel, Saved State & Persistent Storage",
-          "description": "Choose storage by lifetime, size, and source of truth rather than convenience.",
+          "id": "platform-selection",
+          "title": "Kotlin Targets & Platform Decision Guide",
+          "description": "Kotlin is a statically typed language compiled for JVM, JavaScript, Native, and Wasm, with Multiplatform source sets for shared code.",
           "table": {
-            "title": "Android State Survival Matrix",
-            "headers": ["State Holder", "Recomposition", "Configuration Change", "Process Death", "Durable Relaunch", "Best For"],
+            "title": "Kotlin Targets & Platform Decision Guide — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
             "rows": [
-              ["remember", "Yes", "No", "No", "No", "Ephemeral composable-local state"],
-              ["rememberSaveable", "Yes", "Yes", "Usually, if saveable", "No", "Small UI state such as input and selection"],
-              ["ViewModel", "Yes", "Yes", "No by itself", "No", "Screen state and orchestration"],
-              ["SavedStateHandle", "Yes", "Yes", "Yes for small saveable values", "No", "Navigation arguments and restoration keys"],
-              ["Room / DataStore / file", "Yes when observed", "Yes", "Yes", "Yes", "Authoritative durable application or preference data"]
+              [
+                "Why it exists",
+                "One language and type system can serve several deployment environments while retaining direct platform access."
+              ],
+              [
+                "Use when",
+                "Choose JVM for JVM ecosystems, JS for JavaScript integration, Native for native binaries or Apple/C interop, Wasm for supported portable workloads, and Multiplatform when substantial stable logic is genuinely shared."
+              ],
+              [
+                "Avoid when",
+                "Do not add Multiplatform solely to share a few models or when required libraries and operational expertise exist on only one target."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Target blocks select outputs; commonMain contains portable code and platform source sets contain target APIs. Compilation returns platform artifacts rather than one universal binary."
+              ],
+              [
+                "Performance notes",
+                "Runtime, startup, memory, build time, and interop costs differ by target; benchmark and operate the actual deployment artifact."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Java, Scala, JavaScript/TypeScript, Rust, Swift; related: source sets, expect/actual, interop."
+              ]
             ]
           },
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Configuration change only → ViewModel\nProcess recreation, small UI input/key → SavedStateHandle / saved-state APIs\nApp restart, user/application data → Room, DataStore, file, or server\nLarge/complex state → persist canonical data; save only an ID or query\nEphemeral derived UI → recompute from source of truth"
-          }],
-          "callouts": [{ "title": "ViewModel Does Not Survive Process Death", "type": "warning", "icon": "⚠️", "text": "A ViewModel survives owner recreation such as rotation, not system process termination. SavedStateHandle is for small reconstruction inputs, not a database replacement.", "color": "amber" }]
+          "diagram": {
+            "type": "mermaid",
+            "content": "flowchart TD\n  A[Deployment requirement] --> B{Existing JVM ecosystem?}\n  B -->|Yes| JVM[Kotlin/JVM]\n  B -->|No| C{Share meaningful logic?}\n  C -->|Yes| KMP[Kotlin Multiplatform]\n  C -->|No| D{Browser or Node?}\n  D -->|Yes| JS[Kotlin/JS or Wasm]\n  D -->|No| N[Kotlin/Native]\n  KMP --> E[Platform APIs behind boundaries]"
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun main() {\n    println(\"Kotlin ${KotlinVersion.CURRENT}\")\n}\n\n// build.gradle.kts\nplugins {\n    kotlin(\"jvm\") version \"2.4.10\"\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Treating Multiplatform as write once, run everywhere and leaking platform APIs into common code."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Share stable domain rules first and keep UI, storage engines, networking clients, and lifecycle integration behind platform boundaries."
+            }
+          ],
+          "tags": [
+            "jvm",
+            "js",
+            "native",
+            "wasm",
+            "multiplatform",
+            "targets"
+          ]
         },
         {
-          "id": "saved-state-handle",
-          "title": "SavedStateHandle",
-          "description": "Store small, serializable inputs needed to reconstruct screen state after process recreation.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "class SearchViewModel(\n    private val savedState: SavedStateHandle,\n    private val repository: SearchRepository\n) : ViewModel() {\n    var query: String\n        get() = savedState[\"query\"] ?: \"\"\n        set(value) { savedState[\"query\"] = value }\n\n    fun restore() = repository.search(query)\n}"
-          }],
-          "callouts": [{ "title": "Save Reconstruction Inputs", "type": "tip", "icon": "💡", "text": "Save the query or entity ID, then reload canonical records. Saving whole object graphs risks transaction-size failures and stale duplicated data.", "color": "green" }]
-        }
-      ]
-    },
-    {
-      "id": "intents-navigation-permissions",
-      "title": "Intents, Results, Deep Links & Permissions",
-      "description": "Treat every platform or external-app boundary as untrusted input.",
-      "subtopics": [
-        {
-          "id": "intents",
-          "title": "Explicit & Implicit Intents",
-          "description": "Use explicit intents for known in-app components and implicit intents for capabilities another app may handle.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "val internal = Intent(this, DetailActivity::class.java)\n    .putExtra(EXTRA_ITEM_ID, itemId.value)\n\nval share = Intent(Intent.ACTION_SEND).apply {\n    type = \"text/plain\"\n    putExtra(Intent.EXTRA_TEXT, publicUrl)\n}\nstartActivity(Intent.createChooser(share, getString(R.string.share_with)))"
-          }],
-          "callouts": [{ "title": "Validate Incoming Data", "type": "danger", "icon": "🔐", "text": "Intent extras, URIs, ClipData, and deep-link parameters can be absent, malformed, oversized, or attacker-controlled. Parse into domain types before use.", "color": "red" }]
-        },
-        {
-          "id": "activity-result-api",
-          "title": "Activity Results & Photo Picker",
-          "description": "Register contracts during initialization, use the system Photo Picker for user-selected media, and keep result handling separate from launching.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "private val pickImage = registerForActivityResult(\n    ActivityResultContracts.PickVisualMedia()\n) { uri: Uri? ->\n    uri?.let(viewModel::onImageSelected)\n}\n\nfun chooseImage() = pickImage.launch(\n    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)\n)"
-          }],
-          "callouts": [{ "title": "Choose the Narrowest Contract", "type": "note", "icon": "📌", "text": "Use Photo Picker for selected photos/videos without broad media permission. If a document URI must survive restart, use an appropriate OpenDocument contract and persistable URI permission.", "color": "blue" }]
-        },
-        {
-          "id": "runtime-permissions",
-          "title": "Runtime Permission Flow",
-          "description": "Ask in context, explain value, handle denial gracefully, and request only permissions required by the current platform behavior.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "val requestCamera = registerForActivityResult(\n    ActivityResultContracts.RequestPermission()\n) { granted ->\n    if (granted) openCamera() else showCameraAlternative()\n}\n\nwhen {\n    checkSelfPermission(Manifest.permission.CAMERA) == PERMISSION_GRANTED -> openCamera()\n    shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> showRationale()\n    else -> requestCamera.launch(Manifest.permission.CAMERA)\n}"
-          }],
-          "callouts": [{ "title": "Denial Is a Valid State", "type": "warning", "icon": "⚠️", "text": "Users may deny permanently or policy may restrict access. The app must remain usable where possible and should not loop or pressure the user. Notification, media, nearby-device, and location rules differ by API level, so gate both requests and behavior.", "color": "amber" }]
-        },
-        {
-          "id": "target-sdk-compatibility",
-          "title": "Target SDK & Platform Behavior Changes",
-          "description": "Treat every target SDK upgrade as a compatibility project: read both all-app and target-specific behavior changes, then test affected journeys on that platform.",
+          "id": "gradle-compiler-setup",
+          "title": "Gradle, Toolchains & Compiler Options",
+          "description": "The Kotlin Gradle plugin coordinates compiler versions, target toolchains, dependencies, tests, and incremental compilation.",
           "table": {
-            "title": "Modern Android Compatibility Watchlist",
-            "headers": ["Platform", "High-Impact Areas", "Required Review"],
+            "title": "Gradle, Toolchains & Compiler Options — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
             "rows": [
-              ["Android 13+", "Notification permission, Photo Picker, media access", "Request only when needed; prefer picker-based access"],
-              ["Android 14+", "Foreground-service types, exact alarms, background starts", "Declare valid types and verify scheduling eligibility"],
-              ["Android 15 / target 35", "Edge-to-edge enforcement", "Handle system bars, cutouts, gesture and IME insets"],
-              ["Android 16 / target 36", "Predictive back defaults; edge-to-edge opt-out removed", "Use supported back APIs and test all back destinations"],
-              ["Android 17 preview / API 37", "Large-screen adaptation, local-network and other behavior changes", "Run preview compatibility tests; do not ship preview assumptions as stable contracts"]
+              [
+                "Why it exists",
+                "Pinned, declarative builds make developer machines and CI compile the same source with the same language and runtime assumptions."
+              ],
+              [
+                "Use when",
+                "Use a version catalog or settings plugin management, explicit JVM toolchains, typed compilerOptions, dependency locking where appropriate, and wrapper-controlled Gradle."
+              ],
+              [
+                "Avoid when",
+                "Avoid relying on the IDE-bundled compiler, developer JAVA_HOME, dynamic dependency versions, or deprecated kotlinOptions configuration."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Plugin version selects Kotlin; jvmToolchain selects compiler JDK; jvmTarget selects bytecode. Gradle tasks return artifacts/reports and nonzero status on failure."
+              ],
+              [
+                "Performance notes",
+                "Compiler plugins and annotation/code generation can dominate build time; use build scans and incremental-build measurements before changing daemon settings."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Maven and command-line kotlinc are alternatives; related: version catalogs, toolchains, compilerOptions, dependencyInsight."
+              ]
             ]
           },
-          "callouts": [{ "title": "Compile SDK Is Not Target SDK", "type": "warning", "icon": "⚠️", "text": "compileSdk exposes APIs; targetSdk opts the app into platform behavior changes. Keep minSdk fallbacks explicit and test the actual targetSdk configuration used for release.", "color": "amber" }],
-          "tags": ["targetSdk", "compatibility", "android-17", "permissions"]
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "plugins { kotlin(\"jvm\") version \"2.4.10\" }\n\nkotlin {\n    jvmToolchain(21)\n    compilerOptions {\n        allWarningsAsErrors.set(true)\n        progressiveMode.set(true)\n    }\n}\n\ndependencies { testImplementation(kotlin(\"test\")) }",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Confusing the compiler JDK, generated bytecode target, deployed JRE, and Kotlin language/API versions."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Upgrade Kotlin, Gradle, JDK, compiler plugins, and kotlinx libraries as a tested compatibility matrix."
+            }
+          ],
+          "tags": [
+            "gradle",
+            "toolchain",
+            "compilerOptions",
+            "build",
+            "dependencies"
+          ]
+        },
+        {
+          "id": "packages-files-visibility",
+          "title": "Packages, Files, Imports & Visibility",
+          "description": "Packages provide namespaces; files contain top-level declarations; imports resolve names; visibility limits who may depend on a declaration.",
+          "table": {
+            "title": "Packages, Files, Imports & Visibility — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Small, intentional module APIs reduce coupling and make compatibility and ownership reviewable."
+              ],
+              [
+                "Use when",
+                "Use cohesive files, explicit packages, private implementation details, internal module APIs, and explicit public signatures."
+              ],
+              [
+                "Avoid when",
+                "Avoid the default package, wildcard-heavy public code, Utils dumping grounds, and accidental public declarations."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "package declares a namespace; import may use as aliases. Visibility is private, protected, internal, or public. Top-level functions return their declared or inferred type."
+              ],
+              [
+                "Performance notes",
+                "Visibility itself has negligible runtime cost, but a large public ABI increases compile invalidation, binary compatibility burden, and optimizer constraints."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Modules, interfaces, facade objects, package-level APIs; related: explicit API mode and binary compatibility."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "package com.example.orders\n\nimport java.time.Instant\nimport java.util.UUID as JavaUuid\n\nprivate const val DEFAULT_LIMIT = 50\n\ninternal fun newId(): String = JavaUuid.randomUUID().toString()\n\npublic class OrderService(private val clock: () -> Instant)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Assuming internal is a JVM security boundary; Java bytecode can still observe internal declarations."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Default to private/internal and publish only coherent contracts with explicit return types."
+            }
+          ],
+          "tags": [
+            "package",
+            "import",
+            "visibility",
+            "internal",
+            "top-level",
+            "module"
+          ]
         }
       ]
     },
     {
-      "id": "resources-localization",
-      "title": "Resources, Localization & Configuration",
-      "description": "Keep user-facing values in resources and design for runtime configuration changes.",
+      "id": "values-control-flow",
+      "title": "Values, Types & Control Flow",
+      "description": "Prefer immutable values and expression-oriented control flow with explicit domain types.",
       "subtopics": [
         {
-          "id": "resource-selection",
-          "title": "Resource Types & Qualifiers",
-          "description": "Use strings, plurals, dimensions, colors, drawables, and qualified alternatives so Android selects the best resource for locale, density, size, and night mode.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "val message = resources.getQuantityString(\n    R.plurals.download_count,\n    count,\n    count\n)\nval spacing = resources.getDimensionPixelSize(R.dimen.content_spacing)"
-          }],
-          "callouts": [{ "title": "Do Not Concatenate Sentences", "type": "warning", "icon": "🌍", "text": "Word order and plural rules vary by language. Use formatted string/plural resources with translator context rather than assembling user-visible fragments in Kotlin.", "color": "amber" }]
+          "id": "val-var-types",
+          "title": "val, var, Constants & Type Inference",
+          "description": "val declares a read-only reference, var a reassignable reference, and const val a compile-time primitive or String constant.",
+          "table": {
+            "title": "val, var, Constants & Type Inference — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "The compiler preserves static types while inference removes redundant syntax; read-only references reduce the number of possible state transitions."
+              ],
+              [
+                "Use when",
+                "Use val by default, var in a narrow owned scope, const val for annotation/compile-time values, and explicit types at public boundaries."
+              ],
+              [
+                "Avoid when",
+                "Avoid shared mutable var, uninitialized lateinit without lifecycle guarantees, and inferred public types that can change accidentally."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "val name: Type = expression; var uses the same form and returns no value from assignment. lateinit supports non-null mutable properties; lazy returns a cached value on first access."
+              ],
+              [
+                "Performance notes",
+                "References add no special overhead. lazy may synchronize and retain its initializer/value; lateinit adds a runtime initialization check."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Immutable/persistent collections, atomic values, StateFlow; related: properties, delegates, concurrency."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "const val API_VERSION = \"v1\"\nval count: Int = 3\nvar attempts = 0\nattempts += 1\n\nval index by lazy(LazyThreadSafetyMode.PUBLICATION) {\n    buildIndex()\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Believing val makes the referenced object immutable; a val MutableList can still be mutated."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep mutable ownership private and expose snapshots or read-only contracts."
+            }
+          ],
+          "tags": [
+            "val",
+            "var",
+            "const",
+            "lateinit",
+            "lazy",
+            "inference"
+          ]
         },
         {
-          "id": "configuration-adaptation",
-          "title": "Configuration & Adaptive UI",
-          "description": "Rotation, resize, locale, font scale, density, theme, and device posture can change while the app runs.",
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Avoid caching configuration-derived values globally\nUse dp for layout and sp for scalable text\nDraw edge-to-edge and consume system-bar, cutout, gesture, and IME insets\nUse current window size/posture and canonical layouts, not device-name checks\nTest resize, multi-window, desktop windowing, fold posture, keyboard/mouse, large fonts, and long translations\nLet Activities recreate unless a proven platform integration requires manual handling"
-          }],
-          "callouts": [{ "title": "Recreation Is a Correctness Test", "type": "tip", "icon": "💡", "text": "Regularly enable developer options that destroy activities and test rotation/resizing. Bugs found there often reveal misplaced ownership or missing persistence.", "color": "green" }]
+          "id": "primitive-string-equality",
+          "title": "Numbers, Strings, Equality & Conversions",
+          "description": "Kotlin supplies signed and unsigned numeric types, immutable strings, explicit numeric conversions, structural equality with ==, and identity equality with ===.",
+          "table": {
+            "title": "Numbers, Strings, Equality & Conversions — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Explicit conversions prevent silent precision loss, while distinct equality operators separate value semantics from object identity."
+              ],
+              [
+                "Use when",
+                "Use == for values, === only for identity invariants, string templates for formatting, buildString for loops, and BigDecimal or integer minor units for money on JVM."
+              ],
+              [
+                "Avoid when",
+                "Avoid Double for money, reference equality for strings, implicit locale assumptions, and repeated string concatenation in large loops."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "toInt/toLong and parsing functions return converted values or throw; toIntOrNull returns Int?. == returns Boolean and is null-safe; === returns Boolean identity."
+              ],
+              [
+                "Performance notes",
+                "Primitive arrays avoid boxing. Generic/nullable/value-class contexts may box. buildString avoids repeated intermediate String allocation."
+              ],
+              [
+                "Alternatives & related concepts",
+                "BigInteger, BigDecimal, value classes, locale APIs; related: data classes and serialization."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "val amount = \"1024\".toLongOrNull() ?: error(\"bad amount\")\nval greeting = \"Hello, ${user.name}\"\nval sameValue = first == second\nval sameObject = first === second\n\nval csv = buildString {\n    rows.forEach { appendLine(\"${it.id},${it.name}\") }\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Constructing BigDecimal from a Double preserves the binary approximation; construct it from a String or integer representation."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Make units and precision part of domain types and specify locale/charset at external boundaries."
+            }
+          ],
+          "tags": [
+            "numbers",
+            "String",
+            "equality",
+            "conversion",
+            "BigDecimal",
+            "buildString"
+          ]
+        },
+        {
+          "id": "expressions-when-loops",
+          "title": "if, when, Loops, Ranges & Destructuring",
+          "description": "if, when, and try are expressions; loops are statements; ranges/progressions describe ordered iteration; destructuring calls component functions.",
+          "table": {
+            "title": "if, when, Loops, Ranges & Destructuring — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Expression-oriented code makes branch results explicit and sealed/enum when expressions compiler-checkable."
+              ],
+              [
+                "Use when",
+                "Use if for two branches, exhaustive when for closed variants, for for visible control flow, and destructuring for small stable tuples/data classes."
+              ],
+              [
+                "Avoid when",
+                "Avoid fragile else branches over owned sealed types, non-local returns hidden in forEach, large destructuring declarations, and ranges with incorrect inclusive bounds."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "if/when/try return the common branch type. for/while/repeat return Unit. .. includes the end; until excludes it; downTo and step create progressions."
+              ],
+              [
+                "Performance notes",
+                "Primitive progressions are efficient. Destructuring may call unused component functions unless skipped with _, and collection chains may allocate."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Collection operators, sequences, sealed types, enum entries, guard clauses; related: labels and smart casts."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun label(status: Status): String = when (status) {\n    Status.NEW -> \"new\"\n    Status.RUNNING -> \"running\"\n    Status.DONE -> \"done\"\n}\n\nfor (i in 0 until items.size) println(items[i])\nfor (i in 10 downTo 0 step 2) println(i)\n\nval (id, name) = user",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "A bare return inside inline forEach returns from the enclosing function; use a for loop when break, continue, or return semantics matter."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Omit else for owned closed hierarchies so a new case produces compiler errors at every incomplete decision."
+            }
+          ],
+          "tags": [
+            "if",
+            "when",
+            "for",
+            "range",
+            "destructuring",
+            "expressions"
+          ]
         }
       ]
     },
     {
-      "id": "data-background-work",
-      "title": "Data, Storage & Background Work",
-      "description": "Select persistence and scheduling tools based on data shape, consistency, durability, and user visibility.",
+      "id": "nullability-failures",
+      "title": "Null Safety, Failures & Contracts",
+      "description": "Represent ordinary absence, exceptional failure, and invariant violations with distinct mechanisms.",
       "subtopics": [
         {
-          "id": "storage-selection",
-          "title": "Room, DataStore, Files & Cache",
-          "description": "Room fits relational/queryable data; DataStore fits small settings; files fit opaque or streamed data; cache is disposable and must have a source of truth.",
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Relational entities, joins, migrations → Room\nTyped preferences or small settings → DataStore\nMedia/documents/blobs → files or platform document storage\nTemporary reproducible data → cache directory\nSensitive secrets → platform-backed secure design; minimize storage\nCross-device canonical data → server plus explicit offline strategy"
-          }],
-          "callouts": [{ "title": "Migrations Are Product Code", "type": "danger", "icon": "🗃️", "text": "Test schema and preference migrations against real historical versions. Destructive fallback can erase user data and should be an explicit product decision.", "color": "red" }]
+          "id": "nullable-types",
+          "title": "Nullable Types, Safe Calls & Elvis",
+          "description": "T? admits null while T does not; safe calls propagate null and Elvis supplies a fallback or exits.",
+          "table": {
+            "title": "Nullable Types, Safe Calls & Elvis — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Nullability in the type system moves many missing-value defects to compile time and makes absence visible at call sites."
+              ],
+              [
+                "Use when",
+                "Use nullable types for expected absence, ?. for propagation, ?: for defaults/early returns, and requireNotNull/checkNotNull at proven boundaries."
+              ],
+              [
+                "Avoid when",
+                "Avoid !!, long safe-call chains that hide which value is missing, and nullable fields when a sealed state better explains lifecycle."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "value?.member returns a nullable member result; value ?: fallback returns a common branch type; value!! returns T or throws; let transforms a non-null receiver."
+              ],
+              [
+                "Performance notes",
+                "Null-safety operators are generally cheap; repeated chains may duplicate work if expressions are not stored. Boxing can occur for nullable primitives/value classes."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Sealed states, Option-like domain types, getOrNull, mapNotNull; related: platform types and smart casts."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun displayName(user: User?): String =\n    user?.profile?.name?.trim()\n        ?.takeIf(String::isNotEmpty)\n        ?: \"Anonymous\"\n\nfun requireToken(headers: Map<String, String>): String =\n    requireNotNull(headers[\"Authorization\"])",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Letting Java platform types T! spread through Kotlin code without validation can reintroduce NPEs despite apparently non-null declarations."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Normalize platform and deserialization values at the boundary, then keep domain code non-null where invariants require it."
+            }
+          ],
+          "tags": [
+            "null",
+            "nullable",
+            "safe-call",
+            "elvis",
+            "platform-type"
+          ]
         },
         {
-          "id": "offline-first-sync",
-          "title": "Offline-First Source of Truth & Sync",
-          "description": "For data that must remain usable without reliable connectivity, expose local persisted data as the read source and reconcile network updates through an explicit sync policy.",
-          "diagram": { "type": "mermaid", "content": "flowchart LR\n  UI[UI observes] --> R[Repository]\n  R --> L[Local source of truth]\n  N[Network] --> S[Sync and conflict policy]\n  S --> L\n  W[Durable WorkManager queue] --> S" },
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Reads → observe the local source of truth\nRefresh → fetch, validate, then update local storage transactionally\nCritical offline write → save locally, enqueue durable sync, expose pending state\nConflict → define server-wins, client-wins, merge, or user resolution\nRetry → bounded backoff with idempotency and observable failure"
-          }],
-          "callouts": [{ "title": "Connectivity Is a Hint", "type": "warning", "icon": "⚠️", "text": "A network callback cannot guarantee that a request will succeed. Attempt operations under policy, handle failures, and let durable work retry when constraints are satisfied.", "color": "amber" }],
-          "tags": ["offline-first", "sync", "room", "workmanager"]
+          "id": "exceptions-result-errors",
+          "title": "Exceptions, Result & Typed Domain Errors",
+          "description": "Kotlin exceptions are unchecked; Result<T> wraps success or Throwable failure; sealed outcomes encode expected domain failures.",
+          "table": {
+            "title": "Exceptions, Result & Typed Domain Errors — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Different failure representations tell callers whether absence is normal, recovery is required, or execution cannot continue."
+              ],
+              [
+                "Use when",
+                "Use T? for reasonless absence, a sealed result for expected business outcomes, Result at exception-adapting boundaries, and throw for violated contracts or operation failures."
+              ],
+              [
+                "Avoid when",
+                "Avoid exceptions for normal branching, Result everywhere, swallowing causes, and exposing infrastructure exception classes as a domain API."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "throw has type Nothing; try is an expression; runCatching returns Result<T>; getOrElse/fold transform it. A sealed when returns the selected response."
+              ],
+              [
+                "Performance notes",
+                "Exceptions are cheap when not thrown but stack traces are expensive. Typed results allocate objects but can make routine outcomes explicit and benchmarkable."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Nullable return, sealed interface, Either libraries, require/check; related: cancellation and HTTP error mapping."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "sealed interface CreateUserResult {\n    data class Created(val user: User) : CreateUserResult\n    data object DuplicateEmail : CreateUserResult\n    data class Rejected(val reasons: List<String>) : CreateUserResult\n}\n\nfun respond(result: CreateUserResult) = when (result) {\n    is CreateUserResult.Created -> ok(result.user)\n    CreateUserResult.DuplicateEmail -> conflict()\n    is CreateUserResult.Rejected -> badRequest(result.reasons)\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Catching Throwable or Exception inside a coroutine and failing to rethrow CancellationException breaks structured cancellation."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Translate failures once at an ownership boundary, preserve the original cause, add safe operation context, and log only where recovery/response ownership exists."
+            }
+          ],
+          "tags": [
+            "exception",
+            "Result",
+            "sealed",
+            "failure",
+            "Nothing",
+            "runCatching"
+          ]
         },
         {
-          "id": "work-selection",
-          "title": "Coroutine, WorkManager, Alarm or Foreground Service",
-          "description": "Use a coroutine for in-process lifetime-bound work, WorkManager for persistent deferrable jobs, alarms for precise user-facing time semantics when allowed, and foreground services for ongoing noticeable work.",
-          "codeBlocks": [{
-            "language": "text",
-            "code": "Needed only while screen exists → ViewModel/lifecycle coroutine\nMust finish eventually after app exit → WorkManager\nPeriodic best-effort maintenance → periodic WorkManager\nExact calendar/user alarm → alarm APIs and current permission rules\nOngoing user-noticeable operation → foreground service + notification"
-          }],
-          "callouts": [{ "title": "Background Limits Change", "type": "warning", "icon": "⚠️", "text": "Android background execution and permission rules evolve. Check official guidance for your target SDK before shipping scheduling, alarms, or foreground services.", "color": "amber" }]
+          "id": "preconditions-contracts",
+          "title": "Preconditions, Assertions & Contracts",
+          "description": "require validates caller input, check validates state, error marks impossible paths, assertions support development checks, and contracts describe call effects to the compiler.",
+          "table": {
+            "title": "Preconditions, Assertions & Contracts — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Specific invariant APIs communicate responsibility and improve smart-cast/data-flow reasoning."
+              ],
+              [
+                "Use when",
+                "Use require/requireNotNull at API boundaries, check/checkNotNull for internal state, error for unreachable paths, and standard contracts through standard-library helpers."
+              ],
+              [
+                "Avoid when",
+                "Avoid assert for security/correctness because JVM assertions may be disabled, and avoid custom contracts unless their semantics are small, stable, and proven."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "require returns Unit or throws IllegalArgumentException; check returns Unit or throws IllegalStateException; requireNotNull/checkNotNull return non-null T; error returns Nothing."
+              ],
+              [
+                "Performance notes",
+                "Lazy message lambdas run only on failure. Exceptions and stack traces dominate failure cost, so do not use invariant failures as a hot-path control mechanism."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Factory functions, sealed validation errors, Result, smart casts; related: contracts and value classes."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class Percentage private constructor(val value: Int) {\n    companion object {\n        fun of(value: Int): Percentage {\n            require(value in 0..100) { \"value must be 0..100\" }\n            return Percentage(value)\n        }\n    }\n}\n\nval session = checkNotNull(currentSession) { \"session not started\" }",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Using require for malformed external payloads without converting the exception into a safe client-facing error leaks implementation-oriented failure handling."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Validate untrusted input into an explicit error model, then construct types that cannot represent invalid state."
+            }
+          ],
+          "tags": [
+            "require",
+            "check",
+            "assert",
+            "contract",
+            "invariant",
+            "Nothing"
+          ]
         }
       ]
     },
     {
-      "id": "architecture-production",
-      "title": "Architecture, Security & Production Readiness",
-      "description": "Scale through clear ownership and boundaries, not layers added by habit.",
+      "id": "functions-functional",
+      "title": "Functions & Functional Programming",
+      "description": "Treat functions as explicit contracts and use higher-order abstractions only where behavior stays visible.",
       "subtopics": [
         {
-          "id": "layered-architecture",
-          "title": "UI, Data & Optional Domain Layers",
-          "description": "The UI renders state and sends actions; repositories expose application data; use cases are valuable when business logic is reused or a ViewModel becomes complex.",
-          "diagram": { "type": "mermaid", "content": "flowchart LR\n  UI[UI: state + user actions] --> VM[Screen ViewModel]\n  VM --> UC[Optional use cases]\n  VM --> R[Repository]\n  UC --> R\n  R --> L[Local source]\n  R --> N[Network source]\n  R --> P[Platform source]" },
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "class ProfileViewModel(\n    repository: ProfileRepository,\n    private val saveProfile: SaveProfile\n) : ViewModel() {\n    val uiState = repository.observeProfile() // stream details in Flow sheet\n    fun save(input: ProfileInput) = saveProfile(input)\n}"
-          }],
-          "callouts": [{ "title": "Single Source of Truth", "type": "tip", "icon": "💡", "text": "Choose one authoritative owner for each piece of data. Other layers observe or derive it rather than maintaining unsynchronized copies.", "color": "green" }]
+          "id": "function-declarations",
+          "title": "Functions, Parameters, Defaults & Returns",
+          "description": "Functions declare named typed parameters and a return type; expression bodies infer returns; named/default arguments improve call-site clarity.",
+          "table": {
+            "title": "Functions, Parameters, Defaults & Returns — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "A clear signature exposes required input, optional policy, output, side effects, and failure ownership."
+              ],
+              [
+                "Use when",
+                "Use explicit return types for public APIs, named arguments for ambiguous literals, defaults for stable common policy, and vararg only for small ergonomic lists."
+              ],
+              [
+                "Avoid when",
+                "Avoid boolean blindness, default expressions that perform I/O, enormous parameter lists, and relying on Java parameter names as a compatibility guarantee."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "fun name(p: T = default): R; parameters are evaluated left-to-right. Assignment returns Unit. Unit means no meaningful value; Nothing means normal return is impossible."
+              ],
+              [
+                "Performance notes",
+                "Default/named arguments are primarily compile-time features. vararg creates an array; spreading an existing array can copy."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Builder, parameter object, overload, extension function; related: ABI compatibility and Java @JvmOverloads."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun searchUsers(\n    query: String,\n    limit: Int = 50,\n    includeDisabled: Boolean = false,\n): List<User> {\n    require(limit in 1..200)\n    return repository.search(query, limit, includeDisabled)\n}\n\nval users = searchUsers(query = \"ada\", includeDisabled = true)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Changing a default parameter can alter behavior after recompilation while existing compiled consumers may retain prior call-site behavior."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Use parameter objects when related options evolve together and domain types instead of multiple same-typed primitives."
+            }
+          ],
+          "tags": [
+            "function",
+            "parameter",
+            "return",
+            "default",
+            "named-argument",
+            "vararg"
+          ]
         },
         {
-          "id": "dependency-injection",
-          "title": "Dependency Injection & Boundaries",
-          "description": "Prefer constructor injection. Use Hilt when component graph complexity warrants it; manual composition is sufficient for small apps.",
-          "codeBlocks": [{
-            "language": "kotlin",
-            "code": "class DefaultUserRepository(\n    private val api: UserApi,\n    private val dao: UserDao,\n    private val clock: Clock\n) : UserRepository"
-          }],
-          "callouts": [{ "title": "Inject Behavior, Not Service Locators", "type": "warning", "icon": "⚠️", "text": "Passing Context, a container, or a global singleton deep into business code hides dependencies. Inject the narrow API the class needs.", "color": "amber" }]
+          "id": "lambdas-function-types",
+          "title": "Lambdas, Function Types & Higher-Order Functions",
+          "description": "Function types such as (T) -> R represent executable behavior; lambdas and callable references create values of those types.",
+          "table": {
+            "title": "Lambdas, Function Types & Higher-Order Functions — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Higher-order functions separate reusable control flow from a small injected policy or transformation."
+              ],
+              [
+                "Use when",
+                "Use lambdas for local behavior, callable references for existing functions, receiver lambdas for focused builders, and fun interface for a named single-method contract."
+              ],
+              [
+                "Avoid when",
+                "Avoid capturing large/short-lived objects in long-lived callbacks, nested receiver ambiguity, and using a function type for an evolving multi-operation service."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "(A, B) -> R accepts two parameters and returns R; suspend (T) -> R may suspend; T.() -> R supplies T as receiver; invoking returns the lambda result."
+              ],
+              [
+                "Performance notes",
+                "Capturing lambdas may allocate and retain captured state. Inline higher-order functions can remove allocation but may increase code size."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Named function, fun interface, interface, strategy object; related: inline, receiver DSLs, callable references."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun interface RetryPolicy {\n    fun shouldRetry(attempt: Int, error: Throwable): Boolean\n}\n\nfun <T, R> Iterable<T>.mapValid(transform: (T) -> R?): List<R> =\n    mapNotNull(transform)\n\nval ids = rawIds.mapValid(String::toLongOrNull)\nval retry = RetryPolicy { n, e -> n < 3 && e is IOException }",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Using map for side effects creates and discards a result list; use forEach or an explicit loop."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Name complex lambdas, keep them short, and define callback lifetime/unregistration when ownership crosses components."
+            }
+          ],
+          "tags": [
+            "lambda",
+            "function-type",
+            "higher-order",
+            "callable-reference",
+            "fun-interface"
+          ]
         },
         {
-          "id": "security-performance-checklist",
-          "title": "Production Checklist",
-          "description": "Audit boundary validation, exported components, lifecycle ownership, state restoration, accessibility, performance, and observability.",
-          "codeBlocks": [{
-            "language": "text",
-            "code": "□ All-app and target-SDK behavior changes are reviewed\n□ External Intent/URI/provider input is validated\n□ Exported components and package visibility are intentional\n□ Runtime permissions are requested in context with denial paths\n□ Secrets and sensitive logs are minimized\n□ UI objects are not retained by long-lived owners\n□ Durable state is persisted before process death\n□ Edge-to-edge, predictive back, resize, locale, night mode, and large fonts work\n□ Blocking/CPU work never stalls the main thread\n□ Offline, denial, empty, loading, and retry states are designed\n□ App startup, jank, ANRs, and critical journeys are measured\n□ Errors have actionable telemetry without personal data\n□ Tests cover ViewModels, repositories, migrations, navigation, and platform upgrades"
-          }],
-          "callouts": [{ "title": "Related Deep Dives", "type": "note", "icon": "🔗", "text": "Use the dedicated Coroutines, Flows, Compose, Modifiers, Testing, Collections, and Naming sheets for mechanics intentionally excluded here.", "color": "blue" }]
+          "id": "inline-reified-tailrec",
+          "title": "inline, reified, noinline, crossinline & tailrec",
+          "description": "Inlining copies eligible function/lambda code at call sites; reified exposes an inline type argument; noinline preserves a lambda object; crossinline forbids non-local returns; tailrec rewrites eligible recursion.",
+          "table": {
+            "title": "inline, reified, noinline, crossinline & tailrec — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "These modifiers enable type-safe runtime checks, non-local control flow, or lower hot-path lambda overhead when semantics require them."
+              ],
+              [
+                "Use when",
+                "Use small inline higher-order utilities, reified adapters/lookups, noinline for stored lambdas, crossinline for deferred invocation, and tailrec only for truly tail-recursive algorithms."
+              ],
+              [
+                "Avoid when",
+                "Avoid marking normal functions inline as ritual, large public inline bodies, reified as a reflection framework, and deep non-tail recursion."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "inline fun <reified T> returns the declared R; reified T supports is T and T::class. noinline/crossinline apply to lambda parameters. tailrec must call itself in tail position."
+              ],
+              [
+                "Performance notes",
+                "Inlining trades dispatch/allocation for duplicated bytecode or target code. Measure runtime and artifact size; tailrec avoids stack growth only when compiler eligibility is met."
+              ],
+              [
+                "Alternatives & related concepts",
+                "KClass tokens, ordinary generic function, loop, compiler specialization; related: erasure and binary compatibility."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "inline fun <reified T> Any?.asOrNull(): T? = this as? T\n\ninline fun <reified T : Any> Registry.resolve(): T =\n    requireNotNull(resolve(T::class)) { \"No binding for ${T::class}\" }\n\ntailrec fun gcd(a: Int, b: Int): Int =\n    if (b == 0) a else gcd(b, a % b)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Forgetting that public inline bodies become part of consumer binaries and cannot freely reference non-public declarations."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep public inline APIs small and stable; use @PublishedApi only for deliberate internal helpers."
+            }
+          ],
+          "tags": [
+            "inline",
+            "reified",
+            "noinline",
+            "crossinline",
+            "tailrec",
+            "performance"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "object-modeling",
+      "title": "Classes, Objects & Domain Modeling",
+      "description": "Encode invariants in small types and use composition or closed hierarchies to constrain state.",
+      "subtopics": [
+        {
+          "id": "classes-constructors",
+          "title": "Classes, Constructors, Members & Inheritance",
+          "description": "Classes are final by default; a primary constructor lives in the header; init blocks and property initializers run in source order.",
+          "table": {
+            "title": "Classes, Constructors, Members & Inheritance — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Final-by-default classes protect invariants, while intentional constructors and factories control valid state creation."
+              ],
+              [
+                "Use when",
+                "Use private constructors plus factories for validation, open/abstract only for designed extension points, and composition for code reuse."
+              ],
+              [
+                "Avoid when",
+                "Avoid calling open members during construction, inheriting merely to reuse code, and exposing mutable setters for invariant-rich state."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "class C(val x: T) constructs C; init returns Unit; functions return declared values. open permits override, abstract requires implementation, super delegates to a base constructor/member."
+              ],
+              [
+                "Performance notes",
+                "Virtual dispatch has small runtime cost; object design, allocation, cache locality, and framework proxies matter more. Factories may enable pooling/caching only when measured and safe."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Factory function, sealed hierarchy, interface/delegation, composition; related: visibility and properties."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class BankAccount private constructor(\n    val id: AccountId,\n    initial: Money,\n) {\n    var balance: Money = initial\n        private set\n\n    init { require(initial >= Money.ZERO) }\n\n    fun deposit(amount: Money) {\n        require(amount > Money.ZERO)\n        balance += amount\n    }\n\n    companion object { fun open(id: AccountId) = BankAccount(id, Money.ZERO) }\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Calling an open property or function from init can dispatch into a subclass before subclass state is initialized."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Make invalid states unconstructable and expose behavioral methods rather than mutable data bags."
+            }
+          ],
+          "tags": [
+            "class",
+            "constructor",
+            "init",
+            "final",
+            "open",
+            "abstract",
+            "companion"
+          ]
+        },
+        {
+          "id": "special-class-forms",
+          "title": "data, enum, value, object & data object",
+          "description": "Special class forms generate or constrain semantics: data classes model transparent values, enums fixed singleton choices, value classes typed scalar wrappers, and objects single instances.",
+          "table": {
+            "title": "data, enum, value, object & data object — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "They reduce boilerplate while making equality, allowed cases, representation, and lifecycle explicit."
+              ],
+              [
+                "Use when",
+                "Use immutable data classes for records, enum for uniform fixed constants, value class for IDs/units, object for stateless singleton behavior, and data object for singleton sealed cases."
+              ],
+              [
+                "Avoid when",
+                "Avoid data classes for mutable identity entities, enums for payload-diverse variants, value classes where identity/boxing/interop dominates, and objects as global mutable service locators."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "data generates equals/hashCode/toString/copy/componentN from primary properties; enum entries are instances; value class wraps one val; object returns the singleton reference."
+              ],
+              [
+                "Performance notes",
+                "Value classes are often unboxed but box in nullable, generic, interface, and some interop contexts. data operations traverse referenced property equality/hash behavior."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Regular class, sealed variants, typealias, dependency-injected singleton; related: equality, serialization, boxing."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "@JvmInline\nvalue class UserId(val value: String) {\n    init { require(value.isNotBlank()) }\n}\n\ndata class User(val id: UserId, val name: String)\nenum class Role { MEMBER, ADMIN }\ndata object Loading\nobject SystemClock : Clock",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "data class copy is shallow and body properties do not participate in generated equality or copy."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep data-class primary properties immutable, validate value-class input, and never place secrets in generated toString output."
+            }
+          ],
+          "tags": [
+            "data-class",
+            "enum",
+            "value-class",
+            "object",
+            "data-object",
+            "domain-model"
+          ]
+        },
+        {
+          "id": "interfaces-sealed-delegation",
+          "title": "Interfaces, Sealed Hierarchies & Delegation",
+          "description": "Interfaces define open behavioral contracts, sealed types restrict direct variants, and by delegation forwards an interface implementation to a collaborator.",
+          "table": {
+            "title": "Interfaces, Sealed Hierarchies & Delegation — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "These tools separate capabilities, closed domain states, and reusable composition without deep inheritance."
+              ],
+              [
+                "Use when",
+                "Use interfaces for third-party implementations, sealed types for exhaustive outcomes/events, and delegation for decorators or selective overrides."
+              ],
+              [
+                "Avoid when",
+                "Avoid sealed types for plugin extension points, broad marker interfaces, and delegation that hides unclear ownership or an oversized contract."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "interface members return declared types; sealed subclasses must satisfy permitted-location rules; class Wrapper(d: I) : I by d forwards calls and may override selected members."
+              ],
+              [
+                "Performance notes",
+                "Interface dispatch is typically cheap relative to I/O. Delegation adds an object/reference layer; sealed exhaustiveness has compile-time benefit and no required reflection."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Abstract class, enum, composition, visitor; related: polymorphism, state machines, decorators."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "sealed interface PaymentResult {\n    data class Approved(val receipt: Receipt) : PaymentResult\n    data class Declined(val reason: Reason) : PaymentResult\n    data object Unavailable : PaymentResult\n}\n\nfun message(result: PaymentResult) = when (result) {\n    is PaymentResult.Approved -> \"paid:${result.receipt.id}\"\n    is PaymentResult.Declined -> \"declined:${result.reason}\"\n    PaymentResult.Unavailable -> \"try later\"\n}\n\nclass LoggingGateway(private val d: Gateway) : Gateway by d",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Adding else to an owned sealed when suppresses compiler guidance when a new case is introduced."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Prefer small role interfaces and exhaustive when without else in code that owns the hierarchy."
+            }
+          ],
+          "tags": [
+            "interface",
+            "sealed",
+            "delegation",
+            "composition",
+            "exhaustive-when"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "generics-runtime-types",
+      "title": "Generics, Variance & Runtime Types",
+      "description": "Preserve type relationships statically while accounting for erasure and platform interop.",
+      "subtopics": [
+        {
+          "id": "generics-variance",
+          "title": "Generics, Bounds, in/out Variance & Projections",
+          "description": "Generics parameterize types; out marks producers, in marks consumers, invariance allows both, bounds require capabilities, and star projections represent an unknown safe type.",
+          "table": {
+            "title": "Generics, Bounds, in/out Variance & Projections — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Variance allows safe substitution without casts and documents whether a contract reads or writes values."
+              ],
+              [
+                "Use when",
+                "Use declaration-site variance on owned producer/consumer interfaces, where clauses for multiple bounds, and use-site projections to adapt invariant APIs."
+              ],
+              [
+                "Avoid when",
+                "Avoid variance when the type is both consumed and produced, unchecked casts, and star projections when the concrete relationship matters."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "C<T> is invariant; Source<out T> may return T; Sink<in T> may accept T; where T : A constrains inputs and returns preserve T relationships."
+              ],
+              [
+                "Performance notes",
+                "Generics are commonly erased on JVM and can box primitives/value classes; specialized primitive collections/arrays may matter in measured hot paths."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Non-generic interface, sealed variants, primitive arrays, use-site projections; related: Java wildcards and reified."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "interface Source<out T> { fun next(): T }\ninterface Sink<in T> { fun accept(value: T) }\n\nfun <T> transfer(source: Source<T>, sink: Sink<T>) {\n    sink.accept(source.next())\n}\n\nfun <T> max(values: Iterable<T>): T\n    where T : Comparable<T>, T : Any =\n    values.maxOrNull() ?: error(\"empty\")",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Declaring out on a type later expected to consume T forces unsafe workarounds and signals the abstraction was not actually producer-only."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Apply producer out, consumer in, keep mutable containers invariant, and test Java-facing wildcard signatures."
+            }
+          ],
+          "tags": [
+            "generics",
+            "variance",
+            "out",
+            "in",
+            "bounds",
+            "star-projection"
+          ]
+        },
+        {
+          "id": "casts-smart-casts",
+          "title": "Type Checks, Casts, Smart Casts & Type Aliases",
+          "description": "is performs a runtime check, as casts or throws, as? casts or returns null, smart casts narrow stable values, and typealias gives an existing type another source-level name.",
+          "table": {
+            "title": "Type Checks, Casts, Smart Casts & Type Aliases — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "These features bridge open/runtime data into statically known branches while aliases improve readability without creating new types."
+              ],
+              [
+                "Use when",
+                "Use is in closed boundary dispatch, as? for optional matches, guard clauses for smart casts, and typealias for complex callback/generic names."
+              ],
+              [
+                "Avoid when",
+                "Avoid as on untrusted data, repetitive type switching instead of polymorphism, aliases for domain separation, and assumptions that erased generic arguments can be checked."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "x is T returns Boolean; x as T returns T or throws ClassCastException; x as? T returns T?; typealias creates no wrapper/runtime type."
+              ],
+              [
+                "Performance notes",
+                "Runtime checks and casts are usually small but type-switch-heavy designs impede optimization and extensibility. Aliases cost nothing because they create no type."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Polymorphism, sealed when, value class, reified type parameter; related: erasure and platform types."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun render(value: Any): String = when (value) {\n    is String -> value.uppercase()\n    is Number -> value.toDouble().toString()\n    is List<*> -> \"list(size=${value.size})\"\n    else -> value.toString()\n}\n\ntypealias Validator<T> = (T) -> List<String>\nval name = payload[\"name\"] as? String ?: return invalid(\"name\")",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Mutable, open, or captured properties may change between check and use and therefore cannot always be smart-cast."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Copy unstable properties to a local val and validate dynamic payloads once into owned typed models."
+            }
+          ],
+          "tags": [
+            "is",
+            "as",
+            "smart-cast",
+            "typealias",
+            "erasure",
+            "runtime-type"
+          ]
+        },
+        {
+          "id": "annotations-reflection",
+          "title": "Annotations, Reflection & Opt-In",
+          "description": "Annotations attach compiler/tool/runtime metadata; reflection inspects types dynamically; opt-in markers flag unstable or delicate contracts.",
+          "table": {
+            "title": "Annotations, Reflection & Opt-In — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Frameworks and tooling need declarative metadata, while opt-in makes stability risk explicit at compile time."
+              ],
+              [
+                "Use when",
+                "Use narrow targets/retention, explicit use-site targets for JVM frameworks, generated code for hot mappings, and RequiresOptIn for genuinely unstable APIs."
+              ],
+              [
+                "Avoid when",
+                "Avoid runtime retention without a consumer, reflection in hot/startup-sensitive paths without measurement, and experimental APIs in stable public signatures."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Annotation parameters are compile-time constants; KClass identifies a type; reflection calls return metadata/results or throw; @OptIn accepts marker KClass values and returns no runtime result."
+              ],
+              [
+                "Performance notes",
+                "Reflection can increase startup, retained metadata, artifact size, and shrinker configuration. Generated codecs/adapters move failures to compile time."
+              ],
+              [
+                "Alternatives & related concepts",
+                "KSP/code generation, compiler plugin, explicit registry, service loader; related: serialization and dependency injection."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "@Target(AnnotationTarget.CLASS)\n@Retention(AnnotationRetention.RUNTIME)\nannotation class Entity(val table: String)\n\n@RequiresOptIn(\n    message = \"API may change\",\n    level = RequiresOptIn.Level.WARNING,\n)\nannotation class ExperimentalQueryApi\n\n@OptIn(ExperimentalQueryApi::class)\nfun useQuery() = experimentalQuery()",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Assuming a Kotlin property annotation reaches the Java field/getter location expected by a framework; use field:, get:, param:, or all: deliberately."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Verify generated bytecode/metadata for interop and document stability plus migration expectations for opt-in APIs."
+            }
+          ],
+          "tags": [
+            "annotation",
+            "reflection",
+            "KClass",
+            "opt-in",
+            "metadata",
+            "use-site-target"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collections-sequences",
+      "title": "Collections, Sequences & Data Processing",
+      "description": "Choose structures by semantics and complexity, then keep data pipelines bounded and explicit.",
+      "subtopics": [
+        {
+          "id": "collection-selection",
+          "title": "List, Set, Map, Arrays & Mutability",
+          "description": "Lists preserve order and duplicates, sets enforce uniqueness, maps associate keys, arrays have fixed size, and mutable variants permit structural changes.",
+          "table": {
+            "title": "List, Set, Map, Arrays & Mutability — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "The right structure communicates invariants and controls lookup, insertion, memory, boxing, and iteration behavior."
+              ],
+              [
+                "Use when",
+                "Use List for ordered results, Set for membership, Map for stable-key lookup, primitive arrays for numeric buffers, and private mutable builders for owned construction."
+              ],
+              [
+                "Avoid when",
+                "Avoid exposing mutable collections, mutable map keys, relying on unspecified hash iteration order, and assuming read-only interfaces are deeply immutable."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Index/get returns an element or may throw; getOrNull returns T?; map lookup returns V?; add/remove on mutable collections return Boolean or removed value depending on API."
+              ],
+              [
+                "Performance notes",
+                "List index is O(1) and search O(n); hash Set/Map lookup is average O(1); primitive arrays avoid boxing; copying snapshots costs O(n)."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Persistent immutable collections, ArrayDeque, sorted maps/sets, sequences; related: value semantics and concurrency."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class Cart {\n    private val mutableItems = mutableListOf<Item>()\n    val items: List<Item> get() = mutableItems.toList()\n\n    fun add(item: Item) { mutableItems += item }\n}\n\nval byId = users.associateBy(User::id)\nval uniqueEmails = users.mapTo(mutableSetOf(), User::email)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "A List<T> may reference a MutableList<T> changed elsewhere; read-only is not a deep immutability guarantee."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep mutation behind one owner, copy at trust/concurrency boundaries, and document ordering and duplicate-key policies."
+            }
+          ],
+          "tags": [
+            "List",
+            "Set",
+            "Map",
+            "Array",
+            "mutability",
+            "complexity"
+          ]
+        },
+        {
+          "id": "collection-transformations",
+          "title": "Transform, Filter, Group, Associate & Fold",
+          "description": "Collection operators declaratively transform, select, index, partition, and aggregate finite data.",
+          "table": {
+            "title": "Transform, Filter, Group, Associate & Fold — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Named operators make common O(n) pipelines concise and composable while preserving types."
+              ],
+              [
+                "Use when",
+                "Use map for one output per input, mapNotNull for optional output, groupingBy for per-key aggregates, associateBy for an explicit last-value-wins index, and fold with an identity."
+              ],
+              [
+                "Avoid when",
+                "Avoid map for side effects, reduce on possibly empty input, repeated scans in hot paths, and silent associateBy duplicate loss."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "map(transform: (T)->R) returns List<R>; filter(predicate) returns List<T>; groupBy returns Map<K,List<T>>; fold(initial, operation) returns accumulator R."
+              ],
+              [
+                "Performance notes",
+                "Eager intermediate operators allocate collections. groupingBy can aggregate without building a List for every key; mapTo/filterTo reuse caller-owned destinations."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Explicit loop, Sequence, Flow, database query; related: aggregation, complexity, allocation."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "data class Order(val customerId: CustomerId, val total: Money)\n\nval totals: Map<CustomerId, Money> = orders\n    .groupingBy(Order::customerId)\n    .fold(Money.ZERO) { sum, order -> sum + order.total }\n\nval duplicateIds = users.groupingBy(User::id)\n    .eachCount()\n    .filterValues { it > 1 }\n    .keys",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "associateBy keeps the later element for duplicate keys; if duplicates mean corruption, detect and reject them explicitly."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep short pipelines readable, name nontrivial predicates/transforms, and document empty-input and duplicate behavior."
+            }
+          ],
+          "tags": [
+            "map",
+            "filter",
+            "groupBy",
+            "groupingBy",
+            "associateBy",
+            "fold"
+          ]
+        },
+        {
+          "id": "sequences-performance",
+          "title": "Sequence Laziness & Allocation Decisions",
+          "description": "Sequence is a synchronous lazy pull pipeline that evaluates intermediate operations per element at a terminal operation.",
+          "table": {
+            "title": "Sequence Laziness & Allocation Decisions — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "It can avoid intermediate lists and stop upstream early for long multi-stage or short-circuiting pipelines."
+              ],
+              [
+                "Use when",
+                "Use Sequence for measured large chains, take/first short-circuiting, or a source naturally consumed once."
+              ],
+              [
+                "Avoid when",
+                "Avoid it for small/simple list operations, repeated side-effectful iteration, asynchronous streams, or resources whose closure is unclear."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "asSequence returns Sequence<T>; intermediate operators return another Sequence; terminal toList/first/fold returns a materialized value and triggers evaluation."
+              ],
+              [
+                "Performance notes",
+                "Benefits depend on input size, operator count, short-circuit position, and target. Benchmark end-to-end with JMH or the target profiler."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Iterable operators, explicit loop, Flow for asynchronous values; related: laziness, terminal operations, benchmarking."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "val firstTen = records.asSequence()\n    .filter(Record::isActive)\n    .mapNotNull(Record::email)\n    .distinct()\n    .take(10)\n    .toList()\n\n// Simpler for a small list and one operation:\nval active = records.filter(Record::isActive)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Assuming lazy automatically means faster; iterator, lambda, boxing, and virtual-call overhead can exceed saved allocation."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Start with direct collection operators, switch only when workload evidence and readability support it."
+            }
+          ],
+          "tags": [
+            "Sequence",
+            "lazy",
+            "allocation",
+            "short-circuit",
+            "benchmark"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "idioms-dsls-properties",
+      "title": "Extensions, Properties & DSLs",
+      "description": "Use concise syntax while keeping receivers, evaluation, side effects, and dependency scope visible.",
+      "subtopics": [
+        {
+          "id": "extensions-scope-functions",
+          "title": "Extensions & Scope Functions",
+          "description": "Extensions add statically dispatched member-like syntax; let/run/with/apply/also differ by receiver name and returned value.",
+          "table": {
+            "title": "Extensions & Scope Functions — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "They enable focused adapters, null transforms, initialization, and side-effect taps without wrapper boilerplate."
+              ],
+              [
+                "Use when",
+                "Use let for nullable transforms, run for receiver computation, apply for configuration, also for a small side effect, and extensions for cohesive convenience."
+              ],
+              [
+                "Avoid when",
+                "Avoid nested scope functions, ambiguous this/it, long workflows hidden in apply/also, and extensions that pretend to override runtime behavior."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "let/also pass it; run/with/apply use this. let/run/with return lambda result; apply/also return receiver. Extension receiver is resolved from compile-time type."
+              ],
+              [
+                "Performance notes",
+                "Extensions usually compile like static functions. Scope lambdas may allocate unless inlined; readability and captured lifetime are usually the larger risks."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Member function, top-level function, adapter/decorator; related: static dispatch, nullable let, receiver lambdas."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "fun String.toSlug(): String = trim()\n    .lowercase()\n    .replace(Regex(\"[^a-z0-9]+\"), \"-\")\n    .trim('-')\n\nval client = HttpClient.Builder()\n    .connectTimeout(5.seconds)\n    .build()\n    .also { logger.info(\"HTTP client created\") }\n\nval length = text?.let(String::length) ?: 0",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "A member with the same signature always wins, and an extension selected from a base-typed reference does not dynamically dispatch to a subtype extension."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Use at most one short scope function at a time and name the receiver explicitly when meaning is not obvious."
+            }
+          ],
+          "tags": [
+            "extension",
+            "let",
+            "run",
+            "with",
+            "apply",
+            "also"
+          ]
+        },
+        {
+          "id": "properties-delegates",
+          "title": "Properties, Accessors, Delegates & Backing Fields",
+          "description": "Properties expose get/set semantics, custom accessors compute or validate values, delegates reuse storage behavior, and backing fields store property state.",
+          "table": {
+            "title": "Properties, Accessors, Delegates & Backing Fields — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "They let APIs express value access while centralizing initialization, observation, validation, or shared storage rules."
+              ],
+              [
+                "Use when",
+                "Use cheap deterministic computed properties, private setters for owned mutation, lazy for one-time deferred work, and delegates for repeated well-understood property policy."
+              ],
+              [
+                "Avoid when",
+                "Avoid I/O or expensive failure-prone work in getters, delegated global state, and assuming lazy always retries or always has desired thread semantics."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "get returns property T; set(value: T) returns Unit. by lazy returns cached T; observable callback receives property, old, new; explicit field syntax controls storage in Kotlin 2.4."
+              ],
+              [
+                "Performance notes",
+                "Custom getters run on every access; lazy retains its result and may synchronize; observable invokes callbacks on each assignment."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Explicit field, factory, cached function, StateFlow; related: lateinit, lazy modes, delegation."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class Session {\n    var token: String? = null\n        private set\n\n    val isAuthenticated: Boolean\n        get() = token != null\n\n    val index by lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex() }\n\n    fun authenticate(value: String) {\n        require(value.isNotBlank())\n        token = value\n    }\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Hiding network, disk, blocking, or large allocation work behind property access violates caller expectations and complicates failure handling."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Use a function when an operation is expensive, suspending, side-effecting, or can meaningfully fail."
+            }
+          ],
+          "tags": [
+            "property",
+            "getter",
+            "setter",
+            "delegate",
+            "lazy",
+            "backing-field"
+          ]
+        },
+        {
+          "id": "operators-dsl-context",
+          "title": "Operators, Infix Calls, DSLs & Context Parameters",
+          "description": "Operator/infix functions provide domain notation, receiver lambdas build type-safe DSLs, and stable Kotlin 2.4 context parameters supply lexical capabilities.",
+          "table": {
+            "title": "Operators, Infix Calls, DSLs & Context Parameters — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "These features can remove repetitive plumbing when the notation has one unsurprising meaning and the dependency scope remains visible."
+              ],
+              [
+                "Use when",
+                "Use conventional operators, small infix relations, DslMarker-protected builders, and context parameters for tightly scoped cross-cutting capabilities."
+              ],
+              [
+                "Avoid when",
+                "Avoid surprising operator side effects, long infix chains, nested same-type receivers, hidden global-like dependencies, and experimental explicit context arguments in stable APIs."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "operator functions use prescribed names/signatures and return their declared type; infix requires one parameter; T.() -> R returns R; context(name: Type) adds required lexical parameters."
+              ],
+              [
+                "Performance notes",
+                "DSL and context abstraction is mostly compile-time, but lambdas/captures and expanded code can allocate or enlarge artifacts; benchmark generated hot builders."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Named methods, builder object, explicit parameter, dependency injection; related: receivers, DslMarker, context functions."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "@DslMarker\nannotation class HtmlDsl\n\n@HtmlDsl\nclass Html {\n    private val children = mutableListOf<String>()\n    fun p(text: String) { children += \"<p>$text</p>\" }\n    override fun toString() = children.joinToString(\"\")\n}\n\nfun html(block: Html.() -> Unit): String = Html().apply(block).toString()\n\ncontext(audit: AuditLog)\nfun approve(order: Order): ApprovedOrder {\n    audit.record(\"approved:${order.id}\")\n    return ApprovedOrder(order.id)\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Multiple implicit receivers or context values can make name resolution and overload selection unclear."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep experimental context arguments and callable-reference forms out of stable public APIs; prefer constructor or explicit parameter injection when ownership matters."
+            }
+          ],
+          "tags": [
+            "operator",
+            "infix",
+            "DSL",
+            "receiver",
+            "DslMarker",
+            "context-parameter"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "coroutines-flow",
+      "title": "Coroutines, Flow & Concurrency",
+      "description": "Give every concurrent task an owner, cancellation path, capacity limit, and observable failure policy.",
+      "subtopics": [
+        {
+          "id": "structured-concurrency",
+          "title": "suspend, Coroutine Scopes, launch & async",
+          "description": "A suspend function may pause without blocking its thread; structured scopes bind child lifetimes to a parent; launch returns Job and async returns Deferred<T>.",
+          "table": {
+            "title": "suspend, Coroutine Scopes, launch & async — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Structured lifetime ownership prevents leaked background work and makes failure/cancellation propagation predictable."
+              ],
+              [
+                "Use when",
+                "Use suspend for asynchronous single results, coroutineScope for parallel children, launch for owned no-result work, and async only for concurrently computed values."
+              ],
+              [
+                "Avoid when",
+                "Avoid GlobalScope, internally unowned scopes, async followed immediately by await, and assuming suspend automatically switches threads."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "suspend function parameters/return are source-level contracts; launch returns Job; async returns Deferred<T>; await returns T or propagates failure; coroutineScope returns block R."
+              ],
+              [
+                "Performance notes",
+                "Coroutines are lightweight, not free; unbounded fan-out consumes memory, connections, rate limits, and dispatcher capacity."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Synchronous function, CompletableFuture/Promise, executor; related: Job hierarchy, supervisorScope, cancellation."
+              ]
+            ]
+          },
+          "diagram": {
+            "type": "mermaid",
+            "content": "flowchart TD\n  P[Parent scope] --> A[async profile]\n  P --> B[async orders]\n  A --> J[await results]\n  B --> J\n  A -. failure .-> C[Cancel sibling and parent]\n  P -. cancellation .-> A\n  P -. cancellation .-> B"
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "suspend fun loadDashboard(id: UserId): Dashboard = coroutineScope {\n    val profile = async { profileApi.get(id) }\n    val orders = async { orderApi.list(id) }\n    Dashboard(profile.await(), orders.await())\n}\n\nsuspend fun refresh() {\n    repository.refresh()\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Starting work in an application-wide scope for a request/component operation allows it to outlive its owner and lose errors."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Inject/own scopes at lifecycle boundaries and bound concurrency according to downstream capacity."
+            }
+          ],
+          "tags": [
+            "suspend",
+            "coroutineScope",
+            "launch",
+            "async",
+            "Deferred",
+            "structured-concurrency"
+          ]
+        },
+        {
+          "id": "dispatchers-cancellation",
+          "title": "Dispatchers, Cancellation, Timeouts & Supervision",
+          "description": "Dispatchers select execution resources; cancellation cooperatively propagates through Jobs; timeouts cancel waiting; supervision isolates sibling failures.",
+          "table": {
+            "title": "Dispatchers, Cancellation, Timeouts & Supervision — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Explicit execution and failure policy keeps CPU work, blocking I/O, cleanup, and partial-failure behavior controlled."
+              ],
+              [
+                "Use when",
+                "Use Default for CPU work, IO for blocking JVM I/O, ensureActive in long loops, withTimeout for bounded waits, and supervisorScope only when each child result/failure is handled."
+              ],
+              [
+                "Avoid when",
+                "Avoid hard-coded dispatchers deep in business code, swallowing CancellationException, NonCancellable around normal work, and treating timeout as remote rollback."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "withContext returns block R; withTimeout returns R or throws TimeoutCancellationException; ensureActive returns Unit or throws cancellation; supervisorScope returns block R."
+              ],
+              [
+                "Performance notes",
+                "Context switching and scheduling have cost; blocking calls can exhaust pools; timeouts create cancellation/cleanup work and do not undo external side effects."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Executor, virtual threads, reactive runtime; related: CancellationException, Semaphore, supervisorScope."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "suspend fun hashAll(files: List<Path>): List<Hash> =\n    withContext(Dispatchers.Default) {\n        files.map { path ->\n            ensureActive()\n            hash(path)\n        }\n    }\n\nsuspend fun fetch(): Payload? = try {\n    withTimeout(2.seconds) { api.fetch() }\n} catch (e: TimeoutCancellationException) {\n    null\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Catching Exception broadly and returning a fallback can convert cancellation into success and keep unwanted work alive."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Catch only recoverable exceptions, use try/finally for cleanup, and design timed-out external operations for idempotency and reconciliation."
+            }
+          ],
+          "tags": [
+            "Dispatcher",
+            "cancellation",
+            "timeout",
+            "supervisorScope",
+            "ensureActive"
+          ]
+        },
+        {
+          "id": "flow-hot-streams",
+          "title": "Flow, StateFlow, SharedFlow & Channels",
+          "description": "Flow is usually cold asynchronous data, StateFlow is hot conflated state, SharedFlow is configurable broadcast, and Channel is a queue-like communication primitive.",
+          "table": {
+            "title": "Flow, StateFlow, SharedFlow & Channels — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Distinct stream types make execution, replay, ownership, fan-out, and slow-consumer policy explicit."
+              ],
+              [
+                "Use when",
+                "Use Flow for queries/transformations, StateFlow for current state, SharedFlow for broadcast events with deliberate replay/buffer, and Channel for internal work distribution."
+              ],
+              [
+                "Avoid when",
+                "Avoid StateFlow for non-conflatable events, Channel as a general public event API, endless flows where a suspend result suffices, and undocumented overflow/drop policy."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "collect consumes and returns Unit; first returns T; stateIn returns StateFlow<T>; shareIn returns SharedFlow<T>; send suspends/returns Unit; receive returns T."
+              ],
+              [
+                "Performance notes",
+                "Operator chains allocate/cancel work; replay retains values; high-frequency streams and slow collectors need measured capacity and payload size."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Suspend function, Sequence, callback, reactive streams; related: backpressure, stateIn, shareIn, channelFlow."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class SearchModel(repository: Repository, scope: CoroutineScope) {\n    private val query = MutableStateFlow(\"\")\n\n    val results: StateFlow<List<Item>> = query\n        .debounce(300.milliseconds)\n        .map(String::trim)\n        .distinctUntilChanged()\n        .flatMapLatest(repository::search)\n        .stateIn(scope, SharingStarted.WhileSubscribed(5_000), emptyList())\n\n    fun search(text: String) { query.value = text }\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Adding buffer, conflate, collectLatest, or DROP_OLDEST for performance without deciding which domain values may be lost."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Expose StateFlow/SharedFlow, keep mutable variants private, and test subscription, cancellation, replay, and slow-consumer behavior."
+            }
+          ],
+          "tags": [
+            "Flow",
+            "StateFlow",
+            "SharedFlow",
+            "Channel",
+            "backpressure",
+            "stateIn"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "platform-interop",
+      "title": "JVM Interop, Multiplatform & Serialization",
+      "description": "Design explicit boundaries for runtime platforms, foreign callers, and wire schemas.",
+      "subtopics": [
+        {
+          "id": "java-interop",
+          "title": "Java Interoperability & JVM API Design",
+          "description": "Kotlin/JVM directly consumes Java types and emits JVM bytecode; annotations shape static access, overloads, fields, names, and checked-exception declarations for Java callers.",
+          "table": {
+            "title": "Java Interoperability & JVM API Design — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Kotlin conveniences do not always produce an ergonomic or compatible Java API, so foreign-facing surfaces need deliberate design."
+              ],
+              [
+                "Use when",
+                "Use recognized Java nullability annotations, adapters for platform types, @JvmOverloads selectively, @JvmStatic for intended static entry points, and @Throws for checked Java contracts."
+              ],
+              [
+                "Avoid when",
+                "Avoid leaking function types, default-only signatures, unsigned/value-class surprises, Unit, or Kotlin collection mutability ambiguity without testing Java callers."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "@JvmOverloads emits trailing-default overloads; @JvmStatic emits a static bridge; @Throws writes throws metadata; @JvmName changes JVM name; functions return JVM-mapped values."
+              ],
+              [
+                "Performance notes",
+                "Interop bridges/boxing may affect hot APIs, but correctness and stable signatures matter first. Inspect bytecode and benchmark representative Java calls."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Java facade, overloads, SAM interface, generated adapter; related: wildcards, erasure, value classes."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class Parser @JvmOverloads constructor(\n    private val strict: Boolean = true,\n) {\n    @Throws(IOException::class)\n    fun parse(path: Path): Document =\n        Files.newBufferedReader(path).use { parse(it, strict) }\n\n    companion object {\n        @JvmStatic fun default(): Parser = Parser()\n    }\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Trusting a Java platform type as non-null and allowing a distant Kotlin NPE instead of validating at the adapter boundary."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Compile tests written in Java against every public JVM library API and keep platform types out of the domain layer."
+            }
+          ],
+          "tags": [
+            "Java",
+            "JVM",
+            "interop",
+            "JvmOverloads",
+            "JvmStatic",
+            "platform-type"
+          ]
+        },
+        {
+          "id": "multiplatform-source-sets",
+          "title": "Multiplatform Source Sets & expect/actual",
+          "description": "Multiplatform source sets group portable and target-specific code; expect declares a common platform contract and actual supplies target implementations.",
+          "table": {
+            "title": "Multiplatform Source Sets & expect/actual — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "The hierarchy shares tested logic while preserving direct access to each platform where abstractions would be leaky."
+              ],
+              [
+                "Use when",
+                "Use commonMain for pure/shared library code, interfaces plus injection for service behavior, expect/actual for small stable platform declarations, and platform sets for OS/framework integration."
+              ],
+              [
+                "Avoid when",
+                "Avoid large expect/actual service surfaces, platform assumptions in common code, publishing untested targets, and manual source-set hierarchies without real shared behavior."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "expect and actual declarations must match; interfaces return owned common types; target blocks produce separate artifacts; commonTest uses kotlin.test."
+              ],
+              [
+                "Performance notes",
+                "Every target adds compilation, publication, CI, and support cost. Native linking and platform interop can dominate build time."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Separate platform projects, code generation, C/Swift/JS interop; related: source-set hierarchy and dependency variants."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "// commonMain\ninterface SecureStore {\n    suspend fun read(key: String): ByteArray?\n    suspend fun write(key: String, value: ByteArray)\n}\n\nexpect fun platformName(): String\n\nclass TokenRepository(private val store: SecureStore) {\n    suspend fun token(): ByteArray? = store.read(\"token\")\n}\n\n// jvmMain\nactual fun platformName(): String = \"JVM\"",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Compiling only the primary target in CI allows actual declarations, dependencies, and tests on secondary targets to silently rot."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Define supported target tiers, compile/test each published target, and keep shared code dependent only on supported multiplatform libraries."
+            }
+          ],
+          "tags": [
+            "multiplatform",
+            "KMP",
+            "source-set",
+            "expect",
+            "actual",
+            "commonMain"
+          ]
+        },
+        {
+          "id": "serialization-boundaries",
+          "title": "Serialization & External Data Boundaries",
+          "description": "Serialization maps typed wire models to formats such as JSON; kotlinx.serialization generates multiplatform codecs from explicit metadata.",
+          "table": {
+            "title": "Serialization & External Data Boundaries — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "A deliberate wire schema separates untrusted/evolving external data from invariant-rich domain objects."
+              ],
+              [
+                "Use when",
+                "Use dedicated payload types, stable serial names, bounded decoding, explicit unknown/null/default policy, allowlisted polymorphism, and mapping validation."
+              ],
+              [
+                "Avoid when",
+                "Avoid serializing domain internals blindly, arbitrary class-name polymorphism, unbounded payloads, platform-default time/charset, and secrets in generated toString/logs."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "encodeToString returns String; decodeFromString<T> returns T or throws SerializationException; @SerialName sets wire key; serializer selection determines supported types."
+              ],
+              [
+                "Performance notes",
+                "Generated codecs usually outperform reflection but payload size/depth and large intermediate strings still dominate memory and latency."
+              ],
+              [
+                "Alternatives & related concepts",
+                "Jackson/Moshi on JVM, Protobuf, manual codecs; related: schema evolution, sealed polymorphism, security."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "@Serializable\ndata class UserPayload(\n    @SerialName(\"user_id\") val id: String,\n    val displayName: String,\n    val createdAtEpochMillis: Long,\n)\n\nval json = Json {\n    ignoreUnknownKeys = true\n    explicitNulls = false\n}\n\nfun UserPayload.toDomain(): User = User(\n    id = UserId(id),\n    name = displayName.trim().also { require(it.isNotEmpty()) },\n)",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Treating missing and explicit null as universally equivalent can erase patch semantics and backward-compatibility information."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Validate size and domain invariants before use, redact diagnostics, and test old/new payload compatibility plus hostile inputs."
+            }
+          ],
+          "tags": [
+            "serialization",
+            "kotlinx.serialization",
+            "JSON",
+            "schema",
+            "wire-model",
+            "security"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "testing-production",
+      "title": "Testing, APIs & Production Engineering",
+      "description": "Turn behavior, compatibility, performance, security, and observability into executable build policies.",
+      "subtopics": [
+        {
+          "id": "testing-strategy",
+          "title": "Unit, Integration, Coroutine & Multiplatform Tests",
+          "description": "kotlin.test provides portable assertions while target runners execute tests; coroutine tests use a controlled scheduler and scope.",
+          "table": {
+            "title": "Unit, Integration, Coroutine & Multiplatform Tests — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Layered tests verify pure rules, boundary integration, implementation contracts, concurrency, and platform behavior without coupling every test to internals."
+              ],
+              [
+                "Use when",
+                "Use unit tests for pure behavior, integration tests for real boundaries, shared contract suites for implementations, runTest for coroutines, and target tests for platform physics."
+              ],
+              [
+                "Avoid when",
+                "Avoid testing private lines, sleep-based timing, mocking the system under integration, hard-coded Dispatchers, and collecting infinite flows without bounds/background ownership."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "@Test functions return Unit; assertions either return Unit or throw AssertionError; assertFailsWith<T> returns caught T; runTest supplies TestScope and virtual time."
+              ],
+              [
+                "Performance notes",
+                "Test runtime is controlled mostly by I/O, framework startup, fixtures, and parallelism. Keep unit tests deterministic and profile slow suites rather than adding arbitrary concurrency."
+              ],
+              [
+                "Alternatives & related concepts",
+                "JUnit, Kotest, property testing, Testcontainers, JMH; related: fakes, virtual time, contract tests."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "class PriceTest {\n    @Test\n    fun `discount never creates negative price`() {\n        val result = Price.cents(100).discount(Percentage.of(20))\n        assertEquals(Price.cents(80), result)\n    }\n\n    @Test\n    fun `rejects invalid percentage`() {\n        assertFailsWith<IllegalArgumentException> { Percentage.of(101) }\n    }\n}\n\n@Test\nfun `refresh loads state`() = runTest {\n    val model = Model(FakeRepository(items), backgroundScope)\n    model.refresh()\n    advanceUntilIdle()\n    assertEquals(UiState.Loaded(items), model.state.value)\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "An endless Flow collected in the main runTest body prevents the test from completing; use take, first, or backgroundScope with cancellation."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Inject clocks, randomness, dispatchers/scopes, and owned ports; test observable contracts and cancellation/failure paths."
+            }
+          ],
+          "tags": [
+            "testing",
+            "kotlin.test",
+            "runTest",
+            "integration",
+            "property-test",
+            "virtual-time"
+          ]
+        },
+        {
+          "id": "api-compatibility",
+          "title": "Public API, Modules & Binary Compatibility",
+          "description": "Library evolution includes source, binary, behavioral, serialization, and multiplatform compatibility; explicit API mode forces public visibility and types.",
+          "table": {
+            "title": "Public API, Modules & Binary Compatibility — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Consumers compile against signatures and may inline bodies/default behavior, so seemingly small changes can break old binaries or newly compiled source."
+              ],
+              [
+                "Use when",
+                "Use explicitApi, ABI validation, semantic versioning, replacement APIs, deprecation cycles, and tests from representative Kotlin/Java consumers."
+              ],
+              [
+                "Avoid when",
+                "Avoid leaking dependency types, changing return/signature types in place, removing deprecated APIs immediately, and assuming default parameters preserve binary compatibility."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Public functions/properties form ABI; @Deprecated supplies message/ReplaceWith/level; explicitApi requires visibility/return declarations. Build validation returns failure on ABI drift."
+              ],
+              [
+                "Performance notes",
+                "Large public ABI increases incremental compilation and compatibility tooling work; public inline code duplicates into consumers and constrains internal evolution."
+              ],
+              [
+                "Alternatives & related concepts",
+                "New method/name, overload bridge, facade, adapter; related: semantic versioning, Maven publication, @PublishedApi."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "kotlin { explicitApi() }\n\npublic interface UserRepository {\n    public suspend fun find(id: UserId): User?\n}\n\n@Deprecated(\n    message = \"Use find(UserId)\",\n    replaceWith = ReplaceWith(\"find(UserId(rawId))\"),\n)\npublic suspend fun find(rawId: String): User? = find(UserId(rawId))",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Adding a defaulted parameter or changing an inline body is not automatically safe for already-compiled consumers."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Keep public surface small, document compatibility guarantees per target, and test both fresh source compilation and old-binary linkage."
+            }
+          ],
+          "tags": [
+            "API",
+            "ABI",
+            "binary-compatibility",
+            "explicitApi",
+            "deprecation",
+            "versioning"
+          ]
+        },
+        {
+          "id": "performance-security-observability",
+          "title": "Performance, Security & Observability",
+          "description": "Production quality depends on measured runtime/build behavior, bounded resource use, validated inputs, redacted telemetry, and target-appropriate profiling.",
+          "table": {
+            "title": "Performance, Security & Observability — production guide",
+            "headers": [
+              "Aspect",
+              "Guidance"
+            ],
+            "rows": [
+              [
+                "Why it exists",
+                "Language safety does not prevent excessive allocation, blocking, queue growth, injection, path traversal, SSRF, ReDoS, or secret leakage."
+              ],
+              [
+                "Use when",
+                "Profile realistic workloads, bound concurrency/retries/payloads, validate URLs/paths/ranges, use structured low-cardinality telemetry, and scan dependencies/secrets."
+              ],
+              [
+                "Avoid when",
+                "Avoid wall-clock microbenchmarks in main, logging raw payloads/tokens, unbounded async fan-out, high-cardinality metric labels, and speculative allocation rewrites."
+              ],
+              [
+                "Syntax / parameters / returns",
+                "Profilers/benchmarks return measurements; Semaphore.withPermit returns block R; telemetry records operation/outcome/duration; validators return typed success/failure."
+              ],
+              [
+                "Performance notes",
+                "Measure allocations, boxing, reflection, lock/dispatcher contention, GC, startup, artifact size, and compiler time with target-specific tools."
+              ],
+              [
+                "Alternatives & related concepts",
+                "JFR, async-profiler, JMH, Native/JS profilers, static analysis; related: Semaphore, serialization limits, dependency scanning."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "private val permits = Semaphore(16)\n\nsuspend fun fetchAll(ids: List<Id>): List<Result<Item>> = coroutineScope {\n    ids.map { id ->\n        async {\n            permits.withPermit { runCatching { api.fetch(id) } }\n        }\n    }.awaitAll()\n}",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "data class includes primary-constructor properties in generated toString; secrets and regulated data can leak through routine logging."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Optimize only a measured bottleneck, preserve readable baselines, add regression benchmarks, and define capacity/telemetry budgets."
+            }
+          ],
+          "tags": [
+            "performance",
+            "security",
+            "observability",
+            "profiling",
+            "bounded-concurrency",
+            "redaction"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "decisions-troubleshooting",
+      "title": "Decision Guides, Troubleshooting & FAQ",
+      "description": "Use the smallest construct that makes ownership, effects, failure, and evolution clear.",
+      "subtopics": [
+        {
+          "id": "design-decisions",
+          "title": "Common Kotlin Design Decisions",
+          "description": "This matrix maps recurring Kotlin choices to the semantic distinction that should drive them.",
+          "table": {
+            "title": "Kotlin decision matrix",
+            "headers": [
+              "Question",
+              "Prefer",
+              "Choose alternative when",
+              "Alternative"
+            ],
+            "rows": [
+              [
+                "Absence or failure?",
+                "T? for ordinary absence",
+                "Reason/recovery matters",
+                "Sealed outcome or exception boundary"
+              ],
+              [
+                "Class or data class?",
+                "Regular class for identity/invariants",
+                "Transparent value semantics fit",
+                "data class"
+              ],
+              [
+                "Enum or sealed type?",
+                "Enum for uniform fixed constants",
+                "Variants need different payloads",
+                "Sealed hierarchy"
+              ],
+              [
+                "Extension or member?",
+                "Member for core owned capability",
+                "Convenience/adaptation is external",
+                "Extension"
+              ],
+              [
+                "List pipeline or Sequence?",
+                "List operators by default",
+                "Measured long pipeline or short circuit",
+                "Sequence"
+              ],
+              [
+                "Flow or suspend function?",
+                "suspend for one result",
+                "Multiple values over time",
+                "Flow"
+              ],
+              [
+                "Interface or function type?",
+                "Function type for one local behavior",
+                "Named/evolving contract",
+                "fun interface/interface"
+              ],
+              [
+                "Inheritance or delegation?",
+                "Composition/delegation",
+                "True substitutable hierarchy exists",
+                "Abstract/open class"
+              ],
+              [
+                "JVM or Multiplatform?",
+                "JVM for JVM-only deployment",
+                "Shared logic across supported targets pays off",
+                "KMP"
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "// Absence with no reason:\nfun find(id: UserId): User?\n\n// Closed expected outcomes:\nsealed interface SaveResult\n\n// One asynchronous result:\nsuspend fun load(id: UserId): User\n\n// Values over time:\nfun observe(id: UserId): Flow<User>",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Selecting the most concise or most advanced feature without documenting its failure mode, lifecycle, or compatibility cost."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Prefer T? over Result for reasonless absence; regular class over data class for identity; enum for uniform constants; sealed type for payload variants; suspend for one async result; Flow for many."
+            }
+          ],
+          "tags": [
+            "decision-guide",
+            "design",
+            "trade-off",
+            "idiom",
+            "architecture"
+          ]
+        },
+        {
+          "id": "troubleshooting",
+          "title": "Compiler, Build & Runtime Troubleshooting",
+          "description": "Effective troubleshooting classifies a failure as source compilation, dependency/metadata, linkage, runtime type/nullability, coroutine lifetime, stream activation, or performance.",
+          "table": {
+            "title": "Symptom → diagnosis",
+            "headers": [
+              "Symptom",
+              "Likely cause",
+              "Check",
+              "Fix"
+            ],
+            "rows": [
+              [
+                "Unresolved reference after upgrade",
+                "Removed API, import, dependency, or source-set mismatch",
+                "Migration guide and dependency graph",
+                "Align versions and migrate API"
+              ],
+              [
+                "Metadata/binary version error",
+                "Compiler and library versions are incompatible",
+                "Resolved artifacts and plugin versions",
+                "Use a supported version matrix"
+              ],
+              [
+                "Duplicate JVM signature",
+                "Erasure, accessor, or overload clash",
+                "Generated JVM signatures",
+                "Rename, @JvmName, or redesign"
+              ],
+              [
+                "Smart cast impossible",
+                "Value is mutable, open, or captured",
+                "Declaration stability",
+                "Copy to local val or model immutable state"
+              ],
+              [
+                "NPE/ClassCastException from Java",
+                "Platform type or unchecked cast crossed boundary",
+                "Java annotations and adapters",
+                "Validate and map at entry"
+              ],
+              [
+                "Coroutine never completes",
+                "Leaked child, endless Flow, blocking call, or test scheduler",
+                "Job tree, thread dump, timeout",
+                "Own/cancel scope and bound work"
+              ],
+              [
+                "Flow does not emit",
+                "No collector, stopped sharing, equality conflation, or test timing",
+                "Collectors, SharingStarted, current values",
+                "Collect in owned scope and advance time"
+              ],
+              [
+                "Slow build",
+                "Compiler plugin, codegen, or invalidated inputs",
+                "Build scan and task profile",
+                "Isolate modules and fix cacheability"
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "// Useful shell commands:\n// ./gradlew --version\n// ./gradlew clean check --stacktrace --info\n// ./gradlew dependencies\n// ./gradlew dependencyInsight --dependency kotlin-stdlib\n// ./gradlew buildEnvironment\n\nval stable = mutableProperty\nif (stable != null) use(stable) // local val enables smart cast",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Treating a metadata-version error as corrupted cache when the resolved library was compiled by an incompatible Kotlin compiler."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Align versions before cleaning, inspect generated JVM signatures for clashes, use local vals for smart casts, and inspect Job/collector ownership for hangs."
+            }
+          ],
+          "tags": [
+            "troubleshooting",
+            "compiler",
+            "Gradle",
+            "metadata",
+            "smart-cast",
+            "coroutine"
+          ]
+        },
+        {
+          "id": "faq",
+          "title": "Frequently Asked Questions",
+          "description": "Short answers clarify Kotlin misconceptions about immutability, suspension, exceptions, collections, extensions, interoperability, and Multiplatform.",
+          "table": {
+            "title": "Kotlin FAQ",
+            "headers": [
+              "Question",
+              "Answer"
+            ],
+            "rows": [
+              [
+                "Is val immutable?",
+                "The reference cannot be reassigned; the referenced object may still mutate."
+              ],
+              [
+                "Are exceptions checked?",
+                "No. @Throws can expose checked declarations to Java or Objective-C callers."
+              ],
+              [
+                "Does suspend start a new thread?",
+                "No. It permits suspension; the coroutine context determines execution."
+              ],
+              [
+                "Is Sequence always faster?",
+                "No. It may save allocations but adds iterator and lambda overhead."
+              ],
+              [
+                "Is data class copy deep?",
+                "No. It reuses nested references unless replacements are supplied."
+              ],
+              [
+                "Does internal hide JVM bytecode?",
+                "No. It is Kotlin module visibility, not a security boundary."
+              ],
+              [
+                "Should every API return Result?",
+                "No. Nullable or a typed domain outcome may communicate better."
+              ],
+              [
+                "Can extensions override members?",
+                "No. Extensions are statically dispatched and members win."
+              ],
+              [
+                "Should every project use coroutines?",
+                "Only when structured asynchronous or concurrent work benefits the stack."
+              ],
+              [
+                "Is Multiplatform write once, run everywhere?",
+                "No. It shares selected code while platform integration remains target-specific."
+              ],
+              [
+                "Are context parameters dependency injection?",
+                "They provide scoped capabilities; constructor injection is often clearer for ownership."
+              ],
+              [
+                "How should Kotlin be upgraded?",
+                "Align compiler, Gradle, JDK, plugins, and libraries; run compatibility and target tests."
+              ]
+            ]
+          },
+          "tabs": [
+            {
+              "label": "Syntax & Example",
+              "language": "kotlin",
+              "code": "val mutable = mutableListOf(1)\nmutable += 2 // legal: reference is read-only, object is mutable\n\nsuspend fun work(): Result<Data> = coroutineScope {\n    runCatching { repository.load() }\n}\n\n// suspend does not mean a new thread.\n// Sequence does not mean automatically faster.",
+              "playground": {
+                "type": "kotlin",
+                "url": "https://play.kotlinlang.org/",
+                "buttonLabel": "Run on Kotlin Playground"
+              }
+            }
+          ],
+          "callouts": [
+            {
+              "title": "Common mistake",
+              "type": "warning",
+              "icon": "⚠️",
+              "color": "amber",
+              "text": "Assuming Kotlin eliminates all NPEs, data races, blocking calls, resource leaks, schema errors, or unsafe Java/platform boundaries."
+            },
+            {
+              "title": "Best practice",
+              "type": "tip",
+              "icon": "💡",
+              "color": "green",
+              "text": "Pin the Kotlin baseline, read release/compatibility guides during upgrades, and compile/test every supported target."
+            }
+          ],
+          "tags": [
+            "FAQ",
+            "val",
+            "suspend",
+            "Sequence",
+            "Result",
+            "multiplatform"
+          ]
         }
       ]
     }

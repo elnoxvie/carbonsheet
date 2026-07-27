@@ -30,7 +30,7 @@
       "technology": "Android / Kotlin",
       "category": "Android",
       "difficulty": "BEGINNER",
-      "file": "sheets/kotlin.json"
+      "file": "sheets/android-kotlin.json"
     },
     {
       "slug": "android-kotlin-coroutines",
@@ -220,6 +220,15 @@
       "category": "Data & Messaging",
       "difficulty": "ADVANCED",
       "file": "sheets/kafka.json"
+    },
+    {
+      "slug": "kotlin",
+      "title": "Kotlin Programming",
+      "description": "Beginner-to-advanced Kotlin language reference covering syntax, types, null safety, functions, object modeling, generics, collections, delegation, DSLs, context parameters, coroutines, Flow, JVM interoperability, multiplatform development, testing, performance, tooling, and production API design.",
+      "technology": "Kotlin",
+      "category": "Languages",
+      "difficulty": "BEGINNER",
+      "file": "sheets/kotlin.json"
     },
     {
       "slug": "kotlin-collection-processing",

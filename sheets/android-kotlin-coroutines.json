@@ -11,7 +11,7 @@
   "tags": ["ANDROID", "KOTLIN", "COROUTINES", "CONCURRENCY", "ASYNC", "STRUCTURED CONCURRENCY"],
   "updatedAt": "2026-07-26",
   "aliases": ["kotlin coroutine", "suspend function", "viewmodelscope", "lifecyclescope", "structured concurrency", "dispatcher", "bounded concurrency", "semaphore", "rate limit"],
-  "relatedSheets": ["android-kotlin-flows", "android-kotlin", "android-testing", "android-jetpack-compose"],
+  "relatedSheets": ["kotlin", "android-kotlin-flows", "android-kotlin", "android-testing", "android-jetpack-compose"],
   "prerequisites": [{ "title": "Android Kotlin", "slug": "android-kotlin" }],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/android-kotlin-coroutines.json",
   "sections": [

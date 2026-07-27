@@ -17,7 +17,7 @@
   ],
   "updatedAt": "2026-07-26",
   "aliases": ["android collections", "kotlin list operations", "kotlin map filter reduce", "kotlin sequence", "collection operators", "persistent collections", "primitive arrays"],
-  "relatedSheets": ["android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
+  "relatedSheets": ["kotlin", "android-kotlin", "android-kotlin-coroutines", "android-kotlin-flows", "android-jetpack-compose"],
   "githubEditUrl": "https://github.com/elnoxvie/carbonsheet/edit/main/sheets/kotlin_collection_processing_sheet.json",
   "sections": [
     {
